@@ -1,0 +1,73 @@
+{
+  "common": {
+    "search": "Search NFT, collections...",
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect"
+  },
+  "nav": {
+    "home": "Home",
+    "box": "Box",
+    "craft": "Craft",
+    "market": "Market",
+    "governance": "DAO",
+    "invite": "Invite",
+    "join": "Join",
+    "create": "Create",
+    "profile": "Profile"
+  },
+  "home": {
+    "hotNFT": "Hot NFT",
+    "viewAll": "View All",
+    "hotAuction": "Hot Auction",
+    "endingSoon": "Ending Soon",
+    "latest": "Latest",
+    "ranking": "Ranking",
+    "suiEcosystem": "SUI Ecosystem",
+    "platformStats": "Platform Stats",
+    "tradingVolume": "Trading Volume",
+    "nftTotal": "NFT Total",
+    "royaltyPaid": "Royalty Paid",
+    "nftHolders": "NFT Holders",
+    "stakeRate": "Stake Rate",
+    "boxStake": "BOX Stake",
+    "suiStake": "SUI Stake",
+    "nftStake": "NFT Stake",
+    "users": "Users",
+    "todayVolume": "Today's Volume",
+    "gasFee": "Gas Fee",
+    "network": "Network",
+    "normal": "Online"
+  },
+  "auction": {
+    "currentPrice": "Current Price",
+    "bids": "bids",
+    "placeBid": "Place Bid",
+    "ending": "Ending Soon",
+    "ended": "Ended"
+  },
+  "footer": {
+    "discover": "Discover NFT Collections",
+    "discoverDesc": "Discover and purchase NFTs and collectibles in just a few clicks. No托管, no delays, just connect your wallet and buy through our smart contracts.",
+    "explore": "Explore",
+    "create": "Create",
+    "support": "Support",
+    "craft": "Craft",
+    "market": "Market",
+    "stake": "Stake",
+    "auction": "Auction",
+    "join": "Join",
+    "mint": "Mint",
+    "help": "Help Center",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "security": "Security",
+    "apply": "Apply"
+  },
+  "bid": {
+    "title": "Place Bid",
+    "bidAmount": "Bid Amount (SUI)",
+    "minBid": "Min Bid",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
+}

@@ -1,0 +1,3 @@
+    const suiChange = stats?.sui?.change ?? 0.56;
+    const suiPrice = stats?.sui?.price ?? 0.9999;
+    const boxPrice = (stats?.box?.price ?? 0.0042) * (stats?.sui?.price ?? 1);

@@ -1,0 +1,73 @@
+{
+  "common": {
+    "search": "搜索NFT、藏品...",
+    "connect": "连接钱包",
+    "disconnect": "断开连接"
+  },
+  "nav": {
+    "home": "首页",
+    "box": "盲盒",
+    "craft": "合成",
+    "market": "交易",
+    "governance": "自治",
+    "invite": "邀请",
+    "join": "入驻",
+    "create": "铸造",
+    "profile": "个人主页"
+  },
+  "home": {
+    "hotNFT": "热门NFT",
+    "viewAll": "查看全部",
+    "hotAuction": "热门拍卖",
+    "endingSoon": "即将结束",
+    "latest": "最新上架",
+    "ranking": "排行榜",
+    "suiEcosystem": "SUI生态",
+    "platformStats": "平台统计",
+    "tradingVolume": "交易量",
+    "nftTotal": "NFT总量",
+    "royaltyPaid": "版税支付",
+    "nftHolders": "NFT持有者",
+    "stakeRate": "质押率",
+    "boxStake": "BOX质押",
+    "suiStake": "SUI质押",
+    "nftStake": "NFT质押",
+    "users": "用户人数",
+    "todayVolume": "今日交易量",
+    "gasFee": "Gas费率",
+    "network": "网络状态",
+    "normal": "正常"
+  },
+  "auction": {
+    "currentPrice": "当前价",
+    "bids": "次出价",
+    "placeBid": "参与竞拍",
+    "ending": "即将结束",
+    "ended": "已结束"
+  },
+  "footer": {
+    "discover": "发现NFT藏品",
+    "discoverDesc": "只需几次点击，即可发现并购买NFT和收藏品。无需托管，无需延迟，只需连接您的钱包，并通过我们的智能合约购买即可。",
+    "explore": "探索",
+    "create": "创造",
+    "support": "支持",
+    "craft": "合成",
+    "market": "交易",
+    "stake": "质押",
+    "auction": "拍卖",
+    "join": "入驻",
+    "mint": "铸造",
+    "help": "帮助中心",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "security": "安全中心",
+    "apply": "申请入驻"
+  },
+  "bid": {
+    "title": "参与竞拍",
+    "bidAmount": "出价金额 (SUI)",
+    "minBid": "最低出价",
+    "cancel": "取消",
+    "confirm": "确认出价"
+  }
+}
