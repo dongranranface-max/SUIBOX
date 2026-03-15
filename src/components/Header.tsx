@@ -75,6 +75,7 @@ const dropdowns: Record<string, { name: string; href: string }[]> = {
     { name: '机构管理', href: '/institution' },
     { name: '创作', href: '/create' },
     { name: '我的主页', href: '/profile' },
+    { name: '客服工单', href: '/support' },
   ],
 };
 
