@@ -296,10 +296,10 @@ export default function JoinPage() {
               当前等级权益
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {currentTier.benefits.map((benefit, i) => (
+              {currentTier.benefits.map((benefit: any, i: number) => (
                 <div key={i} className="bg-black/30 rounded-lg p-3 text-center">
                   <CheckCircle className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                  <div className="text-sm">{benefit}</div>
+                  <div className="text-sm">{benefit.name || benefit}</div>
                 </div>
               ))}
             </div>
