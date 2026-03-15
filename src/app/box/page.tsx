@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle } from 'lucide-react';
+import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle, Wallet, ExternalLink } from 'lucide-react';
+import { SuiWalletButton } from '@/components/SuiWallet';
+import { useSuiWallet } from '@/hooks/useSuiWallet';
+import { SUI_CONFIG, RARITY_NAMES } from '@/config/sui';
 
 // 碎片数据
 const fragmentData = {
@@ -39,9 +42,43 @@ export default function BoxPage() {
   const [showResult, setShowResult] = useState(false);
   const [myFragments, setMyFragments] = useState(fragmentData);
   const [consecutiveNone, setConsecutiveNone] = useState(0);
+  
+  // 钱包连接状态
+  const { address, connected, executeTransaction } = useSuiWallet();
+  
+  // 模拟开盒（实际对接链上）
+  const handleOpenBox = async (boxType: 'common' | 'rare' | 'epic') => {
+    if (!connected) {
+      alert('请先连接SUI钱包！');
+      return;
+    }
+    
+    setIsOpening(true);
+    setResult(null);
+    setShowResult(false);
 
-  // 开盒
-  const handleOpenBox = () => {
+    // 模拟延迟（实际会调用链上合约）
+    setTimeout(() => {
+      const rand = Math.random() * 100;
+      let rarity: string;
+      
+      if (boxType === 'epic') {
+        if (rand < 1) rarity = 'SSR';
+        else if (rand < 16) rarity = 'SR';
+        else rarity = 'R';
+      } else if (boxType === 'rare') {
+        if (rand < 3) rarity = 'SR';
+        else rarity = 'R';
+      } else {
+        rarity = 'R';
+      }
+
+      const nft = nftData.find(n => n.rarity === rarity) || nftData[0];
+      setResult({ name: nft.name, rarity, image: nft.image });
+      setShowResult(true);
+      setIsOpening(false);
+    }, 2000);
+  };
     if (isOpening) return;
     setIsOpening(true);
     setResult(null);
