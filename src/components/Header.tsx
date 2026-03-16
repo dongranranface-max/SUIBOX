@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Wallet, Menu, X, Bell, Globe } from 'lucide-react';
+import { Wallet, Menu, X, Bell, Globe, ChevronDown, Box } from 'lucide-react';
 import { SuiWalletButton } from '@/components/SuiWallet';
 
 const navItems = [
   { href: '/', label: '首页', highlight: false },
   { href: '/box', label: '🎁 盲盒', highlight: false },
+  { href: '/box', label: '🪙 BOX', highlight: false }, // 代币页面
   { href: '/craft', label: '⚗️ 合成', highlight: false },
   { href: '/market', label: '💰 交易', highlight: false },
   { href: '/governance', label: '🏛️ DAO', highlight: false },
@@ -46,9 +47,9 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link 
-                key={item.href} 
+                key={item.href + item.label} 
                 href={item.href}
-                className={`px-3 py-2 text-sm rounded-lg transition-all ${
+                className={`px-3 py-2 text-sm rounded-lg transition-all flex items-center gap-1 ${
                   item.highlight 
                     ? 'text-amber-400 font-bold hover:scale-105' 
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
@@ -62,10 +63,10 @@ export default function Header() {
           {/* Right Side */}
           <div className="flex items-center gap-2">
             {/* 通知 */}
-            <button className="relative p-2 text-gray-400 hover:text-white">
+            <Link href="/announcements" className="relative p-2 text-gray-400 hover:text-white">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            </Link>
 
             {/* 语言切换 */}
             <div className="relative">
@@ -74,7 +75,7 @@ export default function Header() {
                 className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-800 rounded-lg text-sm text-gray-400"
               >
                 <span>{currentLang.flag}</span>
-                <Globe className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3" />
               </button>
               
               {langMenuOpen && (
@@ -114,7 +115,7 @@ export default function Header() {
             <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
                 <Link 
-                  key={item.href} 
+                  key={item.href + item.label} 
                   href={item.href}
                   className={`px-3 py-2 text-sm rounded-lg ${
                     item.highlight 
