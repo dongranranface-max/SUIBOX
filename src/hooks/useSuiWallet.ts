@@ -9,7 +9,8 @@ declare global {
       connected: boolean;
       connect: () => Promise<void>;
       disconnect: () => Promise<void>;
-      signAndExecuteTransaction: (tx: any) => Promise<any>;
+      signAndExecuteTransaction: (tx: { data: any }) => Promise<{ digest: string; effects: any }>;
+      getOwnedObjects?: (params: any) => Promise<any>;
     };
   }
 }
@@ -17,96 +18,104 @@ declare global {
 export interface WalletState {
   address: string | null;
   connected: boolean;
-  connecting: boolean;
+  loading: boolean;
 }
 
+// 检查钱包是否安装
+export function isWalletInstalled(): boolean {
+  return typeof window !== 'undefined' && !!window.suiWallet;
+}
+
+// SUI钱包Hook
 export function useSuiWallet() {
   const [wallet, setWallet] = useState<WalletState>({
     address: null,
     connected: false,
-    connecting: false,
+    loading: true,
   });
 
-  // 检查钱包是否已连接
-  useEffect(() => {
-    const checkConnection = async () => {
-      if (window.suiWallet) {
-        try {
-          // 尝试获取已连接的钱包
-          const isConnected = window.suiWallet.connected;
-          if (isConnected) {
-            setWallet({
-              address: window.suiWallet.address,
-              connected: true,
-              connecting: false,
-            });
-          }
-        } catch (e) {
-          console.log('Wallet not connected');
-        }
-      }
-    };
-
-    checkConnection();
-
-    // 监听钱包变化
-    const handleChange = () => {
-      checkConnection();
-    };
-    window.addEventListener('walletchange', handleChange);
-    return () => window.removeEventListener('walletchange', handleChange);
-  }, []);
-
-  // 连接钱包
-  const connect = useCallback(async () => {
-    if (!window.suiWallet) {
-      alert('请安装 Sui Wallet 钱包插件！');
+  // 检查钱包连接状态
+  const checkConnection = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      setWallet({ address: null, connected: false, loading: false });
       return;
     }
 
-    setWallet(prev => ({ ...prev, connecting: true }));
+    const suiWallet = window.suiWallet;
+    if (!suiWallet) {
+      setWallet({ address: null, connected: false, loading: false });
+      return;
+    }
+
     try {
-      await window.suiWallet.connect();
-      setWallet({
-        address: window.suiWallet?.address || null,
-        connected: true,
-        connecting: false,
-      });
+      // 尝试获取已连接状态
+      if (suiWallet.connected && suiWallet.address) {
+        setWallet({
+          address: suiWallet.address,
+          connected: true,
+          loading: false,
+        });
+      } else {
+        setWallet({ address: null, connected: false, loading: false });
+      }
     } catch (e) {
-      console.error('Failed to connect:', e);
-      setWallet(prev => ({ ...prev, connecting: false }));
+      console.error('Wallet check error:', e);
+      setWallet({ address: null, connected: false, loading: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkConnection();
+
+    // 监听钱包变化
+    const interval = setInterval(checkConnection, 2000);
+    return () => clearInterval(interval);
+  }, [checkConnection]);
+
+  // 连接钱包
+  const connect = useCallback(async () => {
+    const suiWallet = window.suiWallet;
+    if (!suiWallet) {
+      throw new Error('请安装 Sui Wallet 钱包插件！');
+    }
+
+    setWallet(prev => ({ ...prev, loading: true }));
+    
+    try {
+      await suiWallet.connect();
+      if (suiWallet.address) {
+        setWallet({
+          address: suiWallet.address,
+          connected: true,
+          loading: false,
+        });
+      }
+    } catch (e) {
+      console.error('Connect error:', e);
+      setWallet(prev => ({ ...prev, loading: false }));
+      throw e;
     }
   }, []);
 
   // 断开钱包
   const disconnect = useCallback(async () => {
-    if (window.suiWallet) {
-      await window.suiWallet.disconnect();
-      setWallet({
-        address: null,
-        connected: false,
-        connecting: false,
-      });
+    const suiWallet = window.suiWallet;
+    if (suiWallet) {
+      await suiWallet.disconnect();
     }
+    setWallet({ address: null, connected: false, loading: false });
   }, []);
-
-  // 执行交易
-  const executeTransaction = useCallback(async (tx: any) => {
-    if (!window.suiWallet || !wallet.connected) {
-      throw new Error('Wallet not connected');
-    }
-    return await window.suiWallet.signAndExecuteTransaction(tx);
-  }, [wallet.connected]);
 
   return {
     ...wallet,
     connect,
     disconnect,
-    executeTransaction,
+    isInstalled: isWalletInstalled(),
   };
 }
 
-// 检查钱包是否安装
-export function isWalletInstalled(): boolean {
-  return !!window.suiWallet;
+// 短地址
+export function shortenAddress(address: string | null): string {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle, Wallet, ExternalLink } from 'lucide-react';
+import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle, Wallet, ExternalLink, AlertCircle } from 'lucide-react';
 import { SuiWalletButton } from '@/components/SuiWallet';
 import { useSuiWallet } from '@/hooks/useSuiWallet';
-import { SUI_CONFIG, RARITY_NAMES } from '@/config/sui';
+import { SUI_CONFIG, RARITY_MAP, FRAGMENT_TYPE } from '@/config/sui';
 
 // 碎片数据
 const fragmentData = {
@@ -21,35 +21,35 @@ const nftData = [
   { name: '史诗碎片', rarity: 'SSR', image: '/fragment-epic.png' },
 ];
 
-// 概率配置
-const probabilities = {
-  none: 40,
-  common: 40,
-  rare: 15,
-  epic: 1,
-};
-
 // 保底配置
 const guaranteeConfig = {
-  common: { count: 3 },
-  rare: { count: 5 },
-  epic: { count: 53 },
+  common: { count: 3, name: '普通碎片' },
+  rare: { count: 5, name: '稀有碎片' },
+  epic: { count: 53, name: '史诗碎片' },
+};
+
+const rarityColors: Record<string, string> = {
+  SSR: 'from-yellow-500 via-orange-500 to-red-500',
+  SR: 'from-purple-500 to-pink-500',
+  R: 'from-blue-500 to-cyan-500',
 };
 
 export default function BoxPage() {
   const [isOpening, setIsOpening] = useState(false);
-  const [result, setResult] = useState<{ name: string; rarity: string; image: string } | null>(null);
+  const [result, setResult] = useState<{ name: string; rarity: string; image: string; txDigest?: string } | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [myFragments, setMyFragments] = useState(fragmentData);
   const [consecutiveNone, setConsecutiveNone] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   
-  // 钱包连接状态
-  const { address, connected, executeTransaction } = useSuiWallet();
-  
-  // 模拟开盒（实际对接链上）
-  const handleOpenBox = async (boxType: 'common' | 'rare' | 'epic') => {
+  const { address, connected, connect, isInstalled } = useSuiWallet();
+
+  // 模拟开盒（实际对接会调用合约）
+  const handleOpenBox = useCallback(async (boxType: 'common' | 'rare' | 'epic') => {
+    setError(null);
+    
     if (!connected) {
-      alert('请先连接SUI钱包！');
+      setError('请先连接SUI钱包！');
       return;
     }
     
@@ -57,120 +57,70 @@ export default function BoxPage() {
     setResult(null);
     setShowResult(false);
 
-    // 模拟延迟（实际会调用链上合约）
+    // 模拟开盒结果
     setTimeout(() => {
       const rand = Math.random() * 100;
       let rarity: string;
       
-      if (boxType === 'epic') {
-        if (rand < 1) rarity = 'SSR';
-        else if (rand < 16) rarity = 'SR';
-        else rarity = 'R';
-      } else if (boxType === 'rare') {
-        if (rand < 3) rarity = 'SR';
-        else rarity = 'R';
-      } else {
-        rarity = 'R';
-      }
-
-      const nft = nftData.find(n => n.rarity === rarity) || nftData[0];
-      setResult({ name: nft.name, rarity, image: nft.image });
-      setShowResult(true);
-      setIsOpening(false);
-    }, 2000);
-  };
-    if (isOpening) return;
-    setIsOpening(true);
-    setResult(null);
-    setShowResult(false);
-
-    setTimeout(() => {
-      const rand = Math.random() * 100;
-      let nft: typeof nftData[0] | null = null;
-      let resultRarity = 'none';
-
       // 保底逻辑
       if (consecutiveNone >= guaranteeConfig.epic.count) {
-        nft = nftData[2];
-        resultRarity = 'SSR';
+        rarity = boxType === 'epic' ? 'SSR' : boxType === 'rare' ? 'SR' : 'R';
         setConsecutiveNone(0);
       } else if (consecutiveNone >= guaranteeConfig.rare.count) {
-        nft = nftData[1];
-        resultRarity = 'SR';
+        rarity = 'SR';
         setConsecutiveNone(0);
       } else if (consecutiveNone >= guaranteeConfig.common.count) {
-        nft = nftData[0];
-        resultRarity = 'R';
+        rarity = 'R';
         setConsecutiveNone(0);
       } else {
-        if (rand < probabilities.epic) {
-          nft = nftData[2];
-          resultRarity = 'SSR';
-        } else if (rand < probabilities.epic + probabilities.rare) {
-          nft = nftData[1];
-          resultRarity = 'SR';
-        } else if (rand < probabilities.epic + probabilities.rare + probabilities.common) {
-          nft = nftData[0];
-          resultRarity = 'R';
+        // 正常概率
+        if (boxType === 'epic') {
+          if (rand < 1) rarity = 'SSR';
+          else if (rand < 16) rarity = 'SR';
+          else rarity = 'R';
+        } else if (boxType === 'rare') {
+          if (rand < 3) rarity = 'SR';
+          else rarity = 'R';
         } else {
-          resultRarity = 'none';
+          rarity = rand < 10 ? 'SR' : 'R';
+        }
+        
+        if (rarity === 'R') {
           setConsecutiveNone(prev => prev + 1);
+        } else {
+          setConsecutiveNone(0);
         }
       }
 
-      if (nft) {
-        setResult({ name: nft.name, rarity: resultRarity, image: nft.image });
-        const type = resultRarity === 'SSR' ? 'epic' : resultRarity === 'SR' ? 'rare' : 'common';
+      const nft = nftData.find(n => n.rarity === rarity) || nftData[0];
+      
+      setResult({ 
+        name: nft.name, 
+        rarity, 
+        image: nft.image,
+        txDigest: `0x${Math.random().toString(16).slice(2, 66)}`
+      });
+      setShowResult(true);
+      
+      // 更新碎片数量
+      if (rarity === 'SSR' || rarity === 'SR') {
         setMyFragments(prev => ({
           ...prev,
-          [type]: { ...prev[type], count: prev[type].count + 1 }
+          [rarity === 'SSR' ? 'epic' : 'rare']: { 
+            ...prev[rarity === 'SSR' ? 'epic' : 'rare'], 
+            count: prev[rarity === 'SSR' ? 'epic' : 'rare'].count + 1 
+          }
         }));
       } else {
-        setResult({ name: '感谢参与', rarity: 'none', image: '' });
+        setMyFragments(prev => ({
+          ...prev,
+          common: { ...prev.common, count: prev.common.count + 1 }
+        }));
       }
       
-      setShowResult(true);
-      setTimeout(() => setIsOpening(false), 500);
+      setIsOpening(false);
     }, 2500);
-  };
-
-  // 粒子效果
-  const ParticleBurst = () => (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(30)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full"
-          initial={{ x: '50%', y: '50%', opacity: 1, scale: 1 }}
-          animate={showResult && result?.rarity !== 'none' ? {
-            x: `${Math.random() * 100}%`,
-            y: `${Math.random() * 100}%`,
-            opacity: 0,
-            scale: 0,
-          } : { opacity: 0 }}
-          transition={{ duration: 1, delay: i * 0.02 }}
-          style={{
-            background: result?.rarity === 'SSR' ? '#fbbf24' : result?.rarity === 'SR' ? '#a855f7' : '#3b82f6'
-          }}
-        />
-      ))}
-    </div>
-  );
-
-  // 抽奖光效
-  const LotteryGlow = () => (
-    <motion.div
-      className="absolute inset-0 rounded-2xl"
-      animate={isOpening ? {
-        boxShadow: [
-          '0 0 20px rgba(139, 92, 246, 0.3)',
-          '0 0 60px rgba(236, 72, 153, 0.5)',
-          '0 0 20px rgba(139, 92, 246, 0.3)',
-        ],
-      } : {}}
-      transition={{ duration: 0.5, repeat: Infinity }}
-    />
-  );
+  }, [connected, consecutiveNone]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -189,18 +139,31 @@ export default function BoxPage() {
             </h1>
             <span className="text-5xl">💎</span>
           </motion.div>
-          <p className="text-gray-400">Sui Randomness 随机数 · 公平公正</p>
+          <p className="text-gray-400">SUI Devnet 链上盲盒 · {SUI_CONFIG.devnet.packageId.slice(0, 10)}...</p>
+        </div>
+
+        {/* 钱包连接提示 */}
+        {!connected && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 flex items-center justify-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400" />
+            <span className="text-amber-400">请先连接SUI钱包体验链上开盲盒！</span>
+            <SuiWalletButton />
+          </div>
+        )}
+
+        <div className="flex justify-end mb-4">
+          <SuiWalletButton />
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6">
           
           {/* 左侧：大转盘区域 */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-4">
             {/* 保底进度 */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 rounded-2xl p-5 border border-amber-500/30 mb-6"
+              className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 rounded-2xl p-5 border border-amber-500/30"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -214,9 +177,7 @@ export default function BoxPage() {
               <div className="h-4 bg-gray-800 rounded-full overflow-hidden">
                 <motion.div 
                   className="h-full rounded-full"
-                  style={{
-                    background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #f59e0b)'
-                  }}
+                  style={{ background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #f59e0b)' }}
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min((consecutiveNone / guaranteeConfig.epic.count) * 100, 100)}%` }}
                   transition={{ duration: 0.5 }}
@@ -229,97 +190,91 @@ export default function BoxPage() {
               </div>
             </motion.div>
 
-            {/* 抽奖转盘 */}
+            {/* 抽奖按钮 */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { type: 'common' as const, name: '普通盲盒', price: '免费', emoji: '📦' },
+                { type: 'rare' as const, name: '稀有盲盒', price: '100 SUI', emoji: '🎁' },
+                { type: 'epic' as const, name: '史诗盲盒', price: '500 SUI', emoji: '💎' },
+              ].map((box) => (
+                <motion.button
+                  key={box.type}
+                  onClick={() => handleOpenBox(box.type)}
+                  disabled={isOpening || !connected}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    isOpening || !connected
+                      ? 'border-gray-700 bg-gray-800 opacity-50 cursor-not-allowed'
+                      : 'border-violet-500 bg-violet-500/10 hover:border-violet-400'
+                  }`}
+                >
+                  <div className="text-4xl mb-2">{box.emoji}</div>
+                  <div className="font-bold text-sm">{box.name}</div>
+                  <div className="text-violet-400 text-sm">{box.price}</div>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* 错误提示 */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-center text-red-400">
+                {error}
+              </div>
+            )}
+
+            {/* 开盒结果区 */}
             <motion.div 
-              className="relative bg-gray-900/80 rounded-3xl p-8 min-h-[450px] flex flex-col items-center justify-center overflow-hidden"
+              className="relative bg-gray-900/80 rounded-3xl p-8 min-h-[300px] flex flex-col items-center justify-center"
               style={{ background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.1) 0%, rgba(0, 0, 0, 0.8) 70%)' }}
             >
-              <LotteryGlow />
-              <ParticleBurst />
-
-              {/* 中央结果 */}
               <AnimatePresence mode="wait">
                 {showResult && result ? (
                   <motion.div
                     key="result"
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', damping: 12 }}
                     className="text-center z-10"
                   >
-                    {/* 特效 */}
-                    {result.rarity !== 'none' && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 flex items-center justify-center"
-                      >
-                        {[...Array(12)].map((_, i) => (
-                          <motion.div
-                            key={i}
-                            className="absolute w-3 h-3 rounded-full"
-                            style={{
-                              background: result.rarity === 'SSR' ? '#fbbf24' : result.rarity === 'SR' ? '#a855f7' : '#3b82f6',
-                            }}
-                            animate={{
-                              x: [0, Math.cos(i * 30 * Math.PI / 180) * 150],
-                              y: [0, Math.sin(i * 30 * Math.PI / 180) * 150],
-                              opacity: [1, 0],
-                            }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                          />
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* 表情 */}
-                    <div className="text-8xl mb-4">
-                      {result.rarity === 'SSR' ? '🌟' : result.rarity === 'SR' ? '✨' : result.rarity === 'R' ? '💫' : '💨'}
+                    <div className="text-6xl mb-4">
+                      {result.rarity === 'SSR' ? '🌟' : result.rarity === 'SR' ? '✨' : '💫'}
                     </div>
-                    
-                    {/* 稀有度标签 */}
                     <motion.div 
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className={`inline-block px-8 py-3 rounded-2xl font-bold text-2xl mb-4 ${
-                        result.rarity === 'SSR' 
-                          ? 'bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white' 
-                          : result.rarity === 'SR'
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                          : result.rarity === 'R'
-                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                          : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                      }`}
+                      className={`inline-block px-8 py-3 rounded-2xl font-bold text-2xl mb-4 bg-gradient-to-r ${rarityColors[result.rarity]} text-white`}
                     >
-                      {result.rarity === 'none' ? '感谢参与' : result.rarity}
+                      {result.rarity}
                     </motion.div>
-
-                    {/* 图片 */}
                     {result.image && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.3, type: 'spring' }}
-                        className="w-48 h-48 mx-auto mb-4 relative"
+                        className="w-40 h-40 mx-auto mb-4 relative"
                       >
                         <img src={result.image} alt={result.name} className="w-full h-full object-contain" />
-                        {/* 光环 */}
-                        <div className={`absolute inset-0 rounded-full blur-2xl opacity-50 ${
-                          result.rarity === 'SSR' ? 'bg-yellow-500' : result.rarity === 'SR' ? 'bg-purple-500' : 'bg-blue-500'
-                        }`} />
                       </motion.div>
                     )}
-
-                    {/* 名称 */}
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4 }}
-                      className="text-3xl font-bold"
+                      className="text-2xl font-bold"
                     >
                       {result.name}
                     </motion.div>
+                    {result.txDigest && (
+                      <a 
+                        href={`https://suivision.xyz/tx/${result.txDigest}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-gray-400 mt-2 hover:text-white"
+                      >
+                        查看交易 <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </motion.div>
                 ) : (
                   <motion.div
@@ -334,52 +289,51 @@ export default function BoxPage() {
                         scale: [1, 1.1, 1]
                       } : {}}
                       transition={{ duration: 0.5, repeat: isOpening ? Infinity : 0 }}
-                      className="text-[150px] leading-none mb-4"
+                      className="text-[120px] leading-none mb-4"
                     >
                       {isOpening ? '🎁' : '❓'}
                     </motion.div>
                     <div className="text-xl text-gray-400">
-                      {isOpening ? '正在抽奖中...' : '点击下方按钮开始'}
+                      {isOpening ? '抽奖中...' : '选择一个盲盒开始'}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* 抽奖按钮 */}
-              <motion.button
-                onClick={handleOpenBox}
-                disabled={isOpening}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`mt-8 px-12 py-4 rounded-2xl font-bold text-xl flex items-center gap-3 z-20 ${
-                  isOpening 
-                    ? 'bg-gray-700 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:via-emerald-400 hover:to-teal-400 shadow-lg shadow-green-500/30'
-                }`}
-              >
-                {isOpening ? (
-                  <>
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    >
-                      <Zap className="w-6 h-6" />
-                    </motion.span>
-                    抽奖中...
-                  </>
-                ) : (
-                  <>
-                    <Gift className="w-6 h-6" />
-                    开始抽奖
-                  </>
-                )}
-              </motion.button>
+              {connected && !showResult && (
+                <motion.button
+                  onClick={() => handleOpenBox('common')}
+                  disabled={isOpening}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`mt-8 px-12 py-4 rounded-2xl font-bold text-xl flex items-center gap-3 z-20 ${
+                    isOpening 
+                      ? 'bg-gray-700 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:via-emerald-400 hover:to-teal-400 shadow-lg shadow-green-500/30'
+                  }`}
+                >
+                  {isOpening ? (
+                    <>
+                      <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                        <Zap className="w-6 h-6" />
+                      </motion.span>
+                      抽奖中...
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="w-6 h-6" />
+                      开始抽奖
+                    </>
+                  )}
+                </motion.button>
+              )}
             </motion.div>
 
             {/* 概率卡片 */}
-            <div className="grid grid-cols-4 gap-3 mt-6">
+            <div className="grid grid-cols-4 gap-3">
               {[
-                { rate: '40%', name: '感谢参与', color: 'gray' },
+                { rate: '44%', name: '感谢参与', color: 'gray' },
                 { rate: '40%', name: '普通碎片', color: 'blue' },
                 { rate: '15%', name: '稀有碎片', color: 'purple' },
                 { rate: '1%', name: '史诗碎片', color: 'amber' },
