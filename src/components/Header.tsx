@@ -313,9 +313,9 @@ export default function Header() {
                 <Bell className="w-5 h-5" />
                 <span>公告</span>
               </Link>
-              <button className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-gray-400">
                 <WalletButton />
-              </button>
+              </div>
             </div>
           </div>
         </motion.div>
