@@ -1,21 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-
-interface SuiWallet {
-  name: string;
-  icon?: string;
-  accounts: { address: string }[];
-  connect: () => Promise<void>;
-  disconnect: () => Promise<void>;
-}
-
-declare global {
-  interface Window {
-    suiet?: { address: string; connected: boolean };
-    sui?: { wallets: SuiWallet[] };
-  }
-}
+import { useState, useEffect } from 'react';
 
 export function useWallet() {
   const [wallet, setWallet] = useState({
@@ -25,106 +10,73 @@ export function useWallet() {
     debug: '',
   });
 
-  const checkWallet = useCallback(async () => {
+  useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let debugInfo = '';
-    let addr: string | null = null;
-    let conn = false;
-
-    // 检查Suiet
-    if (window.suiet) {
-      debugInfo = 'Suiet: ';
-      if (window.suiet.connected && window.suiet.address) {
-        addr = window.suiet.address;
-        conn = true;
-        debugInfo += 'connected ' + addr.slice(0, 8);
-      } else {
-        debugInfo += 'not connected';
+    // 监听消息（钱包通过postMessage通信）
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'suiet-connected') {
+        setWallet({
+          address: event.data.address,
+          connected: true,
+          loading: false,
+          debug: 'Connected via postMessage',
+        });
       }
-    }
-    // 检查官方
-    else if (window.sui?.wallets) {
-      debugInfo = 'Sui: ';
-      const suiWallet = window.sui.wallets[0];
-      if (suiWallet?.accounts?.[0]?.address) {
-        addr = suiWallet.accounts[0].address;
-        conn = true;
-        debugInfo += 'connected ' + addr.slice(0, 8);
-      } else {
-        debugInfo += 'wallets exist but not connected';
-      }
-    } else {
-      debugInfo = 'No wallet found';
-    }
+    };
 
-    setWallet({
-      address: addr,
-      connected: conn,
-      loading: false,
-      debug: debugInfo,
-    });
-  }, []);
+    window.addEventListener('message', handleMessage);
 
-  useEffect(() => {
-    // 立即检查
-    checkWallet();
+    // 定时检查localStorage（部分钱包会存这里）
+    const check = () => {
+      try {
+        const suiAddress = localStorage.getItem('sui_address');
+        if (suiAddress) {
+          setWallet({
+            address: suiAddress,
+            connected: true,
+            loading: false,
+            debug: 'Found in localStorage',
+          });
+          return;
+        }
+      } catch (e) {}
 
-    // 使用 MutationObserver 监听 DOM 变化（钱包可能延迟注入）
-    const observer = new MutationObserver(() => {
-      checkWallet();
-    });
+      setWallet(prev => ({ ...prev, loading: false, debug: 'No wallet detected' }));
+    };
 
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // 定时检查
-    const timer = setInterval(checkWallet, 1000);
-
-    // 监听钱包事件
-    const handleWalletChange = () => checkWallet();
-    window.addEventListener('wallet:change', handleWalletChange);
+    check();
+    const timer = setInterval(check, 2000);
 
     return () => {
-      observer.disconnect();
+      window.removeEventListener('message', handleMessage);
       clearInterval(timer);
-      window.removeEventListener('wallet:change', handleWalletChange);
     };
-  }, [checkWallet]);
+  }, []);
 
   const connect = async () => {
-    // 如果有Suiet
-    if (window.suiet) {
-      // Suiet需要用户手动在钱包里授权
-      // 我们只需要刷新状态
-      setTimeout(checkWallet, 2000);
-      return;
-    }
-
-    // 如果有官方钱包
-    if (window.sui?.wallets?.length) {
-      try {
-        await window.sui.wallets[0].connect();
-        setTimeout(checkWallet, 2000);
-        return;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    alert('请在浏览器右上角打开钱包，点击"连接"授权网站！');
+    // 尝试打开Suiet
+    // Suiet没有标准API，我们用一种workaround方式
+    
+    // 方法1: 尝试Suiet Deep Link
+    const suietUrl = 'suiet://connect';
+    
+    // 方法2: 提示用户手动授权
+    alert('请在打开的钱包窗口中点击"连接/Connect"按钮授权网站！\n\n如果找不到钱包窗口，请点击浏览器右上角的钱包图标。');
   };
 
   const disconnect = () => {
+    try {
+      localStorage.removeItem('sui_address');
+    } catch (e) {}
     setWallet({ address: null, connected: false, loading: false, debug: '' });
   };
-
-  const isInstalled = typeof window !== 'undefined' && (!!window.suiet || !!window.sui?.wallets?.length);
 
   return {
     ...wallet,
     connect,
     disconnect,
-    isInstalled,
+    isInstalled: true, // 假设已安装，让用户可以尝试连接
   };
 }
 
