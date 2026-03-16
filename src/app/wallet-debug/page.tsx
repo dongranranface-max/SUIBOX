@@ -4,52 +4,55 @@ import { useState, useEffect } from 'react';
 
 export default function WalletDebugPage() {
   const [debugInfo, setDebugInfo] = useState<string>('检查中...\n');
+  const [walletAddress, setWalletAddress] = useState<string>('');
 
   useEffect(() => {
-    const check = () => {
+    const check = async () => {
       let info = '=== 钱包检测 ===\n\n';
       
-      // 检查 window.sui (Wallet Standard)
-      try {
-        const suiWin = (window as unknown as Record<string, unknown>).sui;
-        if (suiWin) {
-          info += '✅ window.sui 存在\n';
-          if (typeof suiWin === 'object' && suiWin !== null) {
-            info += `内容: ${JSON.stringify(Object.keys(suiWin)).slice(0, 100)}\n`;
+      // 方法1: window.sui (Wallet Standard)
+      const suiWin = (window as unknown as Record<string, unknown>).sui;
+      info += `window.sui: ${suiWin ? '✅ 存在' : '❌ 不存在'}\n`;
+
+      // 方法2: suiWallet (Suiet/鲸鱼钱包)
+      const suiWallet = (window as unknown as Record<string, unknown>).suiWallet;
+      info += `window.suiWallet: ${suiWallet ? '✅ 存在' : '❌ 不存在'}\n`;
+
+      if (suiWallet) {
+        info += `\n尝试连接 suiWallet...\n`;
+        try {
+          // @ts-ignore
+          if (typeof suiWallet.connect === 'function') {
+            // @ts-ignore
+            await suiWallet.connect();
+            // @ts-ignore
+            if (suiWallet.address) {
+              // @ts-ignore
+              setWalletAddress(suiWallet.address);
+              info += `✅ 连接成功！地址: ${suiWallet.address}\n`;
+            }
           }
-        } else {
-          info += '❌ window.sui 不存在\n';
+        } catch (e) {
+          info += `连接出错: ${e}\n`;
+        }
+      }
+
+      // 方法3: 尝试直接获取
+      try {
+        // @ts-ignore
+        if (window.ethereum?.providers) {
+          // 多钱包检测
+          const providers = window.ethereum.providers;
+          info += `\n找到 ${providers.length} 个 Ethereum 提供商\n`;
         }
       } catch (e) {
-        info += `❌ window.sui 检查失败: ${e}\n`;
+        // ignore
       }
-
-      // 检查 Suiet 特有变量
-      const suietKeys = Object.keys(window).filter(k => 
-        k.toLowerCase().includes('suiet') || 
-        k.toLowerCase().includes('sui') ||
-        k.toLowerCase().includes('wallet')
-      );
-      
-      info += '\n=== 相关全局变量 ===\n';
-      if (suietKeys.length > 0) {
-        info += suietKeys.slice(0, 20).join(', ') + '\n';
-      } else {
-        info += '无\n';
-      }
-
-      // 检查所有以 sui 开头的
-      info += '\n=== window 对象中 sui 相关 ===\n';
-      const allKeys = Object.keys(window);
-      const suiRelated = allKeys.filter(k => k.toLowerCase().startsWith('sui'));
-      info += suiRelated.length > 0 ? suiRelated.join(', ') : '无\n';
 
       setDebugInfo(info);
     };
 
     check();
-    const timer = setInterval(check, 1000);
-    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -60,13 +63,15 @@ export default function WalletDebugPage() {
         {debugInfo}
       </div>
 
+      {walletAddress && (
+        <div className="mt-4 p-4 bg-green-900 rounded-lg">
+          <p className="text-green-400 font-bold">✅ 找到钱包！</p>
+          <p className="font-mono">{walletAddress}</p>
+        </div>
+      )}
+
       <div className="mt-4 p-4 bg-blue-900 rounded-lg">
-        <p className="text-blue-400 font-bold">提示：</p>
-        <ul className="list-disc list-inside text-sm mt-2">
-          <li>确保 Suiet Wallet 扩展已解锁（需要输入密码）</li>
-          <li>确保在扩展设置中允许 localhost</li>
-          <li>尝试刷新页面后再检查</li>
-        </ul>
+        <p className="text-blue-400 font-bold">请告诉我上面显示什么？</p>
       </div>
     </div>
   );
