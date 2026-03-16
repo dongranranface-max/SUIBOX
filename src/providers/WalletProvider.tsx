@@ -2,7 +2,13 @@
 
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
+import { 
+  WalletProvider as SuiWalletProvider,
+  useWallets,
+  useCurrentAccount,
+  useCurrentWallet,
+  ConnectButton,
+} from '@mysten/dapp-kit';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,5 +39,5 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 }
 
-// 导出连接状态
-export { useWallet } from '@mysten/dapp-kit';
+// 导出常用 Hook
+export { useWallets, useCurrentAccount, useCurrentWallet, ConnectButton };

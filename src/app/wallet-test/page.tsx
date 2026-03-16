@@ -8,9 +8,8 @@ import {
 import { 
   TransactionBlock 
 } from '@mysten/sui.js/transactions';
-import { 
-  useWallet 
-} from '@mysten/dapp-kit';
+import { useWallet, shortenAddress } from '@/hooks/useWallet';
+import { ConnectButton } from '@mysten/dapp-kit';
 
 // 初始化 SUI 客户端
 const client = new SuiClient({
@@ -35,7 +34,6 @@ export default function WalletTestPage() {
       const bal = await client.getBalance({
         owner: address,
       });
-      // SUI 最小单位是 9 位小数
       const suiBalance = Number(bal.totalBalance) / 1e9;
       setBalance(suiBalance.toFixed(4));
     } catch (e) {
@@ -45,43 +43,32 @@ export default function WalletTestPage() {
 
   // 当钱包连接时获取余额
   useEffect(() => {
-    if (wallet.connected && wallet.address) {
+    if (wallet.address) {
       fetchBalance(wallet.address);
     }
-  }, [wallet.connected, wallet.address]);
+  }, [wallet.address]);
 
-  // 测试调用合约（模拟开盲盒）
+  // 测试调用合约
   const testCallContract = async () => {
-    if (!wallet.connected || !wallet.address) {
+    if (!wallet.address) {
       alert('请先连接钱包！');
       return;
     }
 
     setLoading(true);
     try {
-      // 构建交易
       const tx = new TransactionBlock();
       
-      // 调用合约的 open_common_box 函数
       tx.moveCall({
         target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
-        arguments: [
-          tx.pure('0x8'), // clock 对象
-        ],
+        arguments: [tx.object('0x8')],
       });
 
-      // 注意：这里需要用户签名，暂时只展示交易构建
-      setTxResult('交易已构建，待签名发送');
-      
-      // 完整签名发送需要：
-      // const result = await wallet.signAndExecuteTransactionBlock({
-      //   transactionBlock: tx,
-      // });
-      // setTxResult(`交易哈希: ${result.digest}`);
+      setTxResult('✅ 交易构建成功！\n(完整签名需钱包支持)');
       
     } catch (e: unknown) {
       console.error('调用合约失败:', e);
-      setTxResult(`错误: ${e instanceof Error ? e.message : '未知错误'}`);
+      setTxResult(`❌ 错误: ${e instanceof Error ? e.message : '未知错误'}`);
     }
     setLoading(false);
   };
@@ -98,19 +85,19 @@ export default function WalletTestPage() {
           <h2 className="text-xl font-bold mb-4">钱包状态</h2>
           
           <div className="space-y-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-gray-400">连接状态:</span>
               <span className={wallet.connected ? 'text-green-400' : 'text-gray-500'}>
                 {wallet.connected ? '✅ 已连接' : '❌ 未连接'}
               </span>
             </div>
 
-            {wallet.connected && wallet.address && (
+            {wallet.address && (
               <>
                 <div className="flex justify-between">
                   <span className="text-gray-400">钱包地址:</span>
                   <span className="text-white font-mono">
-                    {wallet.address.slice(0, 10)}...{wallet.address.slice(-4)}
+                    {shortenAddress(wallet.address)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -122,21 +109,9 @@ export default function WalletTestPage() {
           </div>
 
           {/* 连接按钮 */}
-          {!wallet.connected ? (
-            <button
-              onClick={() => wallet.connect()}
-              className="w-full mt-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold hover:from-violet-500 hover:to-pink-500 transition-all"
-            >
-              🔗 连接钱包
-            </button>
-          ) : (
-            <button
-              onClick={() => wallet.disconnect()}
-              className="w-full mt-6 py-3 bg-gray-700 rounded-lg font-bold hover:bg-gray-600 transition-all"
-            >
-              🚪 断开连接
-            </button>
-          )}
+          <div className="mt-6">
+            <ConnectButton />
+          </div>
         </div>
 
         {/* 合约调用测试 */}
@@ -145,7 +120,7 @@ export default function WalletTestPage() {
             <h2 className="text-xl font-bold mb-4">合约调用测试</h2>
             
             <p className="text-gray-400 mb-4">
-              合约地址: {CONTRACT.packageId.slice(0, 20)}...
+              合约: {CONTRACT.packageId.slice(0, 20)}...
             </p>
 
             <button
@@ -157,9 +132,8 @@ export default function WalletTestPage() {
             </button>
 
             {txResult && (
-              <div className="mt-4 p-3 bg-gray-800 rounded-lg">
-                <span className="text-gray-400">结果: </span>
-                <span className="text-white">{txResult}</span>
+              <div className="mt-4 p-3 bg-gray-800 rounded-lg whitespace-pre-wrap">
+                {txResult}
               </div>
             )}
           </div>

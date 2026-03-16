@@ -1,33 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-
-const TEST_ADDRESS = '0xbfb88d37c8df43f0e826967cd635fa7b909da3d6fce691ca70e325a5fd95ed0e';
+import { useCurrentAccount, useWallets } from '@mysten/dapp-kit';
 
 export function useWallet() {
-  // 这里暂时用简化版本，等 dapp-kit 修复
-  const [address, setAddress] = useState<string | null>(null);
-  const [connected, setConnected] = useState(false);
+  const account = useCurrentAccount();
+  const wallets = useWallets();
+  
+  const [savedAddress, setSavedAddress] = useState<string | null>(null);
 
+  // 优先使用链上账户
+  const address = account?.address || savedAddress;
+  const connected = !!account || !!savedAddress;
+
+  // 临时：允许手动设置地址（用于测试）
   const connect = () => {
-    // 直接使用测试地址
-    setAddress(TEST_ADDRESS);
-    setConnected(true);
-    localStorage.setItem('sui_address', TEST_ADDRESS);
+    // 使用 dapp-kit 的连接功能
+    // 实际连接由 ConnectButton 组件处理
+    if (wallets?.length) {
+      // 触发钱包选择
+    }
+  };
+
+  // 临时存储地址用于测试
+  const saveAddress = (addr: string) => {
+    setSavedAddress(addr);
+    localStorage.setItem('sui_address', addr);
   };
 
   const disconnect = () => {
-    setAddress(null);
-    setConnected(false);
+    setSavedAddress(null);
     localStorage.removeItem('sui_address');
   };
 
   // 检查 localStorage
-  if (typeof window !== 'undefined' && !connected) {
+  if (typeof window !== 'undefined' && !account && !savedAddress) {
     const saved = localStorage.getItem('sui_address');
     if (saved) {
-      setAddress(saved);
-      setConnected(true);
+      setSavedAddress(saved);
     }
   }
 
@@ -38,11 +48,11 @@ export function useWallet() {
     debug: connected ? `已连接: ${address?.slice(0, 10)}...` : '点击连接按钮',
     connect,
     disconnect,
-    isInstalled: true,
+    isInstalled: (wallets?.length || 0) > 0,
   };
 }
 
-export function shortenAddress(addr: string | null): string {
+export function shortenAddress(addr: string | null | undefined): string {
   if (!addr) return '';
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
