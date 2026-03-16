@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { CoreClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { ConnectButton } from '@mysten/dapp-kit';
 
+// Devnet RPC URL
+const DEVNET_URL = 'https://fullnode.devnet.sui.io';
+
 // 初始化 SUI 客户端
-const client = new SuiClient({
-  url: getFullnodeUrl('devnet'),
+const client = new CoreClient({
+  rpcUrl: DEVNET_URL,
 });
 
 // 合约配置
@@ -52,7 +55,7 @@ export default function WalletTestPage() {
 
     setLoading(true);
     try {
-      // v2.x 使用 Transaction 而不是 TransactionBlock
+      // v2.x 使用 Transaction
       const tx = new Transaction();
       
       tx.moveCall({
