@@ -1,91 +1,88 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 declare global {
   interface Window {
-    suiet?: {
-      address: string;
-      connected: boolean;
-    };
-    // 官方Sui Wallet
-    sui?: {
-      hasWallets: boolean;
-    };
+    suiet?: { address: string; connected: boolean };
+    sui?: unknown;
   }
 }
 
 export function useWallet() {
-  const [address, setAddress] = useState<string | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState({
+    address: null as string | null,
+    connected: false,
+    loading: true,
+    debug: '',
+  });
 
-  useEffect(() => {
-    const checkWallet = () => {
-      if (typeof window === 'undefined') return;
+  const checkWallet = useCallback(async () => {
+    if (typeof window === 'undefined') return;
 
-      // 检查Suiet Wallet
-      if (window.suiet?.connected && window.suiet?.address) {
-        setAddress(window.suiet.address);
-        setConnected(true);
-        setLoading(false);
-        return;
+    let debugInfo = '';
+    let addr: string | null = null;
+    let conn = false;
+
+    // 1. 检查Suiet
+    if (window.suiet) {
+      debugInfo += 'Suiet detected. ';
+      if (window.suiet.connected && window.suiet.address) {
+        addr = window.suiet.address;
+        conn = true;
+        debugInfo += 'Connected!';
+      } else {
+        debugInfo += 'Not connected.';
       }
+    } else {
+      debugInfo += 'No Suiet. ';
+    }
 
-      // 检查官方Sui Wallet
-      // 官方钱包会通过content script注入
-      if (window.sui?.hasWallets) {
-        // 钱包已注入，等待用户连接
-      }
+    // 2. 检查Sui官方钱包 (通过全局对象)
+    // 官方钱包会注入到window.SUI_WALLET或类似位置
+    const suiKeys = Object.keys(window).filter(k => 
+      k.toLowerCase().includes('sui') || k.toLowerCase().includes('wallet')
+    );
+    if (suiKeys.length > 0) {
+      debugInfo += ` Found keys: ${suiKeys.join(', ')}`;
+    }
 
-      setAddress(null);
-      setConnected(false);
-      setLoading(false);
-    };
-
-    checkWallet();
-    const timer = setInterval(checkWallet, 1000);
-    return () => clearInterval(timer);
+    setWallet({
+      address: addr,
+      connected: conn,
+      loading: false,
+      debug: debugInfo,
+    });
   }, []);
 
-  const connect = async () => {
-    setLoading(true);
-    
-    try {
-      // 尝试连接Suiet
-      if (window.suiet) {
-        // Suiet会自动弹出连接窗口
-        // 需要刷新状态
-        setTimeout(() => {
-          if (window.suiet?.connected) {
-            setAddress(window.suiet.address);
-            setConnected(true);
-          }
-          setLoading(false);
-        }, 1000);
-        return;
-      }
+  useEffect(() => {
+    checkWallet();
+    const timer = setInterval(checkWallet, 2000);
+    return () => clearInterval(timer);
+  }, [checkWallet]);
 
-      // 如果没有钱包
-      alert('请先安装Sui钱包插件！\n推荐安装：Suiet Wallet\nhttps://chrome.google.com/webstore/detail/suiet-wallet/kmhcihpebhijhfhdcnmfhlnnpbmnjgeb');
-    } catch (e) {
-      console.error(e);
+  const connect = async () => {
+    // 尝试触发Suiet连接
+    if (window.suiet) {
+      // Suiet会自动弹窗
+      // 刷新状态
+      setTimeout(checkWallet, 2000);
+      return;
     }
-    setLoading(false);
+
+    // 尝试Sui官方钱包
+    alert('请在浏览器右上角点击Sui Wallet图标进行连接！\n\n如果看不到图标，请：\n1. 点击浏览器右上角拼图🧩\n2. 找到Sui Wallet并固定\n3. 解锁钱包');
   };
 
-  const disconnect = async () => {
-    setAddress(null);
-    setConnected(false);
+  const disconnect = () => {
+    setWallet({ address: null, connected: false, loading: false, debug: '' });
   };
 
   return {
-    address,
-    connected,
-    loading,
+    ...wallet,
     connect,
     disconnect,
-    isInstalled: typeof window !== 'undefined' && (!!window.suiet || !!window.sui),
+    isInstalled: !!window.suiet || !!window.sui,
   };
 }
 
