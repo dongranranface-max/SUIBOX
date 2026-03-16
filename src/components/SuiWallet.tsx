@@ -1,7 +1,7 @@
 'use client';
 
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import { Wallet, LogOut } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { ConnectButton } from '@mysten/dapp-kit';
 
 function shortenAddress(addr: string | null | undefined): string {
@@ -25,5 +25,7 @@ export function SuiWalletButton() {
     );
   }
 
-  return <ConnectButton />;
+  return (
+    <ConnectButton />
+  );
 }
