@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
-import { useSuiClient, useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit-react';
+import { useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { useQuery } from '@tanstack/react-query';
 
@@ -16,7 +16,7 @@ const CONTRACT = {
 export default function WalletTestPage() {
   const wallet = useWallet();
   const client = useSuiClient();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   
   // 查询余额
   const { data: balanceData } = useQuery({
@@ -50,7 +50,7 @@ export default function WalletTestPage() {
       });
 
       const result = await signAndExecute({
-        transactionBlock: tx,
+        transaction: tx,
       });
 
       setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
