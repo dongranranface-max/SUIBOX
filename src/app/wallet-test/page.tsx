@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
-import { useCurrentAccount, useSuiClient, useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { ConnectButton } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
 
-// 合约配置
 const CONTRACT = {
   packageId: '0x08954fe5f4ef82cbe7d1bf8c557b09287f33e1a51f7f5d4f7c59e11f4ac59b34',
   module: 'box',
@@ -20,9 +19,8 @@ function shortenAddress(addr: string | null | undefined): string {
 export default function WalletTestPage() {
   const account = useCurrentAccount();
   const client = useSuiClient();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   
-  // 查询余额
   const { data: balanceData } = useQuery({
     queryKey: ['balance', account?.address],
     enabled: !!account?.address,
@@ -40,7 +38,6 @@ export default function WalletTestPage() {
   const address = account?.address;
   const connected = !!address;
 
-  // 调用合约
   const testCallContract = async () => {
     if (!address) {
       alert('请先连接钱包！');
@@ -57,7 +54,7 @@ export default function WalletTestPage() {
       });
 
       const result = await signAndExecute({
-        transactionBlock: tx,
+        transaction: tx,
       });
 
       setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
@@ -73,10 +70,9 @@ export default function WalletTestPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-          🔗 SUI 钱包连接测试 (旧版 v1)
+          🔗 SUI 钱包连接测试
         </h1>
 
-        {/* 状态 */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">连接状态</h2>
           
@@ -109,7 +105,6 @@ export default function WalletTestPage() {
           </div>
         </div>
 
-        {/* 合约测试 */}
         {connected && (
           <div className="bg-gray-900 rounded-xl p-6">
             <h2 className="text-xl font-bold mb-4">合约调用</h2>

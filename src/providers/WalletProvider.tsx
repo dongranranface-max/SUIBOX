@@ -2,37 +2,17 @@
 
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { 
-  WalletProvider,
-  getFullnodeUrl,
-  SuiDevnet,
-  SuiTestnet,
-  SuiMainnet,
-} from '@mysten/dapp-kit';
+import { WalletProvider } from '@mysten/dapp-kit';
 
 const queryClient = new QueryClient();
 
-// SUI 网络配置
-const networks = [
-  { ...SuiDevnet, url: getFullnodeUrl('devnet') },
-  { ...SuiTestnet, url: getFullnodeUrl('testnet') },
-  { ...SuiMainnet, url: getFullnodeUrl('mainnet') },
-];
-
+// 最简单的配置 - 使用默认网络
 export function AppWalletProvider({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletProvider networks={networks} defaultNetwork="devnet">
+      <WalletProvider>
         {children}
       </WalletProvider>
     </QueryClientProvider>
   );
 }
-
-// 导出常用 Hook
-export { 
-  useCurrentAccount, 
-  useSuiClient, 
-  useSignAndExecuteTransactionBlock,
-  ConnectButton 
-} from '@mysten/dapp-kit';
