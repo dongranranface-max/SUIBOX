@@ -5,11 +5,12 @@ import { useState } from 'react';
 const TEST_ADDRESS = '0xbfb88d37c8df43f0e826967cd635fa7b909da3d6fce691ca70e325a5fd95ed0e';
 
 export function useWallet() {
+  // 这里暂时用简化版本，等 dapp-kit 修复
   const [address, setAddress] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
 
   const connect = () => {
-    // 直接使用测试地址连接
+    // 直接使用测试地址
     setAddress(TEST_ADDRESS);
     setConnected(true);
     localStorage.setItem('sui_address', TEST_ADDRESS);
@@ -21,7 +22,7 @@ export function useWallet() {
     localStorage.removeItem('sui_address');
   };
 
-  // 页面加载时检查localStorage
+  // 检查 localStorage
   if (typeof window !== 'undefined' && !connected) {
     const saved = localStorage.getItem('sui_address');
     if (saved) {

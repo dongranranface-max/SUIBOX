@@ -1,35 +1,24 @@
 // SUI 网络配置
+
 export const SUI_CONFIG = {
+  // Devnet (测试网)
   devnet: {
-    packageId: '0x1d3f4739d0fbc863cabcf08986d462a00ccfb1a031e3c99d65257304308ebdc7',
-    network: 'https://fullnode.devnet.sui.io',
-    faucet: 'https://faucet.devnet.sui.io',
+    rpc: 'https://fullnode.devnet.sui.io',
+    packageId: '0x08954fe5f4ef82cbe7d1bf8c557b09287f33e1a51f7f5d4f7c59e11f4ac59b34',
   },
-  testnet: {
-    packageId: '',
-    network: 'https://fullnode.testnet.sui.io',
-    faucet: 'https://faucet.testnet.sui.io',
-  },
+  
+  // Mainnet (主网) - BlockVision
   mainnet: {
-    packageId: '',
-    network: 'https://fullnode.mainnet.sui.io',
+    rpc: 'https://sui-mainnet.blockvision.org',
+    ws: 'wss://sui-mainnet.blockvision.org/ws',
+  },
+  
+  // BlockVision API (用于查询余额/NFT/交易)
+  blockvision: {
+    apiKey: '', // 用户需要填写自己的API Key
+    baseUrl: 'https://api.blockvision.org/v1/sui',
   },
 };
 
-export const MODULE_NAME = 'box';
-
-// 开盲盒函数
-export const BOX_FUNCTIONS = {
-  openCommonBox: 'open_common_box',
-  openRareBox: 'open_rare_box',
-  openEpicBox: 'open_epic_box',
-};
-
-// 稀有度映射
-export const RARITY_MAP = {
-  1: { name: 'Common', label: '普通', color: 'blue' },
-  2: { name: 'Rare', label: '稀有', color: 'purple' },
-  3: { name: 'Epic', label: '史诗', color: 'amber' },
-};
-
-export const FRAGMENT_TYPE = '0x1d3f4739d0fbc863cabcf08986d462a00ccfb1a031e3c99d65257304308ebdc7::box::Fragment';
+// 当前使用的网络
+export const CURRENT_NETWORK = 'devnet';
