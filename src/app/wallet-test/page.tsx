@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { ConnectButton } from '@mysten/dapp-kit';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
-import { useBalance } from '@mysten/dapp-kit';
+import { useQuery } from '@tanstack/react-query';
 
 // 合约配置
 const CONTRACT = {
@@ -19,18 +19,23 @@ export default function WalletTestPage() {
   const client = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
   
-  // 使用官方推荐 hook 查询余额
-  const { data: balanceData } = useBalance({
-    address: wallet.address,
+  // 使用 useQuery 查询余额
+  const { data: balanceData } = useQuery({
+    queryKey: ['balance', wallet.address],
+    enabled: !!wallet.address,
+    queryFn: async () => {
+      const res = await client.getBalance({ owner: wallet.address! });
+      return {
+        suiBalance: res.totalBalance,
+        sui: Number(res.totalBalance) / 1e9,
+      };
+    },
   });
   
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string>('');
 
-  // 余额（自动刷新）
-  const balance = balanceData 
-    ? (Number(balanceData.totalBalance) / 1e9).toFixed(4) 
-    : '0';
+  const balance = balanceData?.sui?.toFixed(4) || '0';
 
   // 调用合约
   const testCallContract = async () => {
@@ -41,7 +46,6 @@ export default function WalletTestPage() {
 
     setLoading(true);
     try {
-      // 1. 构建交易
       const tx = new Transaction();
       
       tx.moveCall({
@@ -49,8 +53,7 @@ export default function WalletTestPage() {
         arguments: [tx.object('0x8')],
       });
 
-      // 2. 签名发送
-      const result = await signExecute({
+      const result = await signAndExecute({
         transactionBlock: tx,
       });
 
