@@ -1,24 +1,23 @@
 'use client';
 
-import { useWallet as useSuiWallet } from '@/providers/WalletProvider';
+import { useState } from 'react';
+import { useWallets as useSuiWallets } from '@mysten/dapp-kit';
 
 export function useWallet() {
   const { 
     currentAccount, 
     connect, 
-    disconnect,
-    isConnected,
-    wallets 
-  } = useSuiWallet();
+    disconnect 
+  } = useSuiWallets();
 
   return {
     address: currentAccount?.address || null,
     connected: !!currentAccount,
     loading: false,
-    debug: currentAccount ? `Connected: ${currentAccount.address.slice(0, 10)}...` : 'Not connected',
+    debug: currentAccount ? `Connected: ${currentAccount.address.slice(0, 10)}...` : 'Not connected - click button',
     connect: () => connect({ network: 'devnet' }),
     disconnect,
-    isInstalled: (wallets?.length || 0) > 0,
+    isInstalled: true,
   };
 }
 
