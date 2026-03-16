@@ -1,84 +1,84 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
-interface WalletState {
-  address: string | null;
-  connected: boolean;
-  balance: string;
-  loading: boolean;
+declare global {
+  interface Window {
+    suiWallet?: {
+      address: string;
+      connected: boolean;
+      connect: () => Promise<void>;
+      disconnect: () => Promise<void>;
+    };
+  }
 }
 
 export function useWallet() {
-  const [state, setState] = useState<WalletState>({
-    address: null,
+  const [wallet, setWallet] = useState({
+    address: null as string | null,
     connected: false,
-    balance: '0',
     loading: true,
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem('suibox_wallet');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        setState({
-          address: data.address,
+    const checkWallet = () => {
+      if (typeof window === 'undefined') {
+        setWallet({ address: null, connected: false, loading: false });
+        return;
+      }
+      
+      const suiWallet = window.suiWallet;
+      if (suiWallet?.connected && suiWallet?.address) {
+        setWallet({
+          address: suiWallet.address,
           connected: true,
-          balance: data.balance || '1000',
           loading: false,
         });
-      } catch {
-        setState(prev => ({ ...prev, loading: false }));
+      } else {
+        setWallet({ address: null, connected: false, loading: false });
       }
-    } else {
-      setState(prev => ({ ...prev, loading: false }));
-    }
-  }, []);
-
-  const connect = useCallback(async () => {
-    const chars = '0123456789abcdef';
-    let addr = '0x';
-    for (let i = 0; i < 64; i++) {
-      addr += chars[Math.floor(Math.random() * 16)];
-    }
-    
-    const walletData = {
-      address: addr,
-      balance: '1000',
     };
-    
-    localStorage.setItem('suibox_wallet', JSON.stringify(walletData));
-    
-    setState({
-      address: addr,
-      connected: true,
-      balance: '1000',
-      loading: false,
-    });
-    
-    return addr;
+
+    checkWallet();
+    const interval = setInterval(checkWallet, 2000);
+    return () => clearInterval(interval);
   }, []);
 
-  const disconnect = useCallback(() => {
-    localStorage.removeItem('suibox_wallet');
-    setState({
-      address: null,
-      connected: false,
-      balance: '0',
-      loading: false,
-    });
-  }, []);
+  const connect = async () => {
+    const suiWallet = window.suiWallet;
+    if (!suiWallet) {
+      alert('请安装Sui Wallet钱包插件！');
+      return;
+    }
+    setWallet(prev => ({ ...prev, loading: true }));
+    try {
+      await suiWallet.connect();
+      if (suiWallet.address) {
+        setWallet({ address: suiWallet.address, connected: true, loading: false });
+      }
+    } catch (e) {
+      console.error(e);
+      setWallet(prev => ({ ...prev, loading: false }));
+    }
+  };
 
-  const formatAddress = useCallback((addr: string) => {
-    if (!addr) return '';
-    return addr.slice(0, 6) + '...' + addr.slice(-4);
-  }, []);
+  const disconnect = async () => {
+    const suiWallet = window.suiWallet;
+    if (suiWallet) {
+      await suiWallet.disconnect();
+    }
+    setWallet({ address: null, connected: false, loading: false });
+  };
 
   return {
-    ...state,
+    ...wallet,
     connect,
     disconnect,
-    formatAddress,
+    isInstalled: typeof window !== 'undefined' && !!window.suiWallet,
   };
+}
+
+export function shortenAddress(address: string | null): string {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

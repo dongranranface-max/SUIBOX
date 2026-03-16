@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle, Wallet, ExternalLink, AlertCircle } from 'lucide-react';
-import { useWallet } from '@/providers/WalletProvider';
+import { useWallet } from '@/hooks/useWallet';
 import { SUI_CONFIG } from '@/config/sui';
 
 // 碎片数据
