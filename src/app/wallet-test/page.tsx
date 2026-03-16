@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
-import { ConnectButton } from '@mysten/dapp-kit';
-import { useSuiClient } from '@mysten/dapp-kit';
-import { useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
+import { useSuiClient, useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit-react';
+import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { useQuery } from '@tanstack/react-query';
 
 // 合约配置
@@ -19,23 +18,20 @@ export default function WalletTestPage() {
   const client = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
   
-  // 使用 useQuery 查询余额
+  // 查询余额
   const { data: balanceData } = useQuery({
     queryKey: ['balance', wallet.address],
     enabled: !!wallet.address,
     queryFn: async () => {
       const res = await client.getBalance({ owner: wallet.address! });
-      return {
-        suiBalance: res.totalBalance,
-        sui: Number(res.totalBalance) / 1e9,
-      };
+      return Number(res.totalBalance) / 1e9;
     },
   });
   
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string>('');
 
-  const balance = balanceData?.sui?.toFixed(4) || '0';
+  const balance = balanceData?.toFixed(4) || '0';
 
   // 调用合约
   const testCallContract = async () => {
@@ -50,7 +46,7 @@ export default function WalletTestPage() {
       
       tx.moveCall({
         target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
-        arguments: [tx.object('0x8')],
+        arguments: [tx.object.clock()],
       });
 
       const result = await signAndExecute({
@@ -70,7 +66,7 @@ export default function WalletTestPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-          🔗 SUI 钱包连接测试
+          🔗 SUI 钱包连接测试 (新版)
         </h1>
 
         {/* 状态 */}

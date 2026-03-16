@@ -1,6 +1,6 @@
 'use client';
 
-import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useCurrentAccount } from '@mysten/dapp-kit-react';
 
 export function useWallet() {
   const account = useCurrentAccount();
@@ -13,8 +13,7 @@ export function useWallet() {
     connected,
     loading: false,
     debug: connected ? `已连接: ${address?.slice(0, 10)}...` : '点击连接按钮',
-    // connect 和 disconnect 由 ConnectButton 组件处理
-    connect: () => {},
+    connect: () => {}, // 由 ConnectButton 处理
     disconnect: () => {},
     isInstalled: true,
   };

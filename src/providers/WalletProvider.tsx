@@ -1,29 +1,30 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { DAppKitProvider } from '@mysten/dapp-kit-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { 
-  WalletProvider,
-  getFullnodeUrl,
-  SuiDevnet,
-  SuiTestnet,
-  SuiMainnet,
-} from '@mysten/dapp-kit';
 
 const queryClient = new QueryClient();
 
-const networks = [
-  { ...SuiDevnet, url: getFullnodeUrl('devnet') },
-  { ...SuiTestnet, url: getFullnodeUrl('testnet') },
-  { ...SuiMainnet, url: getFullnodeUrl('mainnet') },
-];
+// SUI 网络配置
+const networks = {
+  devnet: { url: 'https://fullnode.devnet.sui.io' },
+  testnet: { url: 'https://fullnode.testnet.sui.io' },
+  mainnet: { url: 'https://fullnode.mainnet.sui.io' },
+};
 
 export function AppWalletProvider({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletProvider networks={networks} defaultNetwork="devnet">
+      <DAppKitProvider
+        networks={networks}
+        defaultNetwork="devnet"
+      >
         {children}
-      </WalletProvider>
+      </DAppKitProvider>
     </QueryClientProvider>
   );
 }
+
+// 导出常用 Hook
+export { useCurrentAccount, useCurrentWallet, useCurrentClient } from '@mysten/dapp-kit-react';
