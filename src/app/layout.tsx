@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { I18nProvider } from "@/contexts/I18nContext";
-import { Providers } from "@/providers/WalletProvider";
+import { AppWalletProvider } from "@/providers/WalletProvider";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
@@ -24,12 +24,12 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body className="antialiased">
-        <Providers>
+        <AppWalletProvider>
           <I18nProvider>
             <Header />
             {children}
           </I18nProvider>
-        </Providers>
+        </AppWalletProvider>
       </body>
     </html>
   );
