@@ -22,15 +22,14 @@ const dropdowns: Record<string, { name: string; href: string }[]> = {
     { name: '拍卖', href: '/auction' },
   ],
   dao: [
-    { name: '提案', href: '/governance' },
+    { name: '社区提案', href: '/governance' },
     { name: 'Staking', href: '/mine' },
   ],
   join: [
     { name: '申请入驻', href: '/join' },
-    { name: '藏品公司', href: '/institution' },
-    { name: '创建NFT', href: '/create' },
-    { name: '我的', href: '/profile' },
-    { name: '客服', href: '/support' },
+    { name: '创作', href: '/create' },
+    { name: '个人主页', href: '/profile' },
+    { name: '机构管理', href: '/institution' },
   ],
 };
 
