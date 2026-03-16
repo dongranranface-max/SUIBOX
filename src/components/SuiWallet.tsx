@@ -1,54 +1,33 @@
 'use client';
 
-import { useSuiWallet, shortenAddress } from '@/hooks/useSuiWallet';
+import { useWallet } from '@/providers/WalletProvider';
 import { Wallet, LogOut, Loader2, AlertCircle } from 'lucide-react';
 
 export function SuiWalletButton() {
-  const { address, connected, loading, connect, disconnect, isInstalled } = useSuiWallet();
+  const { address, connected, connect, disconnect } = useWallet();
 
-  if (!isInstalled) {
-    return (
-      <a 
-        href="https://sui.io/wallet"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
-      >
-        <AlertCircle className="w-4 h-4" />
-        <span>安装钱包</span>
-      </a>
-    );
-  }
+  const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  if (loading) {
-    return (
-      <button disabled className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg text-sm">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        <span>连接中...</span>
-      </button>
-    );
-  }
-
-  if (connected && address) {
+  if (!connected) {
     return (
       <button 
-        onClick={disconnect}
+        onClick={() => connect()}
         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
       >
         <Wallet className="w-4 h-4" />
-        <span>{shortenAddress(address)}</span>
-        <LogOut className="w-3 h-3" />
+        <span>连接钱包</span>
       </button>
     );
   }
 
   return (
     <button 
-      onClick={connect}
+      onClick={() => disconnect()}
       className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
     >
       <Wallet className="w-4 h-4" />
-      <span>连接钱包</span>
+      <span>{shortenAddress(address || '')}</span>
+      <LogOut className="w-3 h-3" />
     </button>
   );
 }

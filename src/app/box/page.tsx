@@ -3,9 +3,8 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Users, Zap, Shield, Layers, Star, CheckCircle, Wallet, ExternalLink, AlertCircle } from 'lucide-react';
-import { SuiWalletButton } from '@/components/SuiWallet';
-import { useSuiWallet } from '@/hooks/useSuiWallet';
-import { SUI_CONFIG, RARITY_MAP, FRAGMENT_TYPE } from '@/config/sui';
+import { useWallet } from '@/providers/WalletProvider';
+import { SUI_CONFIG } from '@/config/sui';
 
 // 碎片数据
 const fragmentData = {
@@ -42,7 +41,7 @@ export default function BoxPage() {
   const [consecutiveNone, setConsecutiveNone] = useState(0);
   const [error, setError] = useState<string | null>(null);
   
-  const { address, connected, connect, isInstalled } = useSuiWallet();
+  const { address, connected, connect } = useWallet();
 
   // 模拟开盒（实际对接会调用合约）
   const handleOpenBox = useCallback(async (boxType: 'common' | 'rare' | 'epic') => {

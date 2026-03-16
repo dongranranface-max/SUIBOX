@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@mysten/dapp-kit": "^1.0.3",
-    "@mysten/sui": "^2.7.0",
+    "@mysten/dapp-kit": "^1.0.4",
+    "@mysten/sui": "^2.8.0",
     "@mysten/wallet-adapter-sui-wallet": "^0.3.0",
     "@mysten/wallet-adapter-wallet-standard": "^0.8.0",
     "@mysten/walrus": "^1.0.4",

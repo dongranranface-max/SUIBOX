@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
 
 // 创建QueryClient
 const queryClient = new QueryClient({
@@ -13,28 +14,26 @@ const queryClient = new QueryClient({
   },
 });
 
-// 钱包上下文
-interface WalletContextType {
-  address: string | null;
-  connected: boolean;
-}
-
-const WalletContext = createContext<WalletContextType>({
-  address: null,
-  connected: false,
-});
-
-export function useWallet() {
-  return useContext(WalletContext);
-}
+// 网络配置
+const networks = {
+  devnet: {
+    url: 'https://fullnode.devnet.sui.io',
+  },
+};
 
 // Providers包装组件
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletContext.Provider value={{ address: null, connected: false }}>
+      <SuiWalletProvider
+        networks={networks}
+        defaultNetwork="devnet"
+      >
         {children}
-      </WalletContext.Provider>
+      </SuiWalletProvider>
     </QueryClientProvider>
   );
 }
+
+// 导出useWallet
+export { useWallet } from '@mysten/dapp-kit';
