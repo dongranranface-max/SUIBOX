@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
-import { useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit-react';
+import { useCurrentClient, useCurrentAccount } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { useQuery } from '@tanstack/react-query';
 
@@ -15,15 +15,16 @@ const CONTRACT = {
 
 export default function WalletTestPage() {
   const wallet = useWallet();
-  const client = useSuiClient();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const client = useCurrentClient();
+  const account = useCurrentAccount();
   
   // 查询余额
   const { data: balanceData } = useQuery({
-    queryKey: ['balance', wallet.address],
-    enabled: !!wallet.address,
+    queryKey: ['balance', account?.address],
+    enabled: !!account?.address,
     queryFn: async () => {
-      const res = await client.getBalance({ owner: wallet.address! });
+      if (!account?.address) return 0;
+      const res = await client.getBalance({ owner: account.address });
       return Number(res.totalBalance) / 1e9;
     },
   });
@@ -33,32 +34,15 @@ export default function WalletTestPage() {
 
   const balance = balanceData?.toFixed(4) || '0';
 
-  // 调用合约
+  // 调用合约 - 暂时跳过
   const testCallContract = async () => {
-    if (!wallet.address) {
+    if (!account?.address) {
       alert('请先连接钱包！');
       return;
     }
 
     setLoading(true);
-    try {
-      const tx = new Transaction();
-      
-      tx.moveCall({
-        target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
-        arguments: [tx.object.clock()],
-      });
-
-      const result = await signAndExecute({
-        transaction: tx,
-      });
-
-      setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
-      
-    } catch (e: unknown) {
-      console.error('调用失败:', e);
-      setTxResult(`❌ 错误: ${e instanceof Error ? e.message : '未知错误'}`);
-    }
+    setTxResult('合约调用功能开发中...');
     setLoading(false);
   };
 
@@ -66,7 +50,7 @@ export default function WalletTestPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-          🔗 SUI 钱包连接测试 (新版 v2)
+          🔗 SUI 钱包连接测试
         </h1>
 
         {/* 钱包检测 */}
@@ -98,12 +82,12 @@ export default function WalletTestPage() {
               </span>
             </div>
 
-            {wallet.address && (
+            {account?.address && (
               <>
                 <div className="flex justify-between">
                   <span className="text-gray-400">地址:</span>
                   <span className="text-white font-mono">
-                    {shortenAddress(wallet.address)}
+                    {shortenAddress(account.address)}
                   </span>
                 </div>
                 <div className="flex justify-between">
