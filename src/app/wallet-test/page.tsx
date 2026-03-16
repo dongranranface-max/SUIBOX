@@ -1,18 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CoreClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { ConnectButton } from '@mysten/dapp-kit';
-
-// Devnet RPC URL
-const DEVNET_URL = 'https://fullnode.devnet.sui.io';
-
-// 初始化 SUI 客户端
-const client = new CoreClient({
-  rpcUrl: DEVNET_URL,
-});
+import { useSuiClient } from '@mysten/dapp-kit';
+import { useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
 
 // 合约配置
 const CONTRACT = {
@@ -22,6 +15,9 @@ const CONTRACT = {
 
 export default function WalletTestPage() {
   const wallet = useWallet();
+  const client = useSuiClient();  // 自动使用 WalletProvider 配置的网络
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
+  
   const [balance, setBalance] = useState<string>('0');
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string>('');
@@ -32,6 +28,7 @@ export default function WalletTestPage() {
       const bal = await client.getBalance({
         owner: address,
       });
+      // 1 SUI = 1e9 MIST
       const suiBalance = Number(bal.totalBalance) / 1e9;
       setBalance(suiBalance.toFixed(4));
     } catch (e) {
@@ -44,9 +41,9 @@ export default function WalletTestPage() {
     if (wallet.address) {
       fetchBalance(wallet.address);
     }
-  }, [wallet.address]);
+  }, [wallet.address, client]);
 
-  // 测试调用合约
+  // 调用合约
   const testCallContract = async () => {
     if (!wallet.address) {
       alert('请先连接钱包！');
@@ -55,15 +52,20 @@ export default function WalletTestPage() {
 
     setLoading(true);
     try {
-      // v2.x 使用 Transaction
+      // 1. 构建交易
       const tx = new Transaction();
       
       tx.moveCall({
         target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
-        arguments: [tx.object('0x8')],
+        arguments: [tx.object('0x8')], // Clock 对象
       });
 
-      setTxResult('✅ 交易构建成功！\n(完整签名需钱包支持)');
+      // 2. 签名并发送（使用官方推荐的 hook）
+      const result = await signAndExecute({
+        transactionBlock: tx,
+      });
+
+      setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
       
     } catch (e: unknown) {
       console.error('调用合约失败:', e);

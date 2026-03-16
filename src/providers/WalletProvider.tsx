@@ -8,6 +8,8 @@ import {
   useCurrentAccount,
   useCurrentWallet,
   ConnectButton,
+  useSuiClient,
+  useSignAndExecuteTransactionBlock,
 } from '@mysten/dapp-kit';
 
 const queryClient = new QueryClient({
@@ -40,4 +42,11 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 
 // 导出常用 Hook
-export { useWallets, useCurrentAccount, useCurrentWallet, ConnectButton };
+export { 
+  useWallets, 
+  useCurrentAccount, 
+  useCurrentWallet, 
+  ConnectButton,
+  useSuiClient,
+  useSignAndExecuteTransactionBlock,
+};
