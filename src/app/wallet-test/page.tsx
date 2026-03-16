@@ -1,13 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  SuiClient, 
-  getFullnodeUrl 
-} from '@mysten/sui.js/client';
-import { 
-  TransactionBlock 
-} from '@mysten/sui.js/transactions';
+import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { Transaction } from '@mysten/sui/transactions';
 import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { ConnectButton } from '@mysten/dapp-kit';
 
@@ -57,7 +52,8 @@ export default function WalletTestPage() {
 
     setLoading(true);
     try {
-      const tx = new TransactionBlock();
+      // v2.x 使用 Transaction 而不是 TransactionBlock
+      const tx = new Transaction();
       
       tx.moveCall({
         target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
