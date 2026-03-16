@@ -82,7 +82,7 @@ export function useWallet() {
     ...wallet,
     connect,
     disconnect,
-    isInstalled: !!window.suiet || !!window.sui,
+  const isInstalled = typeof window !== 'undefined' && (!!window.suiet || !!window.sui);
   };
 }
 
