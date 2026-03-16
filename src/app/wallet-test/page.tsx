@@ -66,16 +66,33 @@ export default function WalletTestPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-          🔗 SUI 钱包连接测试 (新版)
+          🔗 SUI 钱包连接测试 (新版 v2)
         </h1>
+
+        {/* 钱包检测 */}
+        <div className="bg-gray-900 rounded-xl p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4">钱包检测</h2>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">检测到钱包:</span>
+            <span className={wallet.isInstalled ? 'text-green-400' : 'text-red-400'}>
+              {wallet.isInstalled ? `✅ ${wallet.wallets.length} 个` : '❌ 未检测到'}
+            </span>
+          </div>
+          
+          {wallet.wallets.length > 0 && (
+            <div className="mt-2 text-sm text-gray-500">
+              可用钱包: {wallet.wallets.map(w => w.name).join(', ')}
+            </div>
+          )}
+        </div>
 
         {/* 状态 */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">钱包状态</h2>
+          <h2 className="text-xl font-bold mb-4">连接状态</h2>
           
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">连接:</span>
+              <span className="text-gray-400">状态:</span>
               <span className={wallet.connected ? 'text-green-400' : 'text-gray-500'}>
                 {wallet.connected ? '✅ 已连接' : '❌ 未连接'}
               </span>

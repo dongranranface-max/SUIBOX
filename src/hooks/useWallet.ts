@@ -1,21 +1,28 @@
 'use client';
 
-import { useCurrentAccount } from '@mysten/dapp-kit-react';
+import { useCurrentAccount, useWallets } from '@mysten/dapp-kit-react';
 
 export function useWallet() {
   const account = useCurrentAccount();
+  const wallets = useWallets();
   
   const address = account?.address || null;
   const connected = !!address;
+  const isInstalled = wallets.length > 0;
 
   return {
     address,
     connected,
     loading: false,
-    debug: connected ? `已连接: ${address?.slice(0, 10)}...` : '点击连接按钮',
+    debug: connected 
+      ? `已连接: ${address?.slice(0, 10)}...` 
+      : isInstalled 
+        ? '请连接钱包' 
+        : '未检测到钱包',
     connect: () => {}, // 由 ConnectButton 处理
     disconnect: () => {},
-    isInstalled: true,
+    isInstalled,
+    wallets,
   };
 }
 
