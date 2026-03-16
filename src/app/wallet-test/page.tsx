@@ -6,6 +6,7 @@ import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { ConnectButton } from '@mysten/dapp-kit';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
+import { useBalance } from '@mysten/dapp-kit';
 
 // 合约配置
 const CONTRACT = {
@@ -15,33 +16,21 @@ const CONTRACT = {
 
 export default function WalletTestPage() {
   const wallet = useWallet();
-  const client = useSuiClient();  // 自动使用 WalletProvider 配置的网络
+  const client = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
   
-  const [balance, setBalance] = useState<string>('0');
+  // 使用官方推荐 hook 查询余额
+  const { data: balanceData } = useBalance({
+    address: wallet.address,
+  });
+  
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string>('');
 
-  // 查询余额
-  const fetchBalance = async (address: string) => {
-    try {
-      const bal = await client.getBalance({
-        owner: address,
-      });
-      // 1 SUI = 1e9 MIST
-      const suiBalance = Number(bal.totalBalance) / 1e9;
-      setBalance(suiBalance.toFixed(4));
-    } catch (e) {
-      console.error('查询余额失败:', e);
-    }
-  };
-
-  // 当钱包连接时获取余额
-  useEffect(() => {
-    if (wallet.address) {
-      fetchBalance(wallet.address);
-    }
-  }, [wallet.address, client]);
+  // 余额（自动刷新）
+  const balance = balanceData 
+    ? (Number(balanceData.totalBalance) / 1e9).toFixed(4) 
+    : '0';
 
   // 调用合约
   const testCallContract = async () => {
@@ -57,18 +46,18 @@ export default function WalletTestPage() {
       
       tx.moveCall({
         target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
-        arguments: [tx.object('0x8')], // Clock 对象
+        arguments: [tx.object('0x8')],
       });
 
-      // 2. 签名并发送（使用官方推荐的 hook）
-      const result = await signAndExecute({
+      // 2. 签名发送
+      const result = await signExecute({
         transactionBlock: tx,
       });
 
       setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
       
     } catch (e: unknown) {
-      console.error('调用合约失败:', e);
+      console.error('调用失败:', e);
       setTxResult(`❌ 错误: ${e instanceof Error ? e.message : '未知错误'}`);
     }
     setLoading(false);
@@ -81,13 +70,13 @@ export default function WalletTestPage() {
           🔗 SUI 钱包连接测试
         </h1>
 
-        {/* 钱包状态 */}
+        {/* 状态 */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">钱包状态</h2>
           
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">连接状态:</span>
+              <span className="text-gray-400">连接:</span>
               <span className={wallet.connected ? 'text-green-400' : 'text-gray-500'}>
                 {wallet.connected ? '✅ 已连接' : '❌ 未连接'}
               </span>
@@ -96,38 +85,33 @@ export default function WalletTestPage() {
             {wallet.address && (
               <>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">钱包地址:</span>
+                  <span className="text-gray-400">地址:</span>
                   <span className="text-white font-mono">
                     {shortenAddress(wallet.address)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">SUI 余额:</span>
+                  <span className="text-gray-400">余额:</span>
                   <span className="text-yellow-400 font-bold">{balance} SUI</span>
                 </div>
               </>
             )}
           </div>
 
-          {/* 连接按钮 */}
           <div className="mt-6">
             <ConnectButton />
           </div>
         </div>
 
-        {/* 合约调用测试 */}
+        {/* 合约测试 */}
         {wallet.connected && (
           <div className="bg-gray-900 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-4">合约调用测试</h2>
+            <h2 className="text-xl font-bold mb-4">合约调用</h2>
             
-            <p className="text-gray-400 mb-4">
-              合约: {CONTRACT.packageId.slice(0, 20)}...
-            </p>
-
             <button
               onClick={testCallContract}
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold hover:from-green-500 hover:to-emerald-500 transition-all disabled:opacity-50"
+              className="w-full py-3 bg-green-600 rounded-lg font-bold hover:bg-green-500 disabled:opacity-50"
             >
               {loading ? '⏳ 处理中...' : '🎁 测试开盲盒'}
             </button>
