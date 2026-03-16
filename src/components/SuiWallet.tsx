@@ -4,7 +4,7 @@ import { useWallet, shortenAddress } from '@/hooks/useWallet';
 import { Wallet, LogOut, Loader2 } from 'lucide-react';
 
 export function SuiWalletButton() {
-  const { address, connected, loading, connect, disconnect, isInstalled } = useWallet();
+  const { address, connected, loading, connect, disconnect, debug } = useWallet();
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ export function SuiWalletButton() {
   if (connected && address) {
     return (
       <button 
-        onClick={() => disconnect()}
+        onClick={disconnect}
         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
       >
         <Wallet className="w-4 h-4" />
@@ -30,25 +30,11 @@ export function SuiWalletButton() {
 
   return (
     <button 
-      onClick={() => connect()}
+      onClick={connect}
       className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
     >
       <Wallet className="w-4 h-4" />
       <span>连接钱包</span>
     </button>
-  );
-}
-
-// 调试信息
-export function WalletDebug() {
-  const { debug, isInstalled, connected, address } = useWallet();
-  
-  return (
-    <div className="fixed bottom-4 right-4 bg-black/80 text-xs text-gray-400 p-2 rounded max-w-xs z-50">
-      <div>已安装: {isInstalled ? '✓' : '✗'}</div>
-      <div>已连接: {connected ? '✓' : '✗'}</div>
-      <div>地址: {address ? shortenAddress(address) : '无'}</div>
-      <div>状态: {debug}</div>
-    </div>
   );
 }
