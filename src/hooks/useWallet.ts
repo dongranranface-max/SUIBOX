@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+// Sui Wallet Standard 类型
+interface Wallet {
+  name: string;
+  icon?: string;
+  accounts: { address: string }[];
+  connect: () => Promise<void>;
+  disconnect: () => Promise<void>;
+}
 
 declare global {
   interface Window {
-    suiWallet?: {
-      address: string;
-      connected: boolean;
-      connect: () => Promise<void>;
-      disconnect: () => Promise<void>;
+    sui?: {
+      wallets: Wallet[];
     };
   }
 }
@@ -20,41 +26,71 @@ export function useWallet() {
     loading: true,
   });
 
-  useEffect(() => {
-    const checkWallet = () => {
-      if (typeof window === 'undefined') {
-        setWallet({ address: null, connected: false, loading: false });
-        return;
-      }
+  // 使用Wallet Standard检测钱包
+  const detectWallet = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setWallet({ address: null, connected: false, loading: false });
+      return;
+    }
+
+    // 检查window.sui (Sui Wallet Standard)
+    const suiWindow = window.sui;
+    if (suiWindow?.wallets?.length > 0) {
+      const suiWallet = suiWindow.wallets.find((w: Wallet) => 
+        w.name?.toLowerCase().includes('sui')
+      );
       
-      const suiWallet = window.suiWallet;
-      if (suiWallet?.connected && suiWallet?.address) {
+      if (suiWallet?.accounts?.[0]?.address) {
         setWallet({
-          address: suiWallet.address,
+          address: suiWallet.accounts[0].address,
           connected: true,
           loading: false,
         });
-      } else {
-        setWallet({ address: null, connected: false, loading: false });
+        return;
       }
-    };
+    }
 
-    checkWallet();
-    const interval = setInterval(checkWallet, 2000);
-    return () => clearInterval(interval);
+    setWallet({ address: null, connected: false, loading: false });
   }, []);
 
+  useEffect(() => {
+    detectWallet();
+    
+    // 监听钱包变化
+    const handleChange = () => detectWallet();
+    window.addEventListener('wallet:change', handleChange);
+    window.addEventListener('storage', handleChange);
+    
+    const interval = setInterval(detectWallet, 3000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('wallet:change', handleChange);
+      window.removeEventListener('storage', handleChange);
+    };
+  }, [detectWallet]);
+
   const connect = async () => {
-    const suiWallet = window.suiWallet;
-    if (!suiWallet) {
-      alert('请安装Sui Wallet钱包插件！');
+    const suiWindow = window.sui;
+    if (!suiWindow?.wallets?.length) {
+      alert('请安装Sui Wallet钱包！\nhttps://sui.io/wallet');
       return;
     }
+
     setWallet(prev => ({ ...prev, loading: true }));
     try {
-      await suiWallet.connect();
-      if (suiWallet.address) {
-        setWallet({ address: suiWallet.address, connected: true, loading: false });
+      const suiWallet = suiWindow.wallets.find((w: Wallet) => 
+        w.name?.toLowerCase().includes('sui')
+      );
+      
+      if (suiWallet) {
+        await suiWallet.connect();
+        if (suiWallet.accounts?.[0]?.address) {
+          setWallet({ 
+            address: suiWallet.accounts[0].address, 
+            connected: true, 
+            loading: false 
+          });
+        }
       }
     } catch (e) {
       console.error(e);
@@ -63,9 +99,14 @@ export function useWallet() {
   };
 
   const disconnect = async () => {
-    const suiWallet = window.suiWallet;
-    if (suiWallet) {
-      await suiWallet.disconnect();
+    const suiWindow = window.sui;
+    if (suiWindow?.wallets?.length) {
+      const suiWallet = suiWindow.wallets.find((w: Wallet) => 
+        w.name?.toLowerCase().includes('sui')
+      );
+      if (suiWallet) {
+        await suiWallet.disconnect();
+      }
     }
     setWallet({ address: null, connected: false, loading: false });
   };
@@ -74,7 +115,7 @@ export function useWallet() {
     ...wallet,
     connect,
     disconnect,
-    isInstalled: typeof window !== 'undefined' && !!window.suiWallet,
+    isInstalled: typeof window !== 'undefined' && !!window.sui?.wallets?.length,
   };
 }
 
