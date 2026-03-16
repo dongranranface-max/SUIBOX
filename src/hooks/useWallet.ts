@@ -105,11 +105,13 @@ export function useWallet() {
     setWallet({ address: null, connected: false, loading: false, debug: '' });
   };
 
+  const isInstalled = typeof window !== 'undefined' && (!!window.suiet || !!window.sui?.wallets?.length);
+
   return {
     ...wallet,
     connect,
     disconnect,
-    isInstalled: typeof window !== 'undefined' && (!!window.suiet || !!window.sui?.wallets?.length),
+    isInstalled,
   };
 }
 
