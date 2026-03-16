@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { Transaction } from '@mysten/sui/transactions';
-import { useWallet, shortenAddress } from '@/hooks/useWallet';
-import { useCurrentClient, useCurrentAccount } from '@mysten/dapp-kit-react';
-import { ConnectButton } from '@mysten/dapp-kit-react/ui';
+import { useCurrentAccount, useSuiClient, useSignAndExecuteTransactionBlock } from '@mysten/dapp-kit';
+import { ConnectButton } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
 
 // 合约配置
@@ -13,10 +12,15 @@ const CONTRACT = {
   module: 'box',
 };
 
+function shortenAddress(addr: string | null | undefined): string {
+  if (!addr) return '';
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
 export default function WalletTestPage() {
-  const wallet = useWallet();
-  const client = useCurrentClient();
   const account = useCurrentAccount();
+  const client = useSuiClient();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransactionBlock();
   
   // 查询余额
   const { data: balanceData } = useQuery({
@@ -33,16 +37,35 @@ export default function WalletTestPage() {
   const [txResult, setTxResult] = useState<string>('');
 
   const balance = balanceData?.toFixed(4) || '0';
+  const address = account?.address;
+  const connected = !!address;
 
-  // 调用合约 - 暂时跳过
+  // 调用合约
   const testCallContract = async () => {
-    if (!account?.address) {
+    if (!address) {
       alert('请先连接钱包！');
       return;
     }
 
     setLoading(true);
-    setTxResult('合约调用功能开发中...');
+    try {
+      const tx = new Transaction();
+      
+      tx.moveCall({
+        target: `${CONTRACT.packageId}::${CONTRACT.module}::open_common_box`,
+        arguments: [tx.object.clock()],
+      });
+
+      const result = await signAndExecute({
+        transactionBlock: tx,
+      });
+
+      setTxResult(`✅ 成功！\n交易哈希: ${result.digest}`);
+      
+    } catch (e: unknown) {
+      console.error('调用失败:', e);
+      setTxResult(`❌ 错误: ${e instanceof Error ? e.message : '未知错误'}`);
+    }
     setLoading(false);
   };
 
@@ -50,25 +73,8 @@ export default function WalletTestPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-          🔗 SUI 钱包连接测试
+          🔗 SUI 钱包连接测试 (旧版 v1)
         </h1>
-
-        {/* 钱包检测 */}
-        <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">钱包检测</h2>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">检测到钱包:</span>
-            <span className={wallet.isInstalled ? 'text-green-400' : 'text-red-400'}>
-              {wallet.isInstalled ? `✅ ${wallet.wallets.length} 个` : '❌ 未检测到'}
-            </span>
-          </div>
-          
-          {wallet.wallets.length > 0 && (
-            <div className="mt-2 text-sm text-gray-500">
-              可用钱包: {wallet.wallets.map(w => w.name).join(', ')}
-            </div>
-          )}
-        </div>
 
         {/* 状态 */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
@@ -77,17 +83,17 @@ export default function WalletTestPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">状态:</span>
-              <span className={wallet.connected ? 'text-green-400' : 'text-gray-500'}>
-                {wallet.connected ? '✅ 已连接' : '❌ 未连接'}
+              <span className={connected ? 'text-green-400' : 'text-gray-500'}>
+                {connected ? '✅ 已连接' : '❌ 未连接'}
               </span>
             </div>
 
-            {account?.address && (
+            {address && (
               <>
                 <div className="flex justify-between">
                   <span className="text-gray-400">地址:</span>
                   <span className="text-white font-mono">
-                    {shortenAddress(account.address)}
+                    {shortenAddress(address)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -104,7 +110,7 @@ export default function WalletTestPage() {
         </div>
 
         {/* 合约测试 */}
-        {wallet.connected && (
+        {connected && (
           <div className="bg-gray-900 rounded-xl p-6">
             <h2 className="text-xl font-bold mb-4">合约调用</h2>
             
