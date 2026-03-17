@@ -5,8 +5,12 @@ import { useState, useEffect } from 'react';
 export default function WalletDebugPage() {
   const [status, setStatus] = useState<string>('加载中...');
   const [address, setAddress] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [logs, setLogs] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+
+  const addLog = (msg: string) => {
+    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -14,51 +18,61 @@ export default function WalletDebugPage() {
   }, []);
 
   const checkWallet = async () => {
-    setStatus('🔍 检查SUI钱包...');
+    addLog('检查钱包...');
     
     // @ts-ignore
     const ethereum = window.ethereum;
     
     if (!ethereum) {
-      setStatus('❌ 未找到钱包扩展\n请确保已安装 Suiet Wallet');
+      setStatus('❌ 未找到钱包扩展\n请安装 Suiet Wallet');
+      addLog('window.ethereum 不存在');
       return;
     }
 
-    setStatus('✅ 找到钱包扩展\n请点击按钮连接');
+    addLog('找到 window.ethereum');
+    setStatus('✅ 找到钱包\n请点击按钮连接');
 
-    // 自动尝试获取地址
+    // 自动尝试
     try {
+      addLog('尝试 suix_getAllAddresses...');
       // @ts-ignore
       const suiAddresses = await ethereum.request({ 
         method: 'suix_getAllAddresses' 
       });
+      addLog('结果: ' + JSON.stringify(suiAddresses));
       
       if (suiAddresses && suiAddresses.length > 0) {
         setAddress(suiAddresses[0]);
-        setStatus('✅ 已自动连接 SUI 钱包！');
+        setStatus('✅ 已连接 SUI 钱包！');
       }
-    } catch (e) {
-      // 忽略
+    } catch (e: unknown) {
+      addLog('错误: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
   const handleConnect = async () => {
-    setError('');
+    setLogs([]);
+    addLog('开始连接...');
+    
     // @ts-ignore
     const ethereum = window.ethereum;
     if (!ethereum) {
-      setError('未找到钱包');
+      setStatus('❌ 未找到钱包');
+      addLog('错误: window.ethereum 不存在');
       return;
     }
 
-    setStatus('🔄 请求连接...\n请在钱包中确认');
+    setStatus('🔄 请在钱包中确认授权...');
+    addLog('请求连接...');
 
+    // 方法1: suix_getAllAddresses
     try {
-      // 尝试 SUI 方法
+      addLog('方法1: suix_getAllAddresses');
       // @ts-ignore
       const suiAddresses = await ethereum.request({ 
         method: 'suix_getAllAddresses' 
       });
+      addLog('结果: ' + JSON.stringify(suiAddresses));
       
       if (suiAddresses && suiAddresses.length > 0) {
         setAddress(suiAddresses[0]);
@@ -66,23 +80,28 @@ export default function WalletDebugPage() {
         return;
       }
     } catch (e: unknown) {
-      setError('SUI方法失败: ' + (e instanceof Error ? e.message : String(e)));
+      addLog('方法1失败: ' + (e instanceof Error ? e.message : String(e)));
     }
 
-    // 尝试以太坊方法
+    // 方法2: eth_requestAccounts
     try {
+      addLog('方法2: eth_requestAccounts');
       // @ts-ignore
       const accounts = await ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
+      addLog('结果: ' + JSON.stringify(accounts));
       
       if (accounts && accounts.length > 0) {
         setAddress(accounts[0]);
-        setStatus('⚠️ 连接成功，但可能是以太坊地址');
+        setStatus('⚠️ 连接成功（可能非SUI地址）');
+        return;
       }
     } catch (e: unknown) {
-      setError('连接失败: ' + (e instanceof Error ? e.message : String(e)));
+      addLog('方法2失败: ' + (e instanceof Error ? e.message : String(e)));
     }
+
+    setStatus('❌ 连接失败\n请查看下方日志');
   };
 
   if (!mounted) {
@@ -93,14 +112,8 @@ export default function WalletDebugPage() {
     <div className="min-h-screen bg-black text-white p-8">
       <h1 className="text-3xl font-bold mb-8">🔗 SUI 钱包连接</h1>
       
-      <div className="bg-gray-900 p-6 rounded-xl">
+      <div className="bg-gray-900 p-6 rounded-xl mb-4">
         <pre className="whitespace-pre-wrap text-sm mb-4">{status}</pre>
-        
-        {error && (
-          <div className="p-3 bg-red-900 rounded-lg mb-4 text-sm">
-            {error}
-          </div>
-        )}
         
         {address && (
           <div className="mt-4 p-4 bg-green-900 rounded-lg">
@@ -117,14 +130,17 @@ export default function WalletDebugPage() {
         </button>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-900 rounded-lg">
-        <p className="font-bold mb-2">请确保：</p>
-        <ol className="list-decimal list-inside text-sm space-y-1">
-          <li>Suiet Wallet 已解锁</li>
-          <li>网络切换到 Devnet 或 Testnet</li>
-          <li>点击按钮后，在钱包中确认授权</li>
-        </ol>
-      </div>
+      {/* 日志 */}
+      {logs.length > 0 && (
+        <div className="bg-gray-900 p-4 rounded-xl">
+          <p className="font-bold mb-2">连接日志:</p>
+          <div className="font-mono text-xs space-y-1">
+            {logs.map((log, i) => (
+              <p key={i} className="text-gray-400">{log}</p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
