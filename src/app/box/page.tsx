@@ -298,13 +298,21 @@ export default function BoxPage() {
 
               {wallet.connected && <p className="mt-3 text-gray-400 text-sm">剩余 <span className="text-orange-400 font-bold text-xl">{totalDailyCount}</span> 次</p>}
 
-              <div className="mt-5 flex justify-center gap-2">
-                {[{ icon: '🎯', p: '40%' }, { icon: '⭐', p: '19%' }, { icon: '💎', p: '1%' }, { icon: '🙏', p: '40%' }].map((item, i) => (
-                  <div key={i} className="bg-gray-800/80 rounded-lg px-3 py-2 text-center">
-                    <div className="text-lg">{item.icon}</div>
-                    <p className="font-bold text-xs text-yellow-400">{item.p}</p>
-                  </div>
-                ))}
+              <div className="mt-5">
+                <p className="text-gray-500 text-xs mb-2">概率公示</p>
+                <div className="flex justify-center gap-2">
+                  {[
+                    { img: '/fragment-common.png', p: '40%', g: '3' },
+                    { img: '/fragment-rare.png', p: '19%', g: '7' },
+                    { img: '/fragment-epic.png', p: '1%', g: '35' },
+                  ].map((item, i) => (
+                    <div key={i} className="bg-gray-800/80 rounded-xl px-3 py-2 text-center flex flex-col items-center">
+                      <img src={item.img} alt="" className="w-10 h-10 object-contain mb-1" />
+                      <p className="text-yellow-400 font-bold text-sm">{item.p}</p>
+                      <p className="text-gray-600 text-xs">保{item.g}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </motion.div>
           </div>
