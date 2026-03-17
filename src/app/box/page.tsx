@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus, Star, Heart, Sparkle } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
-const GUARANTEE = { common: 3, rare: 7, epic: 35 };
+const GUARANTEE = { common: 3, rare: 7, epic: 25 };
 
 // 邀请任务配置
 const INVITE_TASKS = [
@@ -251,7 +251,7 @@ export default function BoxPage() {
       if (userData.noneCount >= 35) rt = 'epic';
       else if (userData.noneCount >= 7) rt = 'rare';
       else if (userData.noneCount >= 3) rt = 'common';
-      else rt = rand < 5 ? 'epic' : rand < 20 ? 'rare' : rand < 60 ? 'common' : 'none';
+      else rt = rand < 3 ? 'epic' : rand < 18 ? 'rare' : rand < 68 ? 'common' : 'none';
       
       setResult({ type: rt }); setShowOpening(false); setShowResult(true);
       fetchUserData();
@@ -303,9 +303,9 @@ export default function BoxPage() {
                 <p className="text-gray-500 text-xs mb-2">概率公示</p>
                 <div className="flex justify-center gap-2">
                   {[
-                    { img: '/fragment-common.png', p: '40%', g: '3' },
+                    { img: '/fragment-common.png', p: '50%', g: '3' },
                     { img: '/fragment-rare.png', p: '15%', g: '7' },
-                    { img: '/fragment-epic.png', p: '5%', g: '35' },
+                    { img: '/fragment-epic.png', p: '3%', g: '25' },
                   ].map((item, i) => (
                     <div key={i} className="bg-gray-800/80 rounded-xl px-3 py-2 text-center flex flex-col items-center">
                       <img src={item.img} alt="" className="w-10 h-10 object-contain mb-1" />

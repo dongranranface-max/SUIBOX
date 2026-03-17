@@ -24,15 +24,15 @@ const NFT_CONFIG = {
 
 // 碎片合成配方
 const FRAGMENT_RECIPES = [
-  { id: 1, result: 'common', cost: { common: 10 }, reward: 3, name: '普通NFT', tier: 1 },
-  { id: 2, result: 'rare', cost: { rare: 11 }, reward: 15, name: '稀有NFT', tier: 2 },
-  { id: 3, result: 'epic', cost: { epic: 8 }, reward: 25, name: '史诗NFT', tier: 3 },
+  { id: 1, result: 'common', cost: { common: 6 }, reward: 5, name: '普通NFT', tier: 1 },
+  { id: 2, result: 'rare', cost: { rare: 8 }, reward: 8, name: '稀有NFT', tier: 2 },
+  { id: 3, result: 'epic', cost: { epic: 10 }, reward: 15, name: '史诗NFT', tier: 3 },
 ];
 
 // NFT合成配方
 const NFT_RECIPES = [
-  { id: 1, result: 'rare', cost: { common: 10 }, boxCost: 28, reward: 30, name: '稀有NFT', tier: 2 },
-  { id: 2, result: 'epic', cost: { rare: 7 }, boxCost: 58, reward: 100, name: '史诗NFT', tier: 3 },
+  { id: 1, result: 'rare', cost: { common: 5 }, boxCost: 30, reward: 10, name: '稀有NFT', tier: 2 },
+  { id: 2, result: 'epic', cost: { rare: 4 }, boxCost: 50, reward: 20, name: '史诗NFT', tier: 3 },
 ];
 
 function NFTVideo({ src, alt, size = 40 }: { src: string; alt: string; size?: number }) {
@@ -160,9 +160,9 @@ export default function CraftPage() {
               {/* NFT发行量 */}
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div><p className="text-xs text-gray-500">Common NFT</p><p className="text-sm font-bold text-green-400">∞ Unlimited</p></div>
-                  <div><p className="text-xs text-gray-500">Rare NFT</p><p className="text-sm font-bold text-blue-400">400K</p></div>
-                  <div><p className="text-xs text-gray-500">Epic NFT</p><p className="text-sm font-bold text-yellow-400">100K</p></div>
+                  <div><p className="text-xs text-gray-500">Common NFT</p><p className="text-sm font-bold text-green-400">1M</p></div>
+                  <div><p className="text-xs text-gray-500">Rare NFT</p><p className="text-sm font-bold text-blue-400">100K</p></div>
+                  <div><p className="text-xs text-gray-500">Epic NFT</p><p className="text-sm font-bold text-yellow-400">20K</p></div>
                 </div>
               </div>
             </div>
