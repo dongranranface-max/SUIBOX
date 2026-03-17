@@ -265,8 +265,15 @@ export default function InvitePage() {
             </div>
             <div>
               <h2 className="font-bold text-lg">BOX 空投奖励</h2>
-              <p className="text-gray-400 text-sm">好友开盲盒，双方获得 BOX</p>
+              <p className="text-gray-400 text-sm">好友开盲盒，推荐人获得持续奖励</p>
             </div>
+          </div>
+
+          <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl mb-4">
+            <p className="text-sm text-blue-300 flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              每个账号只有一次获得空投机会（达到条件后），但推荐人可持续获得推荐奖励！
+            </p>
           </div>
 
           <div className="space-y-3">
