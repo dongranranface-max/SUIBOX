@@ -18,35 +18,37 @@ export default function WalletDebugPage() {
   }, []);
 
   const checkWallet = async () => {
-    addLog('检查钱包...');
+    addLog('开始检测钱包...');
     
+    // 检测各种可能的钱包注入
     // @ts-ignore
-    const ethereum = window.ethereum;
+    let wallet = window.ethereum;
+    let walletName = 'window.ethereum';
     
-    if (!ethereum) {
-      setStatus('❌ 未找到钱包扩展\n请安装 Suiet Wallet');
-      addLog('window.ethereum 不存在');
-      return;
-    }
-
-    addLog('找到 window.ethereum');
-    setStatus('✅ 找到钱包\n请点击按钮连接');
-
-    // 自动尝试
-    try {
-      addLog('尝试 suix_getAllAddresses...');
+    if (!wallet) {
       // @ts-ignore
-      const suiAddresses = await ethereum.request({ 
-        method: 'suix_getAllAddresses' 
-      });
-      addLog('结果: ' + JSON.stringify(suiAddresses));
-      
-      if (suiAddresses && suiAddresses.length > 0) {
-        setAddress(suiAddresses[0]);
-        setStatus('✅ 已连接 SUI 钱包！');
-      }
-    } catch (e: unknown) {
-      addLog('错误: ' + (e instanceof Error ? e.message : String(e)));
+      wallet = window.sui;
+      walletName = 'window.sui';
+    }
+    
+    if (!wallet) {
+      // @ts-ignore
+      wallet = window.suiWallet;
+      walletName = 'window.suiWallet';
+    }
+    
+    if (!wallet) {
+      // @ts-ignore
+      wallet = window.phantom?.solana;
+      walletName = 'window.phantom';
+    }
+    
+    if (wallet) {
+      addLog(`找到钱包: ${walletName}`);
+      setStatus('✅ 找到钱包\n请点击按钮连接');
+    } else {
+      setStatus('❌ 未找到钱包\n请确保已安装 Suiet Wallet');
+      addLog('未找到任何钱包注入');
     }
   };
 
@@ -54,22 +56,11 @@ export default function WalletDebugPage() {
     setLogs([]);
     addLog('开始连接...');
     
-    // @ts-ignore
-    const ethereum = window.ethereum;
-    if (!ethereum) {
-      setStatus('❌ 未找到钱包');
-      addLog('错误: window.ethereum 不存在');
-      return;
-    }
-
-    setStatus('🔄 请在钱包中确认授权...');
-    addLog('请求连接...');
-
-    // 方法1: suix_getAllAddresses
+    // 尝试方法1: suix_getAllAddresses
     try {
       addLog('方法1: suix_getAllAddresses');
       // @ts-ignore
-      const suiAddresses = await ethereum.request({ 
+      const suiAddresses = await window.ethereum?.request({ 
         method: 'suix_getAllAddresses' 
       });
       addLog('结果: ' + JSON.stringify(suiAddresses));
@@ -80,25 +71,46 @@ export default function WalletDebugPage() {
         return;
       }
     } catch (e: unknown) {
-      addLog('方法1失败: ' + (e instanceof Error ? e.message : String(e)));
+      const errMsg = e instanceof Error ? e.message : String(e);
+      addLog('失败: ' + errMsg);
     }
 
-    // 方法2: eth_requestAccounts
+    // 尝试方法2: requestAccounts
     try {
       addLog('方法2: eth_requestAccounts');
       // @ts-ignore
-      const accounts = await ethereum.request({ 
+      const accounts = await window.ethereum?.request({ 
         method: 'eth_requestAccounts' 
       });
       addLog('结果: ' + JSON.stringify(accounts));
       
       if (accounts && accounts.length > 0) {
         setAddress(accounts[0]);
-        setStatus('⚠️ 连接成功（可能非SUI地址）');
+        setStatus('✅ 连接成功！');
         return;
       }
     } catch (e: unknown) {
-      addLog('方法2失败: ' + (e instanceof Error ? e.message : String(e)));
+      const errMsg = e instanceof Error ? e.message : String(e);
+      addLog('失败: ' + errMsg);
+    }
+
+    // 尝试方法3: Suiet Wallet Standard
+    try {
+      addLog('方法3: Wallet Standard');
+      // @ts-ignore
+      const suiWin = window.sui;
+      if (suiWin?.wallets?.length > 0) {
+        addLog('找到 ' + suiWin.wallets.length + ' 个钱包');
+        const firstWallet = suiWin.wallets[0];
+        if (firstWallet.accounts?.[0]?.address) {
+          setAddress(firstWallet.accounts[0].address);
+          setStatus('✅ 连接成功！');
+          return;
+        }
+      }
+    } catch (e: unknown) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      addLog('失败: ' + errMsg);
     }
 
     setStatus('❌ 连接失败\n请查看下方日志');
@@ -130,11 +142,10 @@ export default function WalletDebugPage() {
         </button>
       </div>
 
-      {/* 日志 */}
       {logs.length > 0 && (
         <div className="bg-gray-900 p-4 rounded-xl">
-          <p className="font-bold mb-2">连接日志:</p>
-          <div className="font-mono text-xs space-y-1">
+          <p className="font-bold mb-2">日志:</p>
+          <div className="font-mono text-xs space-y-1 max-h-60 overflow-y-auto">
             {logs.map((log, i) => (
               <p key={i} className="text-gray-400">{log}</p>
             ))}
