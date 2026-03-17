@@ -251,7 +251,7 @@ export default function BoxPage() {
       if (userData.noneCount >= 35) rt = 'epic';
       else if (userData.noneCount >= 7) rt = 'rare';
       else if (userData.noneCount >= 3) rt = 'common';
-      else rt = rand < 1 ? 'epic' : rand < 20 ? 'rare' : rand < 60 ? 'common' : 'none';
+      else rt = rand < 5 ? 'epic' : rand < 20 ? 'rare' : rand < 60 ? 'common' : 'none';
       
       setResult({ type: rt }); setShowOpening(false); setShowResult(true);
       fetchUserData();
@@ -304,8 +304,8 @@ export default function BoxPage() {
                 <div className="flex justify-center gap-2">
                   {[
                     { img: '/fragment-common.png', p: '40%', g: '3' },
-                    { img: '/fragment-rare.png', p: '19%', g: '7' },
-                    { img: '/fragment-epic.png', p: '1%', g: '35' },
+                    { img: '/fragment-rare.png', p: '15%', g: '7' },
+                    { img: '/fragment-epic.png', p: '5%', g: '35' },
                   ].map((item, i) => (
                     <div key={i} className="bg-gray-800/80 rounded-xl px-3 py-2 text-center flex flex-col items-center">
                       <img src={item.img} alt="" className="w-10 h-10 object-contain mb-1" />
