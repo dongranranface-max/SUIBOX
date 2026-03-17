@@ -46,9 +46,9 @@ function EnergyBar({ count, max }: { count: number; max: number }) {
         <motion.div animate={{ left: `${percent}%` }} transition={{ type: 'spring' }} className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg" style={{ transform: 'translate(-50%, -50%)' }} />
       </div>
       <div className="flex justify-between mt-2 text-xs text-gray-500">
-        <span className={count >= 3 ? 'text-green-400' : ''}>🎯 3次</span>
-        <span className={count >= 7 ? 'text-blue-400' : ''}>⭐ 7次</span>
-        <span className={count >= 35 ? 'text-yellow-400' : ''}>💎 35次</span>
+        <span className={count >= 3 ? 'text-green-400' : ''}><img src="/fragment-common.png" alt="" className="w-4 h-4 inline-block mr-1" />3次</span>
+        <span className={count >= 7 ? 'text-blue-400' : ''}><img src="/fragment-rare.png" alt="" className="w-4 h-4 inline-block mr-1" />7次</span>
+        <span className={count >= 35 ? 'text-yellow-400' : ''}><img src="/fragment-epic.png" alt="" className="w-4 h-4 inline-block mr-1" />35次</span>
       </div>
     </div>
   );
@@ -271,7 +271,7 @@ export default function BoxPage() {
         {/* 标题 */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-5">
           <motion.h1 animate={{ textShadow: ['0 0 10px rgba(139,92,246,0.5)', '0 0 30px rgba(139,92,246,0.8)', '0 0 10px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            SUIBOX
+            SUI GIFT
           </motion.h1>
         </motion.div>
 
