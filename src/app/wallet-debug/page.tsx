@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 export default function WalletDebugPage() {
   const [status, setStatus] = useState<string>('加载中...');
   const [address, setAddress] = useState<string>('');
-  const [chainId, setChainId] = useState<string>('');
   const [logs, setLogs] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
@@ -15,50 +14,12 @@ export default function WalletDebugPage() {
 
   useEffect(() => {
     setMounted(true);
-    checkWallet();
   }, []);
 
-  const checkWallet = async () => {
-    addLog('检测钱包...');
-    
-    // @ts-ignore
-    const eth = window.ethereum;
-    if (!eth) {
-      setStatus('❌ 未找到钱包');
-      return;
-    }
-
-    addLog('找到钱包');
-
-    // 获取链ID
-    try {
-      // @ts-ignore
-      const chain = await eth.request({ method: 'eth_chainId' });
-      setChainId(chain);
-      addLog('当前链: ' + chain);
-    } catch (e) {
-      addLog('获取链失败');
-    }
-
-    // 获取账户
-    try {
-      // @ts-ignore
-      const accounts = await eth.request({ method: 'eth_requestAccounts' });
-      if (accounts && accounts.length > 0) {
-        setAddress(accounts[0]);
-        setStatus('✅ 已连接\n' + accounts[0].slice(0, 20) + '...');
-        addLog('地址: ' + accounts[0]);
-      } else {
-        setStatus('👆 点击按钮连接');
-      }
-    } catch (e) {
-      setStatus('👆 点击按钮连接');
-    }
-  };
-
-  const switchToSUI = async () => {
+  const connectSUI = async () => {
     setLogs([]);
-    addLog('开始连接...');
+    setStatus('连接中...');
+    addLog('开始连接SUI钱包...');
     
     // @ts-ignore
     const eth = window.ethereum;
@@ -67,9 +28,11 @@ export default function WalletDebugPage() {
       return;
     }
 
-    // 先尝试直接获取SUI地址
+    addLog('找到ethereum');
+
+    // 方法1: 直接用 SUI 方法
     try {
-      addLog('尝试获取SUI地址...');
+      addLog('方法1: suix_getAllAddresses');
       // @ts-ignore
       const suiAddrs = await eth.request({ 
         method: 'suix_getAllAddresses' 
@@ -77,48 +40,37 @@ export default function WalletDebugPage() {
       
       if (suiAddrs && suiAddrs.length > 0) {
         setAddress(suiAddrs[0]);
-        setStatus('✅ 连接SUI成功！\n' + suiAddrs[0]);
+        setStatus('✅ SUI钱包连接成功！\n' + suiAddrs[0]);
+        addLog('成功: ' + suiAddrs[0]);
         return;
       }
-    } catch (e) {
-      addLog('SUI方法失败');
+      addLog('未获取到SUI地址');
+    } catch (e: unknown) {
+      addLog('方法1失败: ' + (e instanceof Error ? e.message : String(e)));
     }
 
-    // 尝试切换到SUI Devnet
+    // 方法2: 尝试标准以太坊方法
     try {
-      addLog('尝试切换到SUI Devnet...');
+      addLog('方法2: eth_requestAccounts');
       // @ts-ignore
-      await eth.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x3' }], // SUI Devnet chainId
+      const accounts = await eth.request({ 
+        method: 'eth_requestAccounts' 
       });
-      addLog('切换成功');
       
-      // 重试获取地址
-      // @ts-ignore
-      const accounts = await eth.request({ method: 'eth_requestAccounts' });
       if (accounts && accounts.length > 0) {
         setAddress(accounts[0]);
+        
+        // 检查链
         // @ts-ignore
-        const chain = await eth.request({ method: 'eth_chainId' });
-        setChainId(chain);
-        setStatus('✅ 连接成功！\n' + accounts[0]);
+        const chainId = await eth.request({ method: 'eth_chainId' });
+        addLog('链ID: ' + chainId);
+        
+        setStatus('⚠️ 已连接，但可能是以太坊地址\n' + accounts[0]);
+        addLog('连接成功，但需要切换到SUI网络');
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addLog('切换失败: ' + msg);
-      
-      // 如果切换失败，直接获取账户
-      try {
-        // @ts-ignore
-        const accounts = await eth.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          setAddress(accounts[0]);
-          setStatus('⚠️ 连接成功\n' + accounts[0]);
-        }
-      } catch (e2) {
-        setStatus('❌ 连接失败');
-      }
+      addLog('方法2失败: ' + (e instanceof Error ? e.message : String(e)));
+      setStatus('❌ 连接失败');
     }
   };
 
@@ -130,7 +82,6 @@ export default function WalletDebugPage() {
       
       <div className="bg-gray-800 p-4 rounded-lg mb-4">
         <p className="whitespace-pre-wrap">{status}</p>
-        {chainId && <p className="text-sm text-gray-400 mt-2">链ID: {chainId}</p>}
       </div>
 
       {address && (
@@ -141,10 +92,10 @@ export default function WalletDebugPage() {
       )}
 
       <button 
-        onClick={switchToSUI}
+        onClick={connectSUI}
         className="px-6 py-3 bg-purple-600 rounded-lg font-bold"
       >
-        切换到SUI网络
+        连接SUI钱包
       </button>
 
       {logs.length > 0 && (
@@ -152,6 +103,13 @@ export default function WalletDebugPage() {
           <p className="text-xs">{logs.join('\n')}</p>
         </div>
       )}
+
+      <div className="mt-6 p-4 bg-yellow-900 rounded-lg">
+        <p className="font-bold">重要提示：</p>
+        <p className="text-sm mt-2">
+          请在Suiet Wallet扩展中手动切换到 SUI 网络（Devnet），然后再点击连接按钮！
+        </p>
+      </div>
     </div>
   );
 }
