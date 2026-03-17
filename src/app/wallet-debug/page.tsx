@@ -1,60 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSuiWallet } from '@/hooks/useSuiWallet';
 
 export default function WalletDebugPage() {
-  const [logs, setLogs] = useState<string[]>([]);
-  const [mounted, setMounted] = useState(false);
-
-  const addLog = (msg: string) => {
-    setLogs(prev => [...prev, msg]);
-  };
-
-  useEffect(() => {
-    setMounted(true);
-    
-    addLog('=== 检查所有全局变量 ===');
-    
-    // 检查所有可能的钱包
-    const checks = [
-      { name: 'window.ethereum', val: window.ethereum },
-      { name: 'window.sui', val: (window as unknown as Record<string, unknown>).sui },
-      { name: 'window.suiWallet', val: (window as unknown as Record<string, unknown>).suiWallet },
-      { name: 'window.phantom', val: (window as unknown as Record<string, unknown>).phantom },
-    ];
-    
-    checks.forEach(({ name, val }) => {
-      if (val) {
-        addLog('✓ ' + name + ' 存在');
-        // @ts-ignore
-        if (val.isSuiet) addLog('  -> isSuiet: true');
-        // @ts-ignore
-        if (val.isPhantom) addLog('  -> isPhantom: true');
-      } else {
-        addLog('✗ ' + name + ' 不存在');
-      }
-    });
-
-    // 检查以太坊相关的
-    // @ts-ignore
-    const eth = window.ethereum;
-    if (eth) {
-      addLog('');
-      addLog('ethereum 属性:');
-      // @ts-ignore
-      const props = Object.keys(eth).filter(k => !k.startsWith('_'));
-      props.slice(0, 20).forEach(p => addLog('  ' + p));
-    }
-  }, []);
-
-  if (!mounted) return <div className="p-8">加载中...</div>;
+  const { address, connected, loading, error, connect } = useSuiWallet();
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-2xl font-bold mb-4">🔍 检查</h1>
+      <h1 className="text-3xl font-bold mb-8">🔗 SUI 钱包连接</h1>
       
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <pre className="text-xs">{logs.join('\n')}</pre>
+      <div className="bg-gray-900 p-6 rounded-xl">
+        <p className="text-xl mb-4">
+          {loading ? '连接中...' : connected ? '✅ 已连接' : '点击按钮连接'}
+        </p>
+        
+        {address && (
+          <div className="mt-4 p-4 bg-green-900 rounded-lg">
+            <p className="text-gray-400 text-sm">钱包地址:</p>
+            <p className="font-mono text-lg break-all">{address}</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-900 rounded-lg">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
+        <button 
+          onClick={connect}
+          disabled={loading}
+          className="mt-6 px-8 py-4 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-lg font-bold disabled:opacity-50"
+        >
+          {loading ? '连接中...' : '连接钱包'}
+        </button>
       </div>
     </div>
   );

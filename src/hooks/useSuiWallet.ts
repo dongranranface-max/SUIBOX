@@ -21,7 +21,15 @@ export function useSuiWallet() {
         return false;
       }
 
-      // 尝试切换到 SUI Devnet
+      // 打印钱包类型
+      // @ts-ignore
+      console.log('钱包类型:', {
+        isOkxWallet: eth.isOkxWallet,
+        isMetaMask: eth.isMetaMask,
+        isSuiet: eth.isSuiet,
+      });
+
+      // 尝试切换到 SUI Devnet (0x3)
       try {
         // @ts-ignore
         await eth.request({
@@ -29,13 +37,13 @@ export function useSuiWallet() {
           params: [{ chainId: '0x3' }],
         });
       } catch (e) {
-        // 忽略
+        console.log('切换网络忽略');
       }
 
-      // 等待一下
-      await new Promise(r => setTimeout(r, 500));
+      // 等待网络切换
+      await new Promise(r => setTimeout(r, 1000));
 
-      // 尝试获取 SUI 地址
+      // 方法1: 尝试 SUI 地址
       try {
         // @ts-ignore
         const suiAddrs = await eth.request({ 
@@ -49,10 +57,10 @@ export function useSuiWallet() {
           return true;
         }
       } catch (e) {
-        // 忽略
+        console.log('SUI方法失败');
       }
 
-      // 获取普通账户
+      // 方法2: 获取账户
       try {
         // @ts-ignore
         const accounts = await eth.request({ 
