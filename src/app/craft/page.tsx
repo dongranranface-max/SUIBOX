@@ -1,632 +1,384 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import { Sparkles, Lock, CheckCircle, Zap, Gem, Crown, AlertTriangle, Flame, Wallet } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Sparkles, Lock, Check, Zap, Gem, Crown, Wallet, ArrowRight, RefreshCw, Layers, Box } from 'lucide-react';
+import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 type FragmentType = 'common' | 'rare' | 'epic';
-type NFTRarity = 'common' | 'rare' | 'epic';
-type SynthesizeState = 'select' | 'confirm' | 'synthesizing' | 'success';
 
-interface FragmentRecipe {
-  id: number;
-  result: { name: string; image: string; rarity: FragmentType };
-  cost: { common?: number; rare?: number; epic?: number };
-  reward: number;
-}
-
-interface NFTRecipe {
-  id: number;
-  result: { name: string; image: string; rarity: NFTRarity };
-  cost: { common?: number; rare?: number };
-  costBOX: number;
-  reward: number;
-}
-
-interface SynthesizedNFT {
-  id: string;
-  name: string;
-  image: string;
-  rarity: NFTRarity;
-  timestamp: number;
-}
-
-// NFT图片 - 合成后的成品
-const NFT_IMAGES: Record<FragmentType, { image: string; isVideo?: boolean }> = {
-  common: { image: '/nft-common.mp4', isVideo: true },
-  rare: { image: '/nft-rare.mp4', isVideo: true },
-  epic: { image: '/nft-epic.mp4', isVideo: true },
+// 碎片配置
+const FRAGMENT_CONFIG = {
+  common: { name: '普通碎片', image: '/fragment-common.png', color: 'from-gray-500 to-gray-600', border: 'border-gray-500' },
+  rare: { name: '稀有碎片', image: '/fragment-rare.png', color: 'from-blue-500 to-cyan-600', border: 'border-blue-500' },
+  epic: { name: '史诗碎片', image: '/fragment-epic.png', color: 'from-yellow-500 to-orange-600', border: 'border-yellow-500' },
 };
 
-// 碎片合成配方 - 使用NFT图片作为结果展示
-const FRAGMENT_RECIPES: FragmentRecipe[] = [
-  { id: 1, result: { name: '普通NFT', image: '/nft-common.mp4', rarity: 'common' }, cost: { common: 4 }, reward: 3 },
-  { id: 2, result: { name: '稀有NFT', image: '/nft-rare.mp4', rarity: 'rare' }, cost: { rare: 5 }, reward: 7 },
-  { id: 3, result: { name: '史诗NFT', image: '/nft-epic.mp4', rarity: 'epic' }, cost: { epic: 6 }, reward: 9 },
+// 碎片合成配方
+const FRAGMENT_RECIPES = [
+  { id: 1, result: 'common', cost: { common: 3 }, reward: 1, name: '普通NFT' },
+  { id: 2, result: 'rare', cost: { rare: 3 }, reward: 3, name: '稀有NFT' },
+  { id: 3, result: 'epic', cost: { epic: 3 }, reward: 10, name: '史诗NFT' },
 ];
 
-// 终极合成配方 - 使用NFT图片作为结果展示
-const NFT_RECIPES: NFTRecipe[] = [
-  { id: 1, result: { name: '稀有NFT', image: '/nft-rare.mp4', rarity: 'rare' }, cost: { common: 4 }, costBOX: 20, reward: 30 },
-  { id: 2, result: { name: '史诗NFT', image: '/nft-epic.mp4', rarity: 'epic' }, cost: { rare: 4 }, costBOX: 50, reward: 100 },
+// NFT合成配方
+const NFT_RECIPES = [
+  { id: 1, result: 'rare', cost: { common: 3 }, boxCost: 10, reward: 20, name: '稀有NFT' },
+  { id: 2, result: 'epic', cost: { rare: 3 }, boxCost: 30, reward: 50, name: '史诗NFT' },
 ];
 
-// 碎片图片 - 使用静态图片替代视频以提高加载速度
-const FRAGMENT_IMAGES: Record<FragmentType, string> = {
-  common: '/fragment-common.png',
-  rare: '/fragment-rare.png',
-  epic: '/fragment-epic.png',  // 改为使用图片
-};
-
-function FragImg({ src, alt, size = 40, isVideo }: { src: string; alt: string; size?: number; isVideo?: boolean }) {
-  if (src && src.startsWith('/')) {
-    if (isVideo) {
-      return <video src={src} autoPlay loop muted playsInline className="object-contain" style={{ width: size, height: size, borderRadius: '8px' }} />;
-    }
-    return <img src={src} alt={alt} className="object-contain" style={{ width: size, height: size, borderRadius: '8px' }} />;
-  }
-  return <span className="text-2xl">{alt}</span>;
-}
-
-// 合成动画
-function SynthesizingAnim() {
+function FragImg({ src, alt, size = 40 }: { src: string; alt: string; size?: number }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="text-center">
-        <motion.div animate={{ rotate: 360, scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-32 h-32 mx-auto mb-6 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-pink-500 rounded-full blur-xl animate-pulse" />
-          <div className="relative w-full h-full bg-gradient-to-br from-violet-600 to-pink-600 rounded-full flex items-center justify-center">
-            <Sparkles className="w-12 h-12 text-white" />
-          </div>
-        </motion.div>
-        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-bold mb-2">合成中...</motion.h2>
-        <p className="text-gray-400">正在融合能量</p>
-        <div className="mt-8 w-64 mx-auto">
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-gradient-to-r from-violet-500 to-pink-500" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 3, ease: 'linear' }} />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// 确认弹窗
-function ConfirmModal({ recipe, type, onConfirm, onCancel }: { 
-  recipe: FragmentRecipe | NFTRecipe; 
-  type: 'fragment' | 'ultimate';
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const isFragment = type === 'fragment';
-  const fragRecipe = recipe as FragmentRecipe;
-  const nftRecipe = recipe as NFTRecipe;
-  
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 max-w-md w-full mx-4">
-        <div className="text-center mb-6">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-full flex items-center justify-center">
-            <AlertTriangle className="w-10 h-10 text-amber-400" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">确认合成</h2>
-          <p className="text-gray-400">请确认以下信息</p>
-        </div>
-        
-        <div className="bg-black/30 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <FragImg src={isFragment ? fragRecipe.result.image : nftRecipe.result.image} alt="结果" size={48} />
-            <span className="text-xl font-bold">→</span>
-            <FragImg src={isFragment ? fragRecipe.result.image : nftRecipe.result.image} alt="结果" size={64} />
-          </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-400">产出</span>
-              <span className="font-bold">{isFragment ? fragRecipe.result.name : nftRecipe.result.name}</span>
-            </div>
-            
-            {!isFragment && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">消耗NFT</span>
-                  <span className="text-amber-400">{nftRecipe.cost.common ? '4个普通NFT' : '4个稀有NFT'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">消耗BOX</span>
-                  <span className="text-red-400">-{nftRecipe.costBOX} BOX</span>
-                </div>
-              </>
-            )}
-            
-            <div className="flex justify-between">
-              <span className="text-gray-400">获得奖励</span>
-              <span className="text-green-400">+{isFragment ? fragRecipe.reward : nftRecipe.reward} BOX</span>
-            </div>
-            
-            {!isFragment && (
-              <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-white/10">
-                <Flame className="w-4 h-4 text-orange-400" />
-                <span className="text-orange-400 text-xs">消耗的NFT将进行链上销毁</span>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold">
-            取消
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-pink-600 hover:opacity-90 rounded-xl font-bold">
-            确认合成
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// 结果弹窗
-function ResultModal({ success, result, reward, onClose }: { success: boolean; result?: string; reward?: number; onClose: () => void }) {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 12 }} className={`bg-gradient-to-br ${success ? 'from-violet-600 to-pink-600' : 'from-gray-700 to-gray-900'} rounded-3xl p-10 shadow-2xl border-2 ${success ? 'border-violet-400' : 'border-gray-600'} text-center`}>
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }} className="w-32 h-32 mx-auto mb-4">
-          {success && result ? <FragImg src={result} alt="NFT" size={128} /> : <span className="text-8xl">💨</span>}
-        </motion.div>
-        
-        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-3xl font-bold mb-2">
-          {success ? '合成成功!' : '合成失败'}
-        </motion.h2>
-        
-        {success && reward && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-green-400 mb-6 text-lg">
-            +{reward} BOX 奖励已发放
-          </motion.p>
-        )}
-        
-        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} onClick={onClose} className="px-8 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-bold">
-          继续
-        </motion.button>
-      </motion.div>
-    </motion.div>
+    <img 
+      src={src} 
+      alt={alt} 
+      className="object-contain" 
+      style={{ width: size, height: size, borderRadius: '8px' }} 
+    />
   );
 }
 
 export default function CraftPage() {
-  // 用户状态
-  const [myFragments, setMyFragments] = useState({ common: 20, rare: 10, epic: 8 });
-  const [myNFTs, setMyNFTs] = useState<SynthesizedNFT[]>([]);
-  const [myBOX, setMyBOX] = useState(500);
-  const [activeTab, setActiveTab] = useState<'fragment' | 'ultimate'>('fragment');
-  const [selectedFragRecipe, setSelectedFragRecipe] = useState<number | null>(null);
-  const [selectedNFTRecipe, setSelectedNFTRecipe] = useState<number | null>(null);
-  const [synthState, setSynthState] = useState<SynthesizeState>('select');
-  const [synthResult, setSynthResult] = useState<{ name: string; reward: number } | null>(null);
+  const wallet = useWallet();
+  const [activeTab, setActiveTab] = useState<'fragment' | 'nft'>('fragment');
+  const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
+  const [synthesizing, setSynthesizing] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [resultData, setResultData] = useState<{ type: string; reward: number } | null>(null);
 
-  // 可合成数量
-  const canFragSynth = useMemo(() => FRAGMENT_RECIPES.filter(r => {
-    const c = r.cost;
-    return (!c.common || myFragments.common >= c.common) && (!c.rare || myFragments.rare >= c.rare) && (!c.epic || myFragments.epic >= c.epic);
-  }).length, [myFragments]);
+  // 用户数据（模拟）
+  const [myFragments, setMyFragments] = useState({ common: 10, rare: 5, epic: 2 });
+  const [myNFTs, setMyNFTs] = useState({ common: 3, rare: 1, epic: 0 });
+  const [myBOX, setMyBOX] = useState(100);
 
-  const canNFTSynth = NFT_RECIPES.filter(r => {
-    const c = r.cost;
-    const nftCount = myNFTs.filter(n => n.rarity === (c.common ? 'common' : 'rare')).length;
-    return nftCount >= (c.common || c.rare || 0) && myBOX >= r.costBOX;
-  }).length;
+  // 计算可合成数量
+  const canSynth = useMemo(() => {
+    if (activeTab === 'fragment') {
+      return FRAGMENT_RECIPES.filter(r => {
+        const c = r.cost;
+        return (!c.common || myFragments.common >= c.common) &&
+               (!c.rare || myFragments.rare >= c.rare) &&
+               (!c.epic || myFragments.epic >= c.epic);
+      }).length;
+    } else {
+      return NFT_RECIPES.filter(r => {
+        const c = r.cost;
+        const nftCount = c.common ? myNFTs.common : myNFTs.rare;
+        return nftCount >= (c.common || c.rare || 0) && myBOX >= r.boxCost;
+      }).length;
+    }
+  }, [activeTab, myFragments, myNFTs, myBOX]);
 
-  // 碎片合成
-  const handleFragSynth = () => {
-    if (selectedFragRecipe === null) return;
-    setSynthState('confirm');
-  };
+  // 执行合成
+  const handleSynth = () => {
+    if (selectedRecipe === null) return;
+    setSynthesizing(true);
 
-  const confirmFragSynth = () => {
-    if (selectedFragRecipe === null) return;
-    const recipe = FRAGMENT_RECIPES[selectedFragRecipe];
-    const c = recipe.cost;
-    
-    setSynthState('synthesizing');
-    
     setTimeout(() => {
-      // 扣除碎片
-      setMyFragments(prev => ({
-        common: prev.common - (c.common || 0),
-        rare: prev.rare - (c.rare || 0),
-        epic: prev.epic - (c.epic || 0)
-      }));
+      if (activeTab === 'fragment') {
+        const recipe = FRAGMENT_RECIPES[selectedRecipe];
+        const c = recipe.cost;
+        
+        // 扣除碎片
+        setMyFragments(prev => ({
+          common: prev.common - (c.common || 0),
+          rare: prev.rare - (c.rare || 0),
+          epic: prev.epic - (c.epic || 0)
+        }));
+        
+        // 增加NFT
+        setMyNFTs(prev => ({
+          ...prev,
+          [recipe.result]: prev[recipe.result as keyof typeof prev] + 1
+        }));
+        
+        // 增加BOX奖励
+        setMyBOX(prev => prev + recipe.reward);
+        
+        setResultData({ type: recipe.result, reward: recipe.reward });
+      } else {
+        const recipe = NFT_RECIPES[selectedRecipe];
+        const c = recipe.cost;
+        
+        // 扣除BOX
+        setMyBOX(prev => prev - recipe.boxCost + recipe.reward);
+        
+        // 消耗NFT并升级
+        setMyNFTs(prev => ({
+          common: prev.common - (c.common || 0),
+          rare: prev.rare - (c.rare || 0),
+          epic: prev.epic + 1
+        }));
+        
+        setResultData({ type: recipe.result, reward: recipe.reward });
+      }
       
-      // 增加BOX奖励
-      setMyBOX(prev => prev + recipe.reward);
-      
-      // 添加NFT
-      const newNFT: SynthesizedNFT = {
-        id: `${Date.now()}`,
-        name: `${recipe.result.name} #${String(myNFTs.length + 1).padStart(3, '0')}`,
-        image: recipe.result.image,
-        rarity: recipe.result.rarity,
-        timestamp: Date.now()
-      };
-      setMyNFTs(prev => [...prev, newNFT]);
-      
-      setSynthResult({ name: recipe.result.image, reward: recipe.reward });
-      setSynthState('success');
+      setSynthesizing(false);
+      setShowResult(true);
+      setSelectedRecipe(null);
     }, 3000);
-  };
-
-  // 终极合成
-  const handleNFTSynth = () => {
-    if (selectedNFTRecipe === null) return;
-    setSynthState('confirm');
-  };
-
-  const confirmNFTSynth = () => {
-    if (selectedNFTRecipe === null) return;
-    const recipe = NFT_RECIPES[selectedNFTRecipe];
-    const c = recipe.cost;
-    
-    setSynthState('synthesizing');
-    
-    setTimeout(() => {
-      // 扣除BOX
-      setMyBOX(prev => prev - recipe.costBOX + recipe.reward);
-      
-      // 销毁NFT并添加新NFT
-      const nftsToRemove = c.common || c.rare || 0;
-      const rarityToRemove = c.common ? 'common' : 'rare';
-      
-      // 过滤掉要销毁的NFT
-      const remainingNFTs = myNFTs.filter(n => n.rarity !== rarityToRemove).slice(0, -nftsToRemove);
-      
-      const newNFT: SynthesizedNFT = {
-        id: `${Date.now()}`,
-        name: `${recipe.result.name} #${String(remainingNFTs.length + 1).padStart(3, '0')}`,
-        image: recipe.result.image,
-        rarity: recipe.result.rarity,
-        timestamp: Date.now()
-      };
-      
-      setMyNFTs([...remainingNFTs, newNFT]);
-      
-      setSynthResult({ name: recipe.result.image, reward: recipe.reward });
-      setSynthState('success');
-    }, 3000);
-  };
-
-  const handleClose = () => {
-    setSynthState('select');
-    setSelectedFragRecipe(null);
-    setSelectedNFTRecipe(null);
-    setSynthResult(null);
   };
 
   return (
     <div className="min-h-screen bg-black text-white">
-      
-      <div className="max-w-6xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="font-bold text-2xl">⚗️ 碎片合成</h1>
-          <div className="flex items-center gap-4">
-            <div className="bg-amber-500/20 px-4 py-2 rounded-xl flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-400 font-bold">{myBOX}</span> BOX
-            </div>
-            <div className="text-sm text-gray-400">已合成 {myNFTs.length} 个NFT</div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2 mt-4">
-          <button onClick={() => setActiveTab('fragment')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition ${activeTab === 'fragment' ? 'bg-violet-600' : 'bg-white/5 hover:bg-white/10'}`}>
-            <Sparkles className="w-5 h-5" />碎片合成
-          </button>
-          <button onClick={() => setActiveTab('ultimate')} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition ${activeTab === 'ultimate' ? 'bg-amber-600' : 'bg-white/5 hover:bg-white/10'}`}>
-            <Crown className="w-5 h-5" />终极合成
-          </button>
-        </div>
+      {/* 背景 */}
+      <div className="fixed inset-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-violet-950 via-black to-purple-950" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-600/20 rounded-full blur-[150px]" />
       </div>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* 碎片合成 */}
-        {activeTab === 'fragment' && (
-          <>
-            {/* 我的碎片 */}
-            <div className="mb-8">
-              <h2 className="font-bold text-lg mb-4">🎒 我的碎片</h2>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-gray-600/20 to-gray-700/20 rounded-xl p-4 border border-gray-500/30">
-                  <div className="flex items-center gap-3">
-                    <FragImg src={FRAGMENT_IMAGES.common} alt="普通" size={32} />
-                    <div>
-                      <div className="font-bold text-xl">{myFragments.common}</div>
-                      <div className="text-xs text-gray-400">普通碎片</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
-                  <div className="flex items-center gap-3">
-                    <FragImg src={FRAGMENT_IMAGES.rare} alt="稀有" size={32} isVideo={FRAGMENT_IMAGES.rare.endsWith('.mp4')} />
-                    <div>
-                      <div className="font-bold text-xl text-blue-400">{myFragments.rare}</div>
-                      <div className="text-xs text-gray-400">稀有碎片</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl p-4 border border-purple-500/30">
-                  <div className="flex items-center gap-3">
-                    <FragImg src={FRAGMENT_IMAGES.epic} alt="史诗" size={32} isVideo={FRAGMENT_IMAGES.epic.endsWith('.mp4')} />
-                    <div>
-                      <div className="font-bold text-xl text-purple-400">{myFragments.epic}</div>
-                      <div className="text-xs text-gray-400">史诗碎片</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
+        {/* 标题 */}
+        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+            合成
+          </h1>
+          <p className="text-gray-400">碎片合成NFT，获得BOX奖励！</p>
+        </motion.div>
 
-            {/* 合成配方 */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-lg">🧪 碎片合成配方</h2>
-                <span className="text-sm text-gray-400">可合成: {canFragSynth} 种</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {FRAGMENT_RECIPES.map((recipe, i) => {
-                  const c = recipe.cost;
-                  const can = (!c.common || myFragments.common >= c.common) && (!c.rare || myFragments.rare >= c.rare) && (!c.epic || myFragments.epic >= c.epic);
-                  
-                  return (
-                    <motion.div 
-                      key={i} 
-                      whileHover={{ scale: 1.02 }} 
-                      onClick={() => setSelectedFragRecipe(i)}
-                      className={`
-                        relative p-5 rounded-2xl border-2 cursor-pointer transition-all
-                        ${selectedFragRecipe === i ? 'border-violet-500 bg-violet-600/20' : 'border-white/10 bg-white/5'}
-                        ${!can && 'opacity-60'}
-                      `}
-                    >
-                      {selectedFragRecipe === i && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-white" />
-                        </motion.div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        {/* 碎片输入 */}
-                        <div className="flex items-center gap-2">
-                          <FragImg src={FRAGMENT_IMAGES[recipe.result.rarity]} alt="碎片" size={36} />
-                          <div>
-                            <div className="font-bold text-sm">{recipe.result.rarity === 'common' ? '4普通碎片' : recipe.result.rarity === 'rare' ? '5稀有碎片' : '6史诗碎片'}</div>
-                          </div>
-                        </div>
-                        <div className="text-gray-400">→</div>
-                        {/* NFT输出 */}
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="font-bold">{recipe.result.name}</div>
-                          </div>
-                          <FragImg src={recipe.result.image} alt={recipe.result.name} size={36} isVideo={recipe.result.image.endsWith('.mp4')} />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-center gap-2 py-2 bg-black/30 rounded-xl text-sm">
-                        <span className="text-green-400">+{recipe.reward} BOX 奖励</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-center gap-1 text-green-400 text-sm">
-                        <Zap className="w-4 h-4" />+{recipe.reward} BOX
-                      </div>
-                      
-                      {!can && (
-                        <div className="mt-2 flex items-center justify-center gap-1 text-red-400 text-sm">
-                          <Lock className="w-4 h-4" />材料不足
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+        {/* 用户资产 */}
+        {wallet.connected && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-gray-900/80 rounded-xl p-4 text-center">
+              <FragImg src={FRAGMENT_CONFIG.common.image} alt="普通" size={32} />
+              <p className="text-2xl font-black text-white mt-1">{myFragments.common}</p>
+              <p className="text-xs text-gray-500">普通碎片</p>
             </div>
-
-            {/* 合成按钮 */}
-            <div className="flex justify-center mb-12">
-              <motion.button 
-                whileHover={{ scale: selectedFragRecipe !== null ? 1.05 : 1 }} 
-                onClick={handleFragSynth} 
-                disabled={selectedFragRecipe === null} 
-                className={`
-                  px-12 py-4 rounded-2xl font-bold text-xl flex items-center gap-2
-                  ${selectedFragRecipe !== null ? 'bg-gradient-to-r from-violet-600 to-pink-600 hover:shadow-lg' : 'bg-gray-600 cursor-not-allowed'}
-                `}
-              >
-                <Sparkles className="w-5 h-5" />
-                {selectedFragRecipe !== null ? '开始合成' : '选择配方'}
-              </motion.button>
+            <div className="bg-gray-900/80 rounded-xl p-4 text-center">
+              <FragImg src={FRAGMENT_CONFIG.rare.image} alt="稀有" size={32} />
+              <p className="text-2xl font-black text-blue-400 mt-1">{myFragments.rare}</p>
+              <p className="text-xs text-gray-500">稀有碎片</p>
             </div>
-          </>
+            <div className="bg-gray-900/80 rounded-xl p-4 text-center">
+              <FragImg src={FRAGMENT_CONFIG.epic.image} alt="史诗" size={32} />
+              <p className="text-2xl font-black text-yellow-400 mt-1">{myFragments.epic}</p>
+              <p className="text-xs text-gray-500">史诗碎片</p>
+            </div>
+            <div className="bg-gray-900/80 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-green-400 mt-1">{myBOX}</p>
+              <p className="text-xs text-gray-500">BOX余额</p>
+            </div>
+          </motion.div>
         )}
 
-        {/* 终极合成 */}
-        {activeTab === 'ultimate' && (
-          <>
-            {/* 我的NFT */}
-            <div className="mb-8">
-              <h2 className="font-bold text-lg mb-4">🏆 我的NFT</h2>
-              <div className="grid grid-cols-6 gap-4">
-                {myNFTs.length > 0 ? (
-                  myNFTs.map((nft) => (
-                    <motion.div 
-                      key={nft.id}
-                      initial={{ scale: 0, opacity: 0 }} 
-                      animate={{ scale: 1, opacity: 1 }} 
-                      className={`
-                        p-3 rounded-xl
-                        ${nft.rarity === 'epic' ? 'bg-purple-900/30 border border-purple-500/30' : ''}
-                        ${nft.rarity === 'rare' ? 'bg-blue-900/30 border border-blue-500/30' : ''}
-                        ${nft.rarity === 'common' ? 'bg-gray-800/30 border border-gray-500/30' : ''}
-                      `}
-                    >
-                      <FragImg src={nft.image} alt={nft.name} size={48} />
-                      <div className="mt-1 text-xs truncate">{nft.name}</div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="col-span-6 text-center py-8 text-gray-500">暂无NFT</div>
-                )}
-              </div>
-            </div>
-
-            {/* 终极合成配方 */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-lg">👑 终极合成配方</h2>
-                <span className="text-sm text-gray-400">可合成: {canNFTSynth} 种</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {NFT_RECIPES.map((recipe, i) => {
-                  const c = recipe.cost;
-                  const rarity = c.common ? 'common' : 'rare';
-                  const nftCount = myNFTs.filter(n => n.rarity === rarity).length;
-                  const can = nftCount >= (c.common || c.rare || 0) && myBOX >= recipe.costBOX;
-                  
-                  return (
-                    <motion.div 
-                      key={i} 
-                      whileHover={{ scale: 1.02 }} 
-                      onClick={() => setSelectedNFTRecipe(i)}
-                      className={`
-                        relative p-5 rounded-2xl border-2 cursor-pointer transition-all
-                        ${selectedNFTRecipe === i ? 'border-amber-500 bg-amber-600/20' : 'border-white/10 bg-white/5'}
-                        ${!can && 'opacity-60'}
-                      `}
-                    >
-                      {selectedNFTRecipe === i && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-white" />
-                        </motion.div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        {/* NFT输入 */}
-                        <div className="flex items-center gap-2">
-                          <FragImg src={c.common ? NFT_IMAGES.common.image : NFT_IMAGES.rare.image} alt="NFT" size={36} isVideo={(c.common ? NFT_IMAGES.common.isVideo : NFT_IMAGES.rare.isVideo)} />
-                          <div>
-                            <div className="font-bold text-sm">{c.common ? '4个普通NFT' : '4个稀有NFT'}</div>
-                          </div>
-                        </div>
-                        <div className="text-gray-400">→</div>
-                        {/* NFT输出 */}
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="font-bold">{recipe.result.name}</div>
-                          </div>
-                          <FragImg src={recipe.result.image} alt={recipe.result.name} size={36} isVideo={recipe.result.image.endsWith('.mp4')} />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-center gap-2 py-2 bg-black/30 rounded-xl text-sm mb-2">
-                        <span className="text-gray-400">消耗BOX:</span>
-                        <span className={myBOX >= recipe.costBOX ? 'text-green-400' : 'text-red-400'}>-{recipe.costBOX} BOX</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-center gap-1 text-green-400 text-sm">
-                        <Zap className="w-4 h-4" />+{recipe.reward} BOX
-                        <Flame className="w-3 h-3 text-orange-400 ml-1" />
-                      </div>
-                      
-                      {!can && (
-                        <div className="mt-2 flex items-center justify-center gap-1 text-red-400 text-sm">
-                          <Lock className="w-4 h-4" />
-                          {myBOX < recipe.costBOX ? 'BOX不足' : 'NFT不足'}
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 合成按钮 */}
-            <div className="flex justify-center">
-              <motion.button 
-                whileHover={{ scale: selectedNFTRecipe !== null ? 1.05 : 1 }} 
-                onClick={handleNFTSynth} 
-                disabled={selectedNFTRecipe === null} 
-                className={`
-                  px-12 py-4 rounded-2xl font-bold text-xl flex items-center gap-2
-                  ${selectedNFTRecipe !== null ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:shadow-lg' : 'bg-gray-600 cursor-not-allowed'}
-                `}
-              >
-                <Crown className="w-5 h-5" />
-                {selectedNFTRecipe !== null ? '开始终极合成' : '选择配方'}
-              </motion.button>
-            </div>
-          </>
-        )}
-
-        {/* 已合成NFT展示 */}
-        <div className="mt-12">
-          <h2 className="font-bold text-lg mb-4">🏆 已合成的NFT</h2>
-          {myNFTs.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {myNFTs.map((nft) => (
-                <motion.div 
-                  key={nft.id}
-                  initial={{ scale: 0, opacity: 0 }} 
-                  animate={{ scale: 1, opacity: 1 }} 
-                  className={`
-                    p-4 rounded-xl
-                    ${nft.rarity === 'epic' ? 'bg-purple-900/30 border border-purple-500/30' : ''}
-                    ${nft.rarity === 'rare' ? 'bg-blue-900/30 border border-blue-500/30' : ''}
-                    ${nft.rarity === 'common' ? 'bg-gray-800/30 border border-gray-500/30' : ''}
-                  `}
-                >
-                  <FragImg src={nft.image} alt={nft.name} size={64} />
-                  <div className="mt-2 text-sm font-medium truncate">{nft.name}</div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <Gem className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>暂无合成的NFT</p>
-            </div>
-          )}
+        {/* Tab切换 */}
+        <div className="flex gap-2 mb-6">
+          {[
+            { key: 'fragment', label: '碎片合成', icon: Layers },
+            { key: 'nft', label: 'NFT升级', icon: Crown },
+          ].map(tab => (
+            <motion.button
+              key={tab.key}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => { setActiveTab(tab.key as 'fragment' | 'nft'); setSelectedRecipe(null); }}
+              className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 ${
+                activeTab === tab.key 
+                  ? 'bg-gradient-to-r from-violet-600 to-pink-600' 
+                  : 'bg-gray-800 text-gray-400'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              {tab.label}
+            </motion.button>
+          ))}
         </div>
-      </main>
 
-      {/* 动画层 */}
-      <AnimatePresence>
-        {synthState === 'synthesizing' && <SynthesizingAnim />}
-        {synthState === 'confirm' && selectedFragRecipe !== null && (
-          <ConfirmModal 
-            recipe={FRAGMENT_RECIPES[selectedFragRecipe]} 
-            type="fragment" 
-            onConfirm={confirmFragSynth} 
-            onCancel={() => setSynthState('select')} 
-          />
+        {/* 合成配方 */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          {activeTab === 'fragment' ? (
+            FRAGMENT_RECIPES.map((recipe, index) => {
+              const c = recipe.cost;
+              const canDo = (!c.common || myFragments.common >= c.common) &&
+                           (!c.rare || myFragments.rare >= c.rare) &&
+                           (!c.epic || myFragments.epic >= c.epic);
+              const resultConfig = FRAGMENT_CONFIG[recipe.result as keyof FragmentType];
+              
+              return (
+                <motion.div
+                  key={recipe.id}
+                  whileHover={{ scale: 1.01 }}
+                  onClick={() => canDo && setSelectedRecipe(index)}
+                  className={`bg-gray-900/80 rounded-xl p-4 border-2 cursor-pointer transition-all ${
+                    selectedRecipe === index 
+                      ? 'border-violet-500 bg-violet-500/10' 
+                      : canDo 
+                        ? 'border-gray-700 hover:border-gray-600' 
+                        : 'border-gray-800 opacity-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* 消耗 */}
+                      <div className="flex items-center gap-2">
+                        {c.common && (
+                          <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg">
+                            <FragImg src={FRAGMENT_CONFIG.common.image} alt="" size={20} />
+                            <span className="text-sm">×{c.common}</span>
+                          </div>
+                        )}
+                        {c.rare && (
+                          <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg">
+                            <FragImg src={FRAGMENT_CONFIG.rare.image} alt="" size={20} />
+                            <span className="text-sm">×{c.rare}</span>
+                          </div>
+                        )}
+                        {c.epic && (
+                          <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg">
+                            <FragImg src={FRAGMENT_CONFIG.epic.image} alt="" size={20} />
+                            <span className="text-sm">×{c.epic}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <ArrowRight className="w-5 h-5 text-gray-500" />
+                      
+                      {/* 产出 */}
+                      <div className="flex items-center gap-2">
+                        <FragImg src={resultConfig.image} alt={resultConfig.name} size={32} />
+                        <span className="font-bold">{recipe.name}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <p className="text-green-400 font-bold">+{recipe.reward} BOX</p>
+                      {canDo ? (
+                        <Check className="w-5 h-5 text-green-400 ml-auto" />
+                      ) : (
+                        <Lock className="w-5 h-5 text-gray-600 ml-auto" />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            NFT_RECIPES.map((recipe, index) => {
+              const c = recipe.cost;
+              const nftCount = c.common ? myNFTs.common : myNFTs.rare;
+              const canDo = nftCount >= (c.common || c.rare || 0) && myBOX >= recipe.boxCost;
+              
+              return (
+                <motion.div
+                  key={recipe.id}
+                  whileHover={{ scale: 1.01 }}
+                  onClick={() => canDo && setSelectedRecipe(index)}
+                  className={`bg-gray-900/80 rounded-xl p-4 border-2 cursor-pointer transition-all ${
+                    selectedRecipe === index 
+                      ? 'border-violet-500 bg-violet-500/10' 
+                      : canDo 
+                        ? 'border-gray-700 hover:border-gray-600' 
+                        : 'border-gray-800 opacity-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        {c.common && (
+                          <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg">
+                            <span className="text-sm">普通NFT ×{c.common}</span>
+                          </div>
+                        )}
+                        {c.rare && (
+                          <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg">
+                            <span className="text-sm">稀有NFT ×{c.rare}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1 bg-red-500/20 px-2 py-1 rounded-lg">
+                          <span className="text-sm text-red-400">-{recipe.boxCost} BOX</span>
+                        </div>
+                      </div>
+                      
+                      <ArrowRight className="w-5 h-5 text-gray-500" />
+                      
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-6 h-6 text-yellow-400" />
+                        <span className="font-bold">{recipe.name}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <p className="text-green-400 font-bold">+{recipe.reward} BOX</p>
+                      {canDo ? (
+                        <Check className="w-5 h-5 text-green-400 ml-auto" />
+                      ) : (
+                        <Lock className="w-5 h-5 text-gray-600 ml-auto" />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </motion.div>
+
+        {/* 合成按钮 */}
+        {wallet.connected && selectedRecipe !== null && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSynth}
+              disabled={synthesizing}
+              className="w-full py-4 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold text-lg flex items-center justify-center gap-2"
+            >
+              {synthesizing ? (
+                <>
+                  <RefreshCw className="w-6 h-6 animate-spin" />
+                  合成中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-6 h-6" />
+                  开始合成
+                </>
+              )}
+            </motion.button>
+          </motion.div>
         )}
-        {synthState === 'confirm' && selectedNFTRecipe !== null && (
-          <ConfirmModal 
-            recipe={NFT_RECIPES[selectedNFTRecipe]} 
-            type="ultimate" 
-            onConfirm={confirmNFTSynth} 
-            onCancel={() => setSynthState('select')} 
-          />
+
+        {/* 未连接钱包 */}
+        {!wallet.connected && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 bg-gray-900/80 rounded-2xl p-8 text-center border border-gray-700">
+            <Wallet className="w-16 h-16 mx-auto mb-4 text-gray-500" />
+            <p className="text-gray-400 mb-4">连接钱包进行合成</p>
+            <ConnectButton />
+          </motion.div>
         )}
-        {synthState === 'success' && (
-          <ResultModal 
-            success={!!synthResult} 
-            result={synthResult?.name} 
-            reward={synthResult?.reward} 
-            onClose={handleClose} 
-          />
-        )}
-      </AnimatePresence>
+      </div>
+
+      {/* 合成中动画 */}
+      {synthesizing && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+          <div className="text-center">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity }} className="w-24 h-24 mx-auto mb-6">
+              <div className="w-full h-full bg-gradient-to-r from-violet-500 to-pink-500 rounded-full flex items-center justify-center">
+                <Sparkles className="w-12 h-12 text-white" />
+              </div>
+            </motion.div>
+            <p className="text-2xl font-bold">合成中...</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* 结果弹窗 */}
+      {showResult && resultData && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={() => setShowResult(false)}>
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className={`bg-gradient-to-br ${FRAGMENT_CONFIG[resultData.type as keyof FragmentType]?.color || 'from-gray-600 to-gray-800'} rounded-2xl p-8 text-center max-w-sm`} onClick={e => e.stopPropagation()}>
+            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-6xl mb-4">
+              {resultData.type === 'epic' ? '💎' : resultData.type === 'rare' ? '⭐' : '🎯'}
+            </motion.div>
+            <h2 className="text-2xl font-black mb-2">
+              {resultData.type === 'epic' ? '史诗NFT' : resultData.type === 'rare' ? '稀有NFT' : '普通NFT'}
+            </h2>
+            <p className="text-green-400 font-bold mb-4">+{resultData.reward} BOX</p>
+            <button onClick={() => setShowResult(false)} className="px-8 py-3 bg-white text-black rounded-full font-bold">
+              收下
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
