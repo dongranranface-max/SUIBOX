@@ -161,8 +161,8 @@ export default function CraftPage() {
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div><p className="text-xs text-gray-500">Common NFT</p><p className="text-sm font-bold text-green-400">∞ Unlimited</p></div>
-                  <div><p className="text-xs text-gray-500">Rare NFT</p><p className="text-sm font-bold text-blue-400">2M</p></div>
-                  <div><p className="text-xs text-gray-500">Epic NFT</p><p className="text-sm font-bold text-yellow-400">1M</p></div>
+                  <div><p className="text-xs text-gray-500">Rare NFT</p><p className="text-sm font-bold text-blue-400">40M</p></div>
+                  <div><p className="text-xs text-gray-500">Epic NFT</p><p className="text-sm font-bold text-yellow-400">10M</p></div>
                 </div>
               </div>
             </div>
