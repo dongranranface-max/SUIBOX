@@ -371,10 +371,16 @@ export default function InvitePage() {
                 <p className="text-2xl font-black text-yellow-400">{userData.totalBoxEarned}</p>
                 <p className="text-xs text-gray-400">已获得BOX</p>
               </div>
-              <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+              <motion.a
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                href={`https://suiscan.xyz/testnet/address/${wallet.account?.address}`}
+                target="_blank"
+                className="bg-gray-800/50 rounded-xl p-4 text-center cursor-pointer block"
+              >
                 <p className="text-2xl font-black text-orange-400">{userData.pendingBox}</p>
-                <p className="text-xs text-gray-400">待领取</p>
-              </div>
+                <p className="text-xs text-gray-400">待领取 →</p>
+              </motion.a>
             </div>
           </motion.div>
         )}
