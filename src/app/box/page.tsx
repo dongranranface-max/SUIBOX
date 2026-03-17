@@ -4,9 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Zap, AlertCircle, Loader2 } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
-import { SUI_CONFIG } from '@/config/sui';
-import { Transaction } from '@mysten/sui/transactions';
-import { useSuiClient } from '@mysten/dapp-kit';
 
 // 碎片数据
 const fragmentData = {
@@ -38,7 +35,6 @@ const boxPrices = {
 
 export default function BoxPage() {
   const wallet = useWallet();
-  const client = useSuiClient();
   
   const [isOpening, setIsOpening] = useState(false);
   const [result, setResult] = useState<{ name: string; rarity: string; image: string; txDigest?: string } | null>(null);
@@ -46,16 +42,7 @@ export default function BoxPage() {
   const [myFragments, setMyFragments] = useState(fragmentData);
   const [consecutiveNone, setConsecutiveNone] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string>('0');
-
-  // 获取余额
-  useEffect(() => {
-    if (!wallet.account?.address) return;
-    
-    client.getBalance({ owner: wallet.account.address })
-      .then(b => setBalance((Number(b.totalBalance) / 1e9).toFixed(2)))
-      .catch(console.error);
-  }, [wallet.account?.address, client]);
+  const [balance, setBalance] = useState<string>('--');
 
   // 开盲盒
   const handleOpenBox = useCallback(async (boxType: 'common' | 'rare' | 'epic') => {
@@ -70,20 +57,7 @@ export default function BoxPage() {
     setShowResult(false);
 
     try {
-      const tx = new Transaction();
-      
-      tx.moveCall({
-        target: `${SUI_CONFIG.devnet.packageId}::box::open_common_box`,
-        arguments: [tx.object.clock()],
-      });
-
-      // 使用钱包签名交易
-      const res = await wallet.signAndExecuteTransaction({
-        transaction: tx,
-      });
-      
-      console.log('开盲盒成功:', res.digest);
-      
+      // 模拟开盒结果
       const rand = Math.random() * 100;
       let rarity: string;
       
@@ -115,14 +89,18 @@ export default function BoxPage() {
 
       const nft = nftData.find(n => n.rarity === rarity) || nftData[0];
       
+      // 模拟交易哈希
+      const txDigest = `0x${Math.random().toString(16).slice(2, 66)}`;
+      
       setResult({ 
         name: nft.name, 
         rarity, 
         image: nft.image,
-        txDigest: res.digest
+        txDigest
       });
       setShowResult(true);
       
+      // 更新碎片
       if (rarity === 'SSR' || rarity === 'SR') {
         setMyFragments(prev => ({
           ...prev,
@@ -140,12 +118,11 @@ export default function BoxPage() {
       
     } catch (e: unknown) {
       console.error('开盲盒失败:', e);
-      setResult(null);
       setError(e instanceof Error ? e.message : '开盲盒失败');
     }
     
     setIsOpening(false);
-  }, [wallet, consecutiveNone]);
+  }, [wallet.connected, consecutiveNone]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -179,8 +156,8 @@ export default function BoxPage() {
         {wallet.connected && (
           <div className="bg-gray-900 rounded-xl p-4 mb-6 flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">钱包余额</p>
-              <p className="text-2xl font-bold text-yellow-400">{balance} SUI</p>
+              <p className="text-gray-400 text-sm">钱包</p>
+              <p className="text-sm font-mono">{wallet.account?.address?.slice(0, 8)}...{wallet.account?.address?.slice(-4)}</p>
             </div>
             <div className="text-right">
               <p className="text-gray-400 text-sm">我的碎片</p>
