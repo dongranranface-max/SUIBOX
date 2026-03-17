@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export default function WalletDebugPage() {
-  const [status, setStatus] = useState<string>('检测中...');
+  const [status, setStatus] = useState<string>('加载中...');
   const [logs, setLogs] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
@@ -13,68 +13,97 @@ export default function WalletDebugPage() {
 
   useEffect(() => {
     setMounted(true);
-    detectWallet();
   }, []);
 
-  const detectWallet = async () => {
-    addLog('=== 检测钱包 ===');
+  const connectSUI = async () => {
+    setLogs([]);
+    setStatus('正在连接SUI...');
+    addLog('=== 开始连接SUI ===');
     
     // @ts-ignore
     const eth = window.ethereum;
-    
     if (!eth) {
       setStatus('❌ 未找到钱包');
       return;
     }
 
-    addLog('找到 ethereum');
-
-    // 检查钱包支持的方法
-    addLog('检查钱包能力...');
-    
-    // 检查是否是 Suiet
-    // @ts-ignore
-    if (eth.isSuiet) {
-      addLog('✓ 检测到 Suiet Wallet');
+    // 先尝试添加SUI网络
+    try {
+      addLog('尝试添加SUI Devnet...');
+      // @ts-ignore
+      await eth.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0x3',
+          chainName: 'Sui Devnet',
+          nativeCurrency: { name: 'SUI', symbol: 'SUI', decimals: 9 },
+          rpcUrls: ['https://fullnode.devnet.sui.io'],
+          blockExplorerUrls: ['https://explorer.sui.io'],
+        }],
+      });
+      addLog('添加网络成功');
+    } catch (e: unknown) {
+      addLog('添加网络: ' + (e instanceof Error ? e.message : String(e)));
     }
-    
-    // 检查是否是 SUI 链
+
+    // 切换到SUI网络
+    try {
+      addLog('尝试切换到SUI Devnet...');
+      // @ts-ignore
+      await eth.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x3' }],
+      });
+      addLog('切换成功');
+    } catch (e: unknown) {
+      addLog('切换: ' + (e instanceof Error ? e.message : String(e)));
+    }
+
+    // 等待一下
+    await new Promise(r => setTimeout(r, 1000));
+
+    // 检查当前链
     try {
       // @ts-ignore
       const chainId = await eth.request({ method: 'eth_chainId' });
-      addLog('当前链ID: ' + chainId);
-    } catch (e) {
-      addLog('无法获取链ID');
-    }
+      addLog('当前链: ' + chainId);
+    } catch (e) {}
 
-    // 尝试 SUI 方法
+    // 获取SUI地址
     try {
+      addLog('获取SUI地址...');
       // @ts-ignore
-      const result = await eth.request({ 
+      const suiAddrs = await eth.request({ 
         method: 'suix_getAllAddresses' 
       });
-      addLog('✓ SUI方法成功: ' + JSON.stringify(result));
-      if (result && result.length > 0) {
-        setStatus('✅ SUI钱包: ' + result[0]);
+      
+      if (suiAddrs && suiAddrs.length > 0) {
+        setStatus('✅ SUI连接成功！\n\n' + suiAddrs[0]);
+        addLog('SUI地址: ' + suiAddrs[0]);
+        return;
       }
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        addLog('✗ SUI方法: ' + e.message);
-      }
+      addLog('SUI方法: ' + (e instanceof Error ? e.message : String(e)));
     }
 
-    // 尝试标准账户
+    // 获取普通账户
     try {
+      addLog('获取账户...');
       // @ts-ignore
       const accounts = await eth.request({ 
         method: 'eth_requestAccounts' 
       });
+      
       if (accounts && accounts.length > 0) {
-        addLog('✓ 以太坊账户: ' + accounts[0]);
-        setStatus('已连接: ' + accounts[0].slice(0, 16) + '...\n\n提示: 请确保钱包网络是SUI Devnet');
+        // @ts-ignore
+        const chainId = await eth.request({ method: 'eth_chainId' });
+        setStatus('⚠️ 连接成功\n' + accounts[0] + '\n\n当前链: ' + chainId);
+        addLog('地址: ' + accounts[0]);
+        addLog('链: ' + chainId);
       }
-    } catch (e) {
-      addLog('✗ 获取账户失败');
+    } catch (e: unknown) {
+      addLog('失败: ' + (e instanceof Error ? e.message : String(e)));
+      setStatus('❌ 连接失败');
     }
   };
 
@@ -82,19 +111,21 @@ export default function WalletDebugPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-2xl font-bold mb-4">🔍 钱包检测</h1>
+      <h1 className="text-2xl font-bold mb-4">🔗 SUI钱包</h1>
       
       <div className="bg-gray-800 p-4 rounded-lg mb-4">
         <p className="whitespace-pre-wrap">{status}</p>
       </div>
 
-      <button onClick={detectWallet} className="px-6 py-3 bg-purple-600 rounded-lg font-bold mb-4">
-        重新检测
+      <button onClick={connectSUI} className="px-6 py-3 bg-purple-600 rounded-lg font-bold mb-4">
+        获取SUI地址
       </button>
 
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <pre className="text-xs">{logs.join('\n')}</pre>
-      </div>
+      {logs.length > 0 && (
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <pre className="text-xs">{logs.join('\n')}</pre>
+        </div>
+      )}
     </div>
   );
 }
