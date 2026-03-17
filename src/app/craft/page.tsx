@@ -128,9 +128,9 @@ export default function CraftPage() {
         {/* 标题 */}
         <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-6">
           <motion.h1 animate={{ textShadow: ['0 0 20px rgba(139,92,246,0.5)', '0 0 40px rgba(139,92,246,0.8)', '0 0 20px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            🔬 合成实验室
+            🔬 Laboratory
           </motion.h1>
-          <p className="text-gray-400 mt-1 text-sm">将碎片转化为NFT，获得丰厚奖励</p>
+          <p className="text-gray-400 mt-1 text-sm">Transform fragments into NFTs and earn rewards</p>
         </motion.div>
 
         {/* 资产面板 */}
