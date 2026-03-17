@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 export default function WalletDebugPage() {
   const [status, setStatus] = useState<string>('加载中...');
   const [address, setAddress] = useState<string>('');
+  const [error, setError] = useState<string>('');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -23,10 +24,10 @@ export default function WalletDebugPage() {
       return;
     }
 
-    setStatus('✅ 找到钱包扩展');
+    setStatus('✅ 找到钱包扩展\n请点击按钮连接');
 
+    // 自动尝试获取地址
     try {
-      // 尝试获取 SUI 地址 - 使用 SUI 链的方法
       // @ts-ignore
       const suiAddresses = await ethereum.request({ 
         method: 'suix_getAllAddresses' 
@@ -34,29 +35,26 @@ export default function WalletDebugPage() {
       
       if (suiAddresses && suiAddresses.length > 0) {
         setAddress(suiAddresses[0]);
-        setStatus('✅ 已连接 SUI 钱包！');
-        return;
+        setStatus('✅ 已自动连接 SUI 钱包！');
       }
     } catch (e) {
-      // 忽略，继续尝试
+      // 忽略
     }
-
-    // 如果没有 SUI 地址，显示需要连接
-    setStatus('👆 点击下方按钮连接SUI钱包');
   };
 
   const handleConnect = async () => {
+    setError('');
     // @ts-ignore
     const ethereum = window.ethereum;
     if (!ethereum) {
-      setStatus('❌ 未找到钱包');
+      setError('未找到钱包');
       return;
     }
 
-    setStatus('🔄 请求连接...');
+    setStatus('🔄 请求连接...\n请在钱包中确认');
 
     try {
-      // 先尝试 SUI 方法
+      // 尝试 SUI 方法
       // @ts-ignore
       const suiAddresses = await ethereum.request({ 
         method: 'suix_getAllAddresses' 
@@ -67,8 +65,12 @@ export default function WalletDebugPage() {
         setStatus('✅ 连接成功！');
         return;
       }
+    } catch (e: unknown) {
+      setError('SUI方法失败: ' + (e instanceof Error ? e.message : String(e)));
+    }
 
-      // 如果没有自动弹出，尝试请求账户
+    // 尝试以太坊方法
+    try {
       // @ts-ignore
       const accounts = await ethereum.request({ 
         method: 'eth_requestAccounts' 
@@ -76,10 +78,10 @@ export default function WalletDebugPage() {
       
       if (accounts && accounts.length > 0) {
         setAddress(accounts[0]);
-        setStatus('⚠️ 连接成功，但可能是以太坊格式地址');
+        setStatus('⚠️ 连接成功，但可能是以太坊地址');
       }
     } catch (e: unknown) {
-      setStatus('❌ 连接失败: ' + (e instanceof Error ? e.message : '未知错误'));
+      setError('连接失败: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -92,7 +94,13 @@ export default function WalletDebugPage() {
       <h1 className="text-3xl font-bold mb-8">🔗 SUI 钱包连接</h1>
       
       <div className="bg-gray-900 p-6 rounded-xl">
-        <pre className="whitespace-pre-wrap text-sm">{status}</pre>
+        <pre className="whitespace-pre-wrap text-sm mb-4">{status}</pre>
+        
+        {error && (
+          <div className="p-3 bg-red-900 rounded-lg mb-4 text-sm">
+            {error}
+          </div>
+        )}
         
         {address && (
           <div className="mt-4 p-4 bg-green-900 rounded-lg">
@@ -105,8 +113,17 @@ export default function WalletDebugPage() {
           onClick={handleConnect}
           className="mt-6 px-8 py-4 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-lg font-bold"
         >
-          连接 SUI 钱包
+          连接钱包
         </button>
+      </div>
+
+      <div className="mt-6 p-4 bg-blue-900 rounded-lg">
+        <p className="font-bold mb-2">请确保：</p>
+        <ol className="list-decimal list-inside text-sm space-y-1">
+          <li>Suiet Wallet 已解锁</li>
+          <li>网络切换到 Devnet 或 Testnet</li>
+          <li>点击按钮后，在钱包中确认授权</li>
+        </ol>
       </div>
     </div>
   );
