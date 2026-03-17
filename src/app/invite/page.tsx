@@ -374,7 +374,7 @@ export default function InvitePage() {
               <motion.a
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                href={`https://suiscan.xyz/testnet/address/${wallet.account?.address}`}
+                href={`https://suiscan.xyz/devnet/address/${wallet.account?.address}`}
                 target="_blank"
                 className="bg-gray-800/50 rounded-xl p-4 text-center cursor-pointer block"
               >
