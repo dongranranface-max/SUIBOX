@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Gift, Zap, Star, Crown, Wallet, Copy, Check, ArrowRight, Lock, Award, TrendingUp, Link, ExternalLink, Share2 } from 'lucide-react';
+import { Users, Gift, Zap, Star, Wallet, Copy, Check, Lock, Award, TrendingUp, Link, Share2, Twitter, MessageCircle, QrCode, Download, ExternalLink } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 // 邀请任务配置
@@ -23,8 +23,9 @@ export default function InvitePage() {
   const [copied, setCopied] = useState(false);
   const [hasEnough, setHasEnough] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPoster, setShowPoster] = useState(false);
+  const posterRef = useRef<HTMLDivElement>(null);
   
-  // 用户数据
   const [userData, setUserData] = useState({
     inviteCode: '',
     totalInvites: 0,
@@ -35,7 +36,6 @@ export default function InvitePage() {
 
   const canInvite = hasEnough;
   
-  // 生成邀请码
   const generateInviteCode = (address: string) => {
     if (!address) return '';
     return 'SUIBOX' + address.slice(2, 8).toUpperCase();
@@ -50,7 +50,27 @@ export default function InvitePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 获取用户数据
+  // 分享到社交平台
+  const shareToTwitter = () => {
+    const text = encodeURIComponent(`🎁 加入 SUI GIFT 盲盒，空投1500万BOX！\n\n我的邀请码: ${inviteCode}\n🔗 ${inviteLink}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+  };
+
+  const shareToTelegram = () => {
+    const text = encodeURIComponent(`🎁 加入 SUI GIFT 盲盒，空投1500万BOX！\n\n我的邀请码: ${inviteCode}\n🔗 ${inviteLink}`);
+    window.open(`https://t.me/share/url?url=${inviteLink}&text=${text}`, '_blank');
+  };
+
+  // 生成分享海报（模拟）
+  const generatePoster = () => {
+    setShowPoster(true);
+  };
+
+  const downloadPoster = async () => {
+    // 实际项目中可使用 html2canvas
+    alert('海报生成功能需要配置 html2canvas，暂时显示预览');
+  };
+
   const fetchUserData = useCallback(async () => {
     if (!wallet.account?.address) return;
     try {
@@ -63,7 +83,6 @@ export default function InvitePage() {
         totalBoxEarned: data.totalBoxEarned || 0,
         pendingBox: data.pendingBox || 0,
       });
-      // 模拟检查是否有10个BOX
       setHasEnough((data.totalBoxEarned || 0) >= 10);
     } catch (e) {
       console.error(e);
@@ -125,10 +144,91 @@ export default function InvitePage() {
                 {copied ? '已复制' : '复制'}
               </motion.button>
             </div>
-            
-            <p className="text-xs text-white/60 mt-2">
-              分享链接，好友通过链接参与盲盒即算邀请成功
-            </p>
+
+            {/* 分享按钮 */}
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <p className="text-sm text-white/70 mb-3 flex items-center gap-2">
+                <Share2 className="w-4 h-4" />
+                分享到社交平台
+              </p>
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={shareToTwitter}
+                  className="flex-1 py-3 bg-[#1DA1F2] rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <Twitter className="w-5 h-5" />
+                  Twitter
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={shareToTelegram}
+                  className="flex-1 py-3 bg-[#0088cc] rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Telegram
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={generatePoster}
+                  className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <QrCode className="w-5 h-5" />
+                  海报
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 海报预览弹窗 */}
+        {showPoster && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowPoster(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.8 }} 
+              animate={{ scale: 1 }} 
+              className="bg-gray-900 rounded-2xl p-6 max-w-sm w-full"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="font-bold text-lg mb-4 text-center">分享海报</h3>
+              <div ref={posterRef} className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-xl p-6 text-center">
+                <h1 className="text-2xl font-black text-white mb-2">SUI GIFT</h1>
+                <p className="text-white/80 text-sm mb-4">盲盒空投 1500万 BOX</p>
+                <div className="bg-white rounded-lg p-4 mb-4">
+                  <p className="text-gray-500 text-xs mb-1">邀请码</p>
+                  <p className="text-xl font-bold text-violet-600">{inviteCode}</p>
+                </div>
+                <p className="text-white/60 text-xs">扫码或点击链接参与</p>
+                <p className="text-white/60 text-xs mt-1">{inviteLink}</p>
+              </div>
+              <div className="flex gap-3 mt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={downloadPoster}
+                  className="flex-1 py-3 bg-violet-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  下载海报
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowPoster(false)}
+                  className="flex-1 py-3 bg-gray-700 rounded-xl font-bold"
+                >
+                  关闭
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
 
