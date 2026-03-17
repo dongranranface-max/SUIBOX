@@ -296,11 +296,11 @@ export default function InvitePage() {
                     <div className="flex gap-6">
                       <div className="text-center">
                         <p className="text-xs text-white/70">被邀请人</p>
-                        <p className="font-bold text-white">+{task.boxReward}</p>
+                        <p className="font-bold text-white">+{task.boxReward} BOX</p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-yellow-300">推荐人</p>
-                        <p className="font-bold text-yellow-300">+{task.refReward}</p>
+                        <p className="font-bold text-yellow-300">+{task.refReward} BOX</p>
                       </div>
                     </div>
                   </div>
@@ -368,8 +368,8 @@ export default function InvitePage() {
                 <p className="text-xs text-gray-400">今日开盒</p>
               </div>
               <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-black text-yellow-400">{userData.totalBoxEarned}</p>
-                <p className="text-xs text-gray-400">已获得BOX</p>
+                <p className="text-2xl font-black text-yellow-400">{userData.totalBoxEarned} BOX</p>
+                <p className="text-xs text-gray-400">已获得</p>
               </div>
               <motion.a
                 whileHover={{ scale: 1.02 }}
@@ -378,7 +378,7 @@ export default function InvitePage() {
                 target="_blank"
                 className="bg-gray-800/50 rounded-xl p-4 text-center cursor-pointer block"
               >
-                <p className="text-2xl font-black text-orange-400">{userData.pendingBox}</p>
+                <p className="text-2xl font-black text-orange-400">{userData.pendingBox} BOX</p>
                 <p className="text-xs text-gray-400">待领取 →</p>
               </motion.a>
             </div>
