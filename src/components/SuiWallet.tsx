@@ -1,16 +1,16 @@
 'use client';
 
-import { useWallet } from '@suiet/wallet-kit';
-import { Wallet, LogOut } from 'lucide-react';
+import { useSuiWallet } from '@/hooks/useSuiWallet';
+import { Wallet } from 'lucide-react';
 
 function shortenAddress(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
 export function SuiWalletButton() {
-  const { address, connected, status, connect } = useWallet();
+  const { address, connected, loading, connect } = useSuiWallet();
 
-  if (status === 'connecting') {
+  if (loading) {
     return (
       <button disabled className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg text-sm">
         <span>连接中...</span>

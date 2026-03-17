@@ -2,120 +2,78 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-declare global {
-  interface Window {
-    suiWallet?: {
-      address: string;
-      connected: boolean;
-      connect: () => Promise<void>;
-      disconnect: () => Promise<void>;
-      signAndExecuteTransaction: (tx: { data: any }) => Promise<{ digest: string; effects: any }>;
-      getOwnedObjects?: (params: any) => Promise<any>;
-    };
-  }
-}
-
-export interface WalletState {
-  address: string | null;
-  connected: boolean;
-  loading: boolean;
-}
-
-// 检查钱包是否安装
-export function isWalletInstalled(): boolean {
-  return typeof window !== 'undefined' && !!window.suiWallet;
-}
-
-// SUI钱包Hook
 export function useSuiWallet() {
-  const [wallet, setWallet] = useState<WalletState>({
-    address: null,
-    connected: false,
-    loading: true,
-  });
+  const [address, setAddress] = useState<string>('');
+  const [connected, setConnected] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // 检查钱包连接状态
-  const checkConnection = useCallback(async () => {
-    if (typeof window === 'undefined') {
-      setWallet({ address: null, connected: false, loading: false });
-      return;
-    }
-
-    const suiWallet = window.suiWallet;
-    if (!suiWallet) {
-      setWallet({ address: null, connected: false, loading: false });
-      return;
-    }
-
-    try {
-      // 尝试获取已连接状态
-      if (suiWallet.connected && suiWallet.address) {
-        setWallet({
-          address: suiWallet.address,
-          connected: true,
-          loading: false,
-        });
-      } else {
-        setWallet({ address: null, connected: false, loading: false });
-      }
-    } catch (e) {
-      console.error('Wallet check error:', e);
-      setWallet({ address: null, connected: false, loading: false });
-    }
-  }, []);
-
-  useEffect(() => {
-    checkConnection();
-
-    // 监听钱包变化
-    const interval = setInterval(checkConnection, 2000);
-    return () => clearInterval(interval);
-  }, [checkConnection]);
-
-  // 连接钱包
   const connect = useCallback(async () => {
-    const suiWallet = window.suiWallet;
-    if (!suiWallet) {
-      throw new Error('请安装 Sui Wallet 钱包插件！');
-    }
-
-    setWallet(prev => ({ ...prev, loading: true }));
-    
+    setLoading(true);
     try {
-      await suiWallet.connect();
-      if (suiWallet.address) {
-        setWallet({
-          address: suiWallet.address,
-          connected: true,
-          loading: false,
+      // @ts-ignore
+      const eth = window.ethereum;
+      if (!eth) {
+        setLoading(false);
+        return false;
+      }
+
+      // 尝试切换到 SUI Devnet
+      try {
+        // @ts-ignore
+        await eth.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x3' }],
         });
+      } catch (e) {
+        // 忽略切换失败
+      }
+
+      // 等待一下
+      await new Promise(r => setTimeout(r, 500));
+
+      // 尝试获取 SUI 地址
+      try {
+        // @ts-ignore
+        const suiAddrs = await eth.request({ 
+          method: 'suix_getAllAddresses' 
+        });
+        
+        if (suiAddrs && suiAddrs.length > 0) {
+          setAddress(suiAddrs[0]);
+          setConnected(true);
+          setLoading(false);
+          return true;
+        }
+      } catch (e) {
+        // 忽略
+      }
+
+      // 获取普通账户
+      try {
+        // @ts-ignore
+        const accounts = await eth.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (accounts && accounts.length > 0) {
+          setAddress(accounts[0]);
+          setConnected(true);
+        }
+      } catch (e) {
+        // 忽略
       }
     } catch (e) {
-      console.error('Connect error:', e);
-      setWallet(prev => ({ ...prev, loading: false }));
-      throw e;
+      // 忽略
     }
+    
+    setLoading(false);
+    return false;
   }, []);
 
-  // 断开钱包
-  const disconnect = useCallback(async () => {
-    const suiWallet = window.suiWallet;
-    if (suiWallet) {
-      await suiWallet.disconnect();
-    }
-    setWallet({ address: null, connected: false, loading: false });
+  const disconnect = useCallback(() => {
+    setAddress('');
+    setConnected(false);
   }, []);
 
-  return {
-    ...wallet,
-    connect,
-    disconnect,
-    isInstalled: isWalletInstalled(),
-  };
-}
-
-// 短地址
-export function shortenAddress(address: string | null): string {
-  if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  return { address, connected, loading, connect, disconnect };
 }
