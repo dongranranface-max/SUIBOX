@@ -8,6 +8,10 @@ export default function WalletDebugPage() {
   const [chain, setChain] = useState<string>('');
   const [error, setError] = useState<string>('');
 
+  const SUI_CHAIN_ID = '0x1'; // SUI mainnet
+  const SUI_TESTNET_CHAIN_ID = '0x2';
+  const SUI_DEVNET_CHAIN_ID = '0x3';
+
   useEffect(() => {
     const connectSuiWallet = async () => {
       // @ts-ignore
@@ -18,9 +22,9 @@ export default function WalletDebugPage() {
         return;
       }
 
-      setStatus('✅ 找到钱包，尝试连接...');
+      setStatus('✅ 找到钱包');
 
-      // 先尝试 suix_getAllAddresses
+      // 尝试获取 SUI 地址
       try {
         // @ts-ignore
         const suiAddresses = await ethereum.request({ 
@@ -30,14 +34,51 @@ export default function WalletDebugPage() {
         if (suiAddresses && suiAddresses.length > 0) {
           setAddress(suiAddresses[0]);
           setChain('SUI');
-          setStatus('✅ 连接到 SUI 链！');
+          setStatus('✅ 已连接到 SUI 链！');
           return;
         }
-      } catch (e: unknown) {
-        setError(`suix_getAllAddresses: ${e instanceof Error ? e.message : String(e)}`);
+      } catch (e) {
+        // 忽略，继续
       }
 
-      // 再尝试 eth_requestAccounts
+      // 尝试切换到 SUI 网络
+      const trySwitchNetwork = async (chainId: string, name: string) => {
+        try {
+          // @ts-ignore
+          await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId }],
+          });
+          setStatus(`🔄 已切换到 ${name}，重新获取地址...`);
+          
+          // 等待切换完成
+          await new Promise(r => setTimeout(r, 1500));
+          
+          // 重试获取 SUI 地址
+          // @ts-ignore
+          const suiAddresses = await ethereum.request({ 
+            method: 'suix_getAllAddresses' 
+          });
+          
+          if (suiAddresses && suiAddresses.length > 0) {
+            setAddress(suiAddresses[0]);
+            setChain('SUI ' + name);
+            return true;
+          }
+        } catch (e) {
+          // 忽略这个网络，继续尝试下一个
+        }
+        return false;
+      };
+
+      // 尝试切换到不同 SUI 网络
+      setStatus('🔄 尝试切换到 SUI 网络...');
+      
+      if (await trySwitchNetwork(SUI_DEVNET_CHAIN_ID, 'Devnet')) return;
+      if (await trySwitchNetwork(SUI_TESTNET_CHAIN_ID, 'Testnet')) return;
+      if (await trySwitchNetwork(SUI_CHAIN_ID, 'Mainnet')) return;
+
+      // 如果都不行，获取以太坊地址
       try {
         // @ts-ignore
         const ethAccounts = await ethereum.request({ 
@@ -47,35 +88,10 @@ export default function WalletDebugPage() {
         if (ethAccounts && ethAccounts.length > 0) {
           setAddress(ethAccounts[0]);
           setChain('Ethereum');
-          setStatus('⚠️ 连接到以太坊链');
-          return;
+          setStatus('⚠️ 无法切换到 SUI 链，当前连接以太坊');
         }
       } catch (e: unknown) {
-        setError(prev => prev + `\neth_requestAccounts: ${e instanceof Error ? e.message : String(e)}`);
-      }
-
-      // 尝试切换到 SUI 链
-      try {
-        // @ts-ignore
-        await ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x1' }], // SUI chain ID
-        });
-        setStatus('🔄 已切换链，再试一次...');
-        
-        // 重试获取地址
-        // @ts-ignore
-        const suiAddresses = await ethereum.request({ 
-          method: 'suix_getAllAddresses' 
-        });
-        
-        if (suiAddresses && suiAddresses.length > 0) {
-          setAddress(suiAddresses[0]);
-          setChain('SUI');
-          setStatus('✅ 切换到 SUI 链成功！');
-        }
-      } catch (e: unknown) {
-        setError(prev => prev + `\nwallet_switchEthereumChain: ${e instanceof Error ? e.message : String(e)}`);
+        setError(e instanceof Error ? e.message : '未知错误');
       }
     };
 
@@ -98,11 +114,16 @@ export default function WalletDebugPage() {
         )}
 
         {error && (
-          <div className="mt-4 p-4 bg-red-900 rounded-lg whitespace-pre-wrap">
-            <p className="text-red-400 font-bold mb-2">错误详情:</p>
+          <div className="mt-4 p-4 bg-red-900 rounded-lg">
+            <p className="text-red-400 font-bold mb-2">错误:</p>
             <p className="font-mono text-sm">{error}</p>
           </div>
         )}
+      </div>
+
+      <div className="mt-4 p-4 bg-blue-900 rounded-lg">
+        <p className="text-blue-400 font-bold">请在钱包中手动切换到 SUI 网络</p>
+        <p className="text-sm mt-2">点击 Suiet Wallet 扩展 → 点击网络名称 → 选择 Devnet 或 Testnet</p>
       </div>
 
       <button 
