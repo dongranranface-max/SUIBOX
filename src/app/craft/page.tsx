@@ -7,11 +7,25 @@ import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 type FragmentType = 'common' | 'rare' | 'epic';
 
+// NFT视频配置
+const NFT_VIDEOS = {
+  common: '/nft-common.mp4',
+  rare: '/nft-rare.mp4',
+  epic: '/nft-epic.mp4',
+};
+
 // 碎片配置
 const FRAGMENT_CONFIG = {
   common: { name: '普通碎片', image: '/fragment-common.png', color: 'from-gray-500 to-gray-600', border: 'border-gray-500', glow: 'shadow-gray-500/30', bg: 'bg-gray-500' },
   rare: { name: '稀有碎片', image: '/fragment-rare.png', color: 'from-blue-500 to-cyan-600', border: 'border-blue-500', glow: 'shadow-blue-500/30', bg: 'bg-blue-500' },
   epic: { name: '史诗碎片', image: '/fragment-epic.png', color: 'from-yellow-500 to-orange-600', border: 'border-yellow-500', glow: 'shadow-yellow-500/30', bg: 'bg-yellow-500' },
+};
+
+// NFT图片配置
+const NFT_CONFIG = {
+  common: { name: '普通NFT', video: '/nft-common.mp4', color: 'from-gray-500 to-gray-600', border: 'border-gray-400', glow: 'shadow-gray-400/30' },
+  rare: { name: '稀有NFT', video: '/nft-rare.mp4', color: 'from-blue-500 to-cyan-600', border: 'border-blue-400', glow: 'shadow-blue-400/30' },
+  epic: { name: '史诗NFT', video: '/nft-epic.mp4', color: 'from-yellow-500 to-orange-600', border: 'border-yellow-400', glow: 'shadow-yellow-400/30' },
 };
 
 // 碎片合成配方
@@ -26,6 +40,24 @@ const NFT_RECIPES = [
   { id: 1, result: 'rare', cost: { common: 3 }, boxCost: 10, reward: 20, name: '稀有NFT', tier: 2 },
   { id: 2, result: 'epic', cost: { rare: 3 }, boxCost: 30, reward: 50, name: '史诗NFT', tier: 3 },
 ];
+
+function NFTVideo({ src, alt, size = 40, glow = false }: { src: string; alt: string; size?: number; glow?: boolean }) {
+  return (
+    <div className={`relative rounded-lg overflow-hidden ${glow ? 'animate-pulse' : ''}`} style={{ width: size, height: size }}>
+      <video 
+        src={src} 
+        autoPlay 
+        loop 
+        muted 
+        playsInline 
+        className="w-full h-full object-cover"
+      />
+      {glow && (
+        <div className={`absolute inset-0 ${alt === 'epic' ? 'bg-yellow-500' : alt === 'rare' ? 'bg-blue-500' : 'bg-gray-500'} opacity-30 blur-xl rounded-full`} />
+      )}
+    </div>
+  );
+}
 
 function FragImg({ src, alt, size = 40, glow = false }: { src: string; alt: string; size?: number; glow?: boolean }) {
   return (
@@ -454,16 +486,25 @@ export default function CraftPage() {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', bounce: 0.5 }}
-            className={`bg-gradient-to-br ${FRAGMENT_CONFIG[resultData.type as FragmentType]?.color || 'from-gray-600 to-gray-800'} rounded-3xl p-8 text-center max-w-sm w-full`}
+            className={`bg-gradient-to-br ${NFT_CONFIG[resultData.type as keyof typeof NFT_CONFIG]?.color || 'from-gray-600 to-gray-800'} rounded-3xl p-8 text-center max-w-sm w-full`}
             onClick={e => e.stopPropagation()}
           >
+            {/* NFT视频 */}
             <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
+              animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
-              className="text-7xl mb-4"
+              className="w-32 h-32 mx-auto mb-4 rounded-xl overflow-hidden"
             >
-              {resultData.type === 'epic' ? '💎' : resultData.type === 'rare' ? '⭐' : '🎯'}
+              <video 
+                src={NFT_VIDEOS[resultData.type as keyof typeof NFT_VIDEOS]} 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="w-full h-full object-cover"
+              />
             </motion.div>
+            
             <h2 className="text-2xl font-black mb-2">
               {resultData.type === 'epic' ? '史诗NFT' : resultData.type === 'rare' ? '稀有NFT' : '普通NFT'}
             </h2>
