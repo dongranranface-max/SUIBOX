@@ -200,36 +200,67 @@ export default function CraftPage() {
                 <span className="text-xs text-gray-500">{canSynth} 种配方可用</span>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
+                {/* 碎片 */}
                 {[
-                  { key: 'common', config: FRAGMENT_CONFIG.common, count: myFragments.common, label: '普通碎片' },
-                  { key: 'rare', config: FRAGMENT_CONFIG.rare, count: myFragments.rare, label: '稀有碎片' },
-                  { key: 'epic', config: FRAGMENT_CONFIG.epic, count: myFragments.epic, label: '史诗碎片' },
-                  { key: 'box', color: 'from-green-500 to-emerald-600', count: myBOX, label: 'BOX', icon: '💰' },
+                  { key: 'common', config: FRAGMENT_CONFIG.common, count: myFragments.common, label: '碎片' },
+                  { key: 'rare', config: FRAGMENT_CONFIG.rare, count: myFragments.rare, label: '碎片' },
+                  { key: 'epic', config: FRAGMENT_CONFIG.epic, count: myFragments.epic, label: '碎片' },
                 ].map(item => (
                   <motion.div 
                     key={item.key}
                     whileHover={{ scale: 1.02 }}
-                    className="bg-gray-800/50 rounded-xl p-3 text-center"
+                    className="bg-gray-800/50 rounded-xl p-2 text-center"
                   >
-                    {item.key === 'box' ? (
-                      <>
-                        <p className="text-2xl font-black text-green-400">{item.count}</p>
-                        <p className="text-xs text-gray-500">{item.label}</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex justify-center mb-1">
-                          <FragImg src={item.config.image} alt={item.key} size={28} />
-                        </div>
-                        <p className={`text-xl font-bold ${item.key === 'common' ? 'text-gray-300' : item.key === 'rare' ? 'text-blue-400' : 'text-yellow-400'}`}>
-                          {item.count}
-                        </p>
-                        <p className="text-xs text-gray-500">{item.label}</p>
-                      </>
-                    )}
+                    <div className="flex justify-center mb-1">
+                      <FragImg src={item.config.image} alt={item.key} size={24} />
+                    </div>
+                    <p className={`text-lg font-bold ${item.key === 'common' ? 'text-gray-300' : item.key === 'rare' ? 'text-blue-400' : 'text-yellow-400'}`}>
+                      {item.count}
+                    </p>
+                    <p className="text-xs text-gray-500">{item.key === 'common' ? '普通' : item.key === 'rare' ? '稀有' : '史诗'}</p>
                   </motion.div>
                 ))}
+                
+                {/* 分隔 */}
+                <div className="flex items-center justify-center">
+                  <div className="h-8 w-px bg-gray-700" />
+                </div>
+                
+                {/* NFT */}
+                {[
+                  { key: 'common', config: NFT_CONFIG.common, count: myNFTs.common, label: 'NFT' },
+                  { key: 'rare', config: NFT_CONFIG.rare, count: myNFTs.rare, label: 'NFT' },
+                  { key: 'epic', config: NFT_CONFIG.epic, count: myNFTs.epic, label: 'NFT' },
+                ].map(item => (
+                  <motion.div 
+                    key={`nft-${item.key}`}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gray-800/50 rounded-xl p-2 text-center"
+                  >
+                    <div className="flex justify-center mb-1">
+                      <NFTVideo src={item.config.video} alt={item.key} size={24} />
+                    </div>
+                    <p className={`text-lg font-bold ${item.key === 'common' ? 'text-gray-300' : item.key === 'rare' ? 'text-blue-400' : 'text-yellow-400'}`}>
+                      {item.count}
+                    </p>
+                    <p className="text-xs text-gray-500">{item.key === 'common' ? '普通' : item.key === 'rare' ? '稀有' : '史诗'}</p>
+                  </motion.div>
+                ))}
+                
+                {/* 分隔 */}
+                <div className="flex items-center justify-center">
+                  <div className="h-8 w-px bg-gray-700" />
+                </div>
+                
+                {/* BOX */}
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-gray-800/50 rounded-xl p-2 text-center"
+                >
+                  <p className="text-lg font-bold text-green-400 mt-1">{myBOX}</p>
+                  <p className="text-xs text-gray-500">BOX</p>
+                </motion.div>
               </div>
             </div>
           </motion.div>
