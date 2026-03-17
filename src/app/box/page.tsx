@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Star, Crown, Flame, Trophy, Gift as Present, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
+import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 const GUARANTEE = { common: 3, rare: 7, epic: 35 };
+
+// 邀请任务配置 - 按好友开盒数
 const INVITE_TASKS = [
-  { friends: 1, reward: 1, label: '邀请1人', desc: '新手礼包' },
-  { friends: 3, reward: 1, label: '邀请3人', desc: '进阶奖励' },
-  { friends: 15, reward: 2, label: '邀请15人', desc: '豪华大礼' },
+  { friends: 1, reward: 1, label: '1位好友开盒', desc: '基础奖励' },
+  { friends: 3, reward: 2, label: '3位好友开盒', desc: '进阶奖励' },
+  { friends: 15, reward: 3, label: '15位好友开盒', desc: '豪华大奖' },
 ];
 
 const FRAGMENT_CONFIG = {
@@ -87,49 +89,25 @@ function RewardCard({ type, count }: { type: string; count: number }) {
 }
 
 // 邀请任务卡片
-function InviteTaskCard({ task, completed, progress, onInvite }: { task: typeof INVITE_TASKS[0]; completed: boolean; progress: number; onInvite: () => void }) {
+function InviteTaskCard({ task, completed, progress }: { task: typeof INVITE_TASKS[0]; completed: boolean; progress: number }) {
   return (
-    <motion.div 
-      whileHover={{ scale: completed ? 1 : 1.02 }}
-      className={`relative overflow-hidden rounded-xl border-2 ${completed ? 'bg-green-500/10 border-green-500/50' : 'bg-gray-800/50 border-gray-700'}`}
-    >
-      {/* 进度背景 */}
+    <motion.div className={`relative overflow-hidden rounded-xl border-2 ${completed ? 'bg-green-500/10 border-green-500/50' : 'bg-gray-800/50 border-gray-700'}`}>
       {!completed && (
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min((progress / task.friends) * 100, 100)}%` }}
-          className="absolute inset-y-0 left-0 bg-green-500/20"
-        />
+        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((progress / task.friends) * 100, 100)}%` }} className="absolute inset-y-0 left-0 bg-green-500/20" />
       )}
       
       <div className="relative p-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* 图标 */}
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${completed ? 'bg-green-500/30' : 'bg-gray-700'}`}>
             {completed ? <CheckCircle className="w-5 h-5 text-green-400" /> : <UserPlus className="w-5 h-5 text-gray-400" />}
           </div>
-          
-          {/* 文字 */}
           <div>
             <p className={`font-bold text-sm ${completed ? 'text-green-400' : 'text-white'}`}>{task.label}</p>
             <p className="text-xs text-gray-500">{task.desc}</p>
           </div>
         </div>
         
-        {/* 奖励 */}
-        <div className="flex items-center gap-2">
-          <span className={`text-lg font-bold ${completed ? 'text-green-400' : 'text-yellow-400'}`}>+{task.reward}</span>
-          {!completed && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onInvite}
-              className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"
-            >
-              <Plus className="w-4 h-4 text-white" />
-            </motion.button>
-          )}
-        </div>
+        <span className={`text-lg font-bold ${completed ? 'text-green-400' : 'text-yellow-400'}`}>+{task.reward}</span>
       </div>
     </motion.div>
   );
@@ -189,15 +167,6 @@ function OpeningAnimation() {
   );
 }
 
-// 加号图标
-function Plus({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
 export default function BoxPage() {
   const wallet = useWallet();
   const [isOpening, setIsOpening] = useState(false);
@@ -211,7 +180,7 @@ export default function BoxPage() {
   const [userData, setUserData] = useState({
     dailyFreeCount: 1,
     inviteBonus: 0,
-    inviteCount: 0,
+    uniqueFriendsToday: 0,  // 今日不同好友开盒数
     noneCount: 0,
     fragments: { common: 0, rare: 0, epic: 0 },
   });
@@ -219,6 +188,14 @@ export default function BoxPage() {
   const totalDailyCount = userData.dailyFreeCount + userData.inviteBonus;
   const canOpen = totalDailyCount > 0 && wallet.connected;
   const isEpic = userData.noneCount >= 35;
+
+  // 计算邀请奖励
+  const calculateBonus = (friends: number) => {
+    if (friends >= 15) return 3;
+    if (friends >= 3) return 2;
+    if (friends >= 1) return 1;
+    return 0;
+  };
 
   const fetchUserData = useCallback(async () => {
     if (!wallet.account?.address) return;
@@ -319,14 +296,22 @@ export default function BoxPage() {
                   </div>
                 </div>
 
-                {/* 邀请任务 - 新设计 */}
+                {/* 好友助攻 */}
                 <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-green-500" />
-                      <span className="text-gray-300 font-medium">邀请好友</span>
+                      <span className="text-gray-300 font-medium">好友助攻</span>
                     </div>
-                    <span className="text-xs text-gray-500">得免费次数</span>
+                    <span className="text-xs text-gray-500">好友开盒你获次数</span>
+                  </div>
+                  
+                  {/* 当前好友数 */}
+                  <div className="bg-gray-800/50 rounded-xl p-3 mb-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">今日助攻好友</span>
+                      <span className="text-2xl font-bold text-green-400">{userData.uniqueFriendsToday}</span>
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
@@ -334,22 +319,16 @@ export default function BoxPage() {
                       <InviteTaskCard 
                         key={task.friends} 
                         task={task} 
-                        completed={userData.inviteCount >= task.friends}
-                        progress={userData.inviteCount}
-                        onInvite={() => {}}
+                        completed={userData.uniqueFriendsToday >= task.friends}
+                        progress={userData.uniqueFriendsToday}
                       />
                     ))}
                   </div>
                   
-                  {/* 邀请奖励总计 */}
+                  {/* 当前奖励 */}
                   <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">当前奖励</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-green-400">+{userData.inviteBonus}</span>
-                      <span className="text-xs text-gray-500">次</span>
-                    </div>
+                    <span className="text-sm text-gray-400">当前奖励</span>
+                    <span className="text-lg font-bold text-green-400">+{calculateBonus(userData.uniqueFriendsToday)}次</span>
                   </div>
                 </div>
               </motion.div>
