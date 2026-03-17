@@ -18,7 +18,41 @@ export function useSuiWallet() {
         return;
       }
 
-      // 直接尝试获取账户
+      // 1. 先切换到 SUI Devnet (0x3)
+      try {
+        // @ts-ignore
+        await eth.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x3' }],
+        });
+      } catch (e) {
+        // 忽略
+      }
+
+      // 等待网络切换
+      await new Promise(r => setTimeout(r, 1000));
+
+      // 2. 尝试获取 SUI 地址
+      try {
+        // @ts-ignore
+        const suiAddrs = await eth.request({ 
+          method: 'suix_getAllAddresses' 
+        });
+        
+        if (suiAddrs && suiAddrs.length > 0) {
+          // SUI 地址是66个字符
+          if (suiAddrs[0].length === 66) {
+            setAddress(suiAddrs[0]);
+            setConnected(true);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        // 忽略
+      }
+
+      // 3. 如果没有SUI地址，获取普通账户
       try {
         // @ts-ignore
         const accounts = await eth.request({ 
