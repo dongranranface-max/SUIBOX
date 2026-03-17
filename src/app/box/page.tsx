@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, TrendingUp, Flame, Gift as FreeIcon } from 'lucide-react';
+import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, TrendingUp, Gift as FreeIcon } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 // ==================== 配置 ====================
@@ -26,11 +26,11 @@ const GUARANTEE = {
   epic: 35,
 };
 
-// 邀请奖励规则
+// 邀请奖励规则（按不同好友数计算）
 const INVITE_REWARDS = [
-  { minFriends: 1, freeOpens: 1, label: '1人开=1次' },
-  { minFriends: 5, freeOpens: 2, label: '5人开=2次' },
-  { minFriends: 10, freeOpens: 3, label: '10人开=3次' },
+  { uniqueFriends: 1, freeOpens: 1, label: '1人开=1次' },
+  { uniqueFriends: 5, freeOpens: 2, label: '5人开=2次' },
+  { uniqueFriends: 10, freeOpens: 3, label: '10人开=3次' },
 ];
 
 // ==================== 组件 ====================
@@ -206,26 +206,26 @@ export default function BoxPage() {
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // 用户数据
+  // 用户数据（按不同好友计算）
   const [userData, setUserData] = useState({
-    dailyCount: 1,        // 每日免费1次
-    maxDaily: 1,
-    inviteCount: 5,       // 邀请了5人（模拟）
-    friendsOpenedToday: 3, // 今日好友开盒数（模拟）
-    noneCount: 0,
-    totalOpens: 0,
+    dailyFreeUsed: false,
+    dailyCount: 1,              // 每日免费1次
+    uniqueFriendsOpened: 3,     // 今日不同好友开盒数（按不同人计算）
+    inviteCount: 12,            // 邀请总人数
+    noneCount: 0,               // 累计感谢次数
+    totalOpens: 0,              // 总开盒数
     fragments: { common: 0, rare: 0, epic: 0 },
   });
 
-  // 根据好友开盒数计算额外奖励
-  const getInviteBonus = (friendsOpened: number) => {
-    if (friendsOpened >= 10) return 3;
-    if (friendsOpened >= 5) return 2;
-    if (friendsOpened >= 1) return 1;
+  // 根据不同好友开盒数计算奖励
+  const getInviteBonus = (uniqueFriends: number) => {
+    if (uniqueFriends >= 10) return 3;
+    if (uniqueFriends >= 5) return 2;
+    if (uniqueFriends >= 1) return 1;
     return 0;
   };
 
-  const inviteBonus = getInviteBonus(userData.friendsOpenedToday);
+  const inviteBonus = getInviteBonus(userData.uniqueFriendsOpened);
   const totalDailyCount = userData.dailyCount + inviteBonus;
   const canOpen = totalDailyCount > 0 && wallet.connected;
 
@@ -350,7 +350,7 @@ export default function BoxPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-gray-900/80 backdrop-blur rounded-2xl p-6 mb-8 border border-gray-800"
           >
-            {/* 免费次数 */}
+            {/* 次数 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center">
@@ -369,13 +369,13 @@ export default function BoxPage() {
                 <p className="text-3xl font-bold text-violet-400">+{inviteBonus} <span className="text-lg text-gray-500">次</span></p>
               </div>
               
-              {/* 好友开盒 */}
+              {/* 不同好友开盒 */}
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center">
                   <Gift className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-gray-400 text-xs mb-1">今日好友开盒</p>
-                <p className="text-3xl font-bold text-blue-400">{userData.friendsOpenedToday} <span className="text-lg text-gray-500">人</span></p>
+                <p className="text-gray-400 text-xs mb-1">今日不同好友开盒</p>
+                <p className="text-3xl font-bold text-blue-400">{userData.uniqueFriendsOpened} <span className="text-lg text-gray-500">人</span></p>
               </div>
               
               {/* 总次数 */}
@@ -390,10 +390,10 @@ export default function BoxPage() {
 
             {/* 邀请奖励说明 */}
             <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-400 mb-2">📋 邀请奖励规则（好友开盒即得）</p>
+              <p className="text-sm text-gray-400 mb-2">📋 邀请奖励规则（按不同好友数计算）</p>
               <div className="flex justify-center gap-4 text-xs">
                 {INVITE_REWARDS.map((reward, i) => (
-                  <span key={i} className={`px-3 py-1 rounded-full ${userData.friendsOpenedToday >= reward.minFriends ? 'bg-green-600' : 'bg-gray-700'}`}>
+                  <span key={i} className={`px-3 py-1 rounded-full ${userData.uniqueFriendsOpened >= reward.uniqueFriends ? 'bg-green-600' : 'bg-gray-700'}`}>
                     {reward.label}
                   </span>
                 ))}
