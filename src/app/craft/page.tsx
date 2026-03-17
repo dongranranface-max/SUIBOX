@@ -31,8 +31,8 @@ const FRAGMENT_RECIPES = [
 
 // NFT合成配方
 const NFT_RECIPES = [
-  { id: 1, result: 'rare', cost: { common: 4 }, boxCost: 20, reward: 30, name: '稀有NFT', tier: 2 },
-  { id: 2, result: 'epic', cost: { rare: 4 }, boxCost: 50, reward: 100, name: '史诗NFT', tier: 3 },
+  { id: 1, result: 'rare', cost: { common: 10 }, boxCost: 20, reward: 30, name: '稀有NFT', tier: 2 },
+  { id: 2, result: 'epic', cost: { rare: 7 }, boxCost: 50, reward: 80, name: '史诗NFT', tier: 3 },
 ];
 
 function NFTVideo({ src, alt, size = 40 }: { src: string; alt: string; size?: number }) {
