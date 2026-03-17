@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, Menu, X, ChevronDown, Wallet } from 'lucide-react';
+import { Search, Bell, Menu, X, ChevronDown } from 'lucide-react';
+import { SuiWalletButton } from './SuiWallet';
 
 const navItems = [
   { name: '首页', href: '/' },
@@ -153,14 +154,8 @@ export default function Header() {
               )}
             </div>
 
-            {/* Wallet - Simple Button */}
-            <Link 
-              href="/wallet-debug"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all text-sm"
-            >
-              <Wallet className="w-4 h-4" />
-              <span>连接钱包</span>
-            </Link>
+            {/* Wallet - Using Suiet Wallet Kit */}
+            <SuiWalletButton />
             
             {/* Mobile Menu */}
             <button 
