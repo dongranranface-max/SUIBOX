@@ -6,13 +6,17 @@ export function useSuiWallet() {
   const [address, setAddress] = useState<string>('');
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const connect = useCallback(async () => {
     setLoading(true);
+    setError('');
+    
     try {
       // @ts-ignore
       const eth = window.ethereum;
       if (!eth) {
+        setError('未找到钱包');
         setLoading(false);
         return false;
       }
@@ -25,7 +29,7 @@ export function useSuiWallet() {
           params: [{ chainId: '0x3' }],
         });
       } catch (e) {
-        // 忽略切换失败
+        // 忽略
       }
 
       // 等待一下
@@ -60,10 +64,10 @@ export function useSuiWallet() {
           setConnected(true);
         }
       } catch (e) {
-        // 忽略
+        setError('连接失败');
       }
     } catch (e) {
-      // 忽略
+      setError('错误');
     }
     
     setLoading(false);
@@ -75,5 +79,5 @@ export function useSuiWallet() {
     setConnected(false);
   }, []);
 
-  return { address, connected, loading, connect, disconnect };
+  return { address, connected, loading, error, connect, disconnect };
 }
