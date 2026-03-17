@@ -270,8 +270,8 @@ export default function BoxPage() {
       <div className="relative z-10 max-w-5xl mx-auto px-3 py-5">
         {/* 标题 */}
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-5">
-          <motion.h1 animate={{ textShadow: ['0 0 10px rgba(255,200,0,0.5)', '0 0 30px rgba(255,200,0,0.8)', '0 0 10px rgba(255,200,0,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
-            🎰 盲盒大奖 🎰
+          <motion.h1 animate={{ textShadow: ['0 0 10px rgba(139,92,246,0.5)', '0 0 30px rgba(139,92,246,0.8)', '0 0 10px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            SUIBOX
           </motion.h1>
         </motion.div>
 
