@@ -6,61 +6,19 @@ export function useSuiWallet() {
   const [address, setAddress] = useState<string>('');
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
 
   const connect = useCallback(async () => {
     setLoading(true);
-    setError('');
     
     try {
       // @ts-ignore
       const eth = window.ethereum;
       if (!eth) {
-        setError('未找到钱包');
         setLoading(false);
-        return false;
+        return;
       }
 
-      // 打印钱包类型
-      // @ts-ignore
-      console.log('钱包类型:', {
-        isOkxWallet: eth.isOkxWallet,
-        isMetaMask: eth.isMetaMask,
-        isSuiet: eth.isSuiet,
-      });
-
-      // 尝试切换到 SUI Devnet (0x3)
-      try {
-        // @ts-ignore
-        await eth.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x3' }],
-        });
-      } catch (e) {
-        console.log('切换网络忽略');
-      }
-
-      // 等待网络切换
-      await new Promise(r => setTimeout(r, 1000));
-
-      // 方法1: 尝试 SUI 地址
-      try {
-        // @ts-ignore
-        const suiAddrs = await eth.request({ 
-          method: 'suix_getAllAddresses' 
-        });
-        
-        if (suiAddrs && suiAddrs.length > 0) {
-          setAddress(suiAddrs[0]);
-          setConnected(true);
-          setLoading(false);
-          return true;
-        }
-      } catch (e) {
-        console.log('SUI方法失败');
-      }
-
-      // 方法2: 获取账户
+      // 直接尝试获取账户
       try {
         // @ts-ignore
         const accounts = await eth.request({ 
@@ -72,14 +30,13 @@ export function useSuiWallet() {
           setConnected(true);
         }
       } catch (e) {
-        setError('连接失败');
+        // 忽略
       }
     } catch (e) {
-      setError('错误');
+      // 忽略
     }
     
     setLoading(false);
-    return false;
   }, []);
 
   const disconnect = useCallback(() => {
@@ -87,5 +44,5 @@ export function useSuiWallet() {
     setConnected(false);
   }, []);
 
-  return { address, connected, loading, error, connect, disconnect };
+  return { address, connected, loading, connect, disconnect };
 }
