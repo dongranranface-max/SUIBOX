@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, TrendingUp, Flame } from 'lucide-react';
+import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, TrendingUp, Flame, Gift as FreeIcon } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 // ==================== 配置 ====================
@@ -25,6 +25,13 @@ const GUARANTEE = {
   rare: 7,
   epic: 35,
 };
+
+// 邀请奖励规则
+const INVITE_REWARDS = [
+  { minFriends: 1, freeOpens: 1, label: '1人开=1次' },
+  { minFriends: 5, freeOpens: 2, label: '5人开=2次' },
+  { minFriends: 10, freeOpens: 3, label: '10人开=3次' },
+];
 
 // ==================== 组件 ====================
 
@@ -131,7 +138,6 @@ function ResultModal({ result, onClose }: {
         className="bg-gray-900 rounded-3xl p-10 max-w-md text-center border-2 border-gray-800 relative overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* 光效背景 */}
         <div className={`absolute inset-0 bg-gradient-to-br ${fragment.color.replace('from-', 'from-').replace('to-', 'to-')}/20`} />
         
         <motion.div
@@ -200,17 +206,28 @@ export default function BoxPage() {
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // 用户数据
   const [userData, setUserData] = useState({
-    dailyFreeUsed: false,
-    dailyCount: 1,
+    dailyCount: 1,        // 每日免费1次
     maxDaily: 1,
-    inviteCount: 0,
+    inviteCount: 5,       // 邀请了5人（模拟）
+    friendsOpenedToday: 3, // 今日好友开盒数（模拟）
     noneCount: 0,
     totalOpens: 0,
     fragments: { common: 0, rare: 0, epic: 0 },
   });
 
-  const canOpen = userData.dailyCount > 0 && wallet.connected;
+  // 根据好友开盒数计算额外奖励
+  const getInviteBonus = (friendsOpened: number) => {
+    if (friendsOpened >= 10) return 3;
+    if (friendsOpened >= 5) return 2;
+    if (friendsOpened >= 1) return 1;
+    return 0;
+  };
+
+  const inviteBonus = getInviteBonus(userData.friendsOpenedToday);
+  const totalDailyCount = userData.dailyCount + inviteBonus;
+  const canOpen = totalDailyCount > 0 && wallet.connected;
 
   const handleOpenBox = useCallback(async (boxType: 'common' | 'rare' | 'epic') => {
     if (!wallet.connected) {
@@ -218,8 +235,8 @@ export default function BoxPage() {
       return;
     }
     
-    if (userData.dailyCount <= 0) {
-      setError('今日开盒次数已用完，请明天再来或邀请好友！');
+    if (totalDailyCount <= 0) {
+      setError('今日开盒次数已用完！');
       return;
     }
     
@@ -286,7 +303,7 @@ export default function BoxPage() {
     }
     
     setIsOpening(false);
-  }, [wallet.connected, userData.dailyCount, userData.noneCount]);
+  }, [wallet.connected, totalDailyCount, userData.noneCount]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -333,54 +350,84 @@ export default function BoxPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-gray-900/80 backdrop-blur rounded-2xl p-6 mb-8 border border-gray-800"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {/* 次数 */}
+            {/* 免费次数 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-violet-600 to-pink-600 rounded-2xl flex items-center justify-center">
-                  <Flame className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center">
+                  <FreeIcon className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-gray-400 text-xs mb-1">今日次数</p>
-                <p className="text-3xl font-bold text-yellow-400">{userData.dailyCount}<span className="text-lg text-gray-500">/{userData.maxDaily}</span></p>
+                <p className="text-gray-400 text-xs mb-1">每日免费</p>
+                <p className="text-3xl font-bold text-green-400">{userData.dailyCount} <span className="text-lg text-gray-500">次</span></p>
               </div>
               
-              {/* 邀请 */}
+              {/* 邀请奖励 */}
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl flex items-center justify-center">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-gray-400 text-xs mb-1">已邀请</p>
-                <p className="text-3xl font-bold text-blue-400">{userData.inviteCount} <span className="text-lg">人</span></p>
+                <p className="text-gray-400 text-xs mb-1">邀请奖励</p>
+                <p className="text-3xl font-bold text-violet-400">+{inviteBonus} <span className="text-lg text-gray-500">次</span></p>
               </div>
               
-              {/* 保底进度 */}
-              <div className="text-center col-span-2">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
-                  <p className="text-gray-400 text-xs">保底进度</p>
+              {/* 好友开盒 */}
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center">
+                  <Gift className="w-8 h-8 text-white" />
                 </div>
-                <ProgressBar 
-                  value={userData.noneCount} 
-                  max={GUARANTEE.epic} 
-                  label="" 
-                  color={
-                    userData.noneCount >= GUARANTEE.epic ? 'text-yellow-400' :
-                    userData.noneCount >= GUARANTEE.rare ? 'text-purple-400' :
-                    userData.noneCount >= GUARANTEE.common ? 'text-blue-400' :
-                    'text-gray-400'
-                  }
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {userData.noneCount >= GUARANTEE.epic ? '🎉 下一发必中史诗！' :
-                   userData.noneCount >= GUARANTEE.rare ? '⭐ 下一发必中稀有！' :
-                   userData.noneCount >= GUARANTEE.common ? '🎯 ' + (GUARANTEE.common - userData.noneCount) + '发必中普通！' :
-                   '🔄 继续努力'}
-                </p>
+                <p className="text-gray-400 text-xs mb-1">今日好友开盒</p>
+                <p className="text-3xl font-bold text-blue-400">{userData.friendsOpenedToday} <span className="text-lg text-gray-500">人</span></p>
+              </div>
+              
+              {/* 总次数 */}
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-yellow-600 to-orange-600 rounded-2xl flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-gray-400 text-xs mb-1">今日可开</p>
+                <p className="text-3xl font-bold text-yellow-400">{totalDailyCount} <span className="text-lg text-gray-500">次</span></p>
               </div>
             </div>
 
+            {/* 邀请奖励说明 */}
+            <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-gray-400 mb-2">📋 邀请奖励规则（好友开盒即得）</p>
+              <div className="flex justify-center gap-4 text-xs">
+                {INVITE_REWARDS.map((reward, i) => (
+                  <span key={i} className={`px-3 py-1 rounded-full ${userData.friendsOpenedToday >= reward.minFriends ? 'bg-green-600' : 'bg-gray-700'}`}>
+                    {reward.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* 保底进度 */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-purple-400" />
+                <p className="text-gray-400 text-sm">保底进度</p>
+              </div>
+              <ProgressBar 
+                value={userData.noneCount} 
+                max={GUARANTEE.epic} 
+                label="" 
+                color={
+                  userData.noneCount >= GUARANTEE.epic ? 'text-yellow-400' :
+                  userData.noneCount >= GUARANTEE.rare ? 'text-purple-400' :
+                  userData.noneCount >= GUARANTEE.common ? 'text-blue-400' :
+                  'text-gray-400'
+                }
+              />
+              <p className="text-center text-xs text-gray-500">
+                {userData.noneCount >= GUARANTEE.epic ? '🎉 下一发必中史诗！' :
+                 userData.noneCount >= GUARANTEE.rare ? '⭐ 下一发必中稀有！' :
+                 userData.noneCount >= GUARANTEE.common ? '🎯 ' + (GUARANTEE.common - userData.noneCount) + '发必中普通！' :
+                 '🔄 继续努力'}
+              </p>
+            </div>
+
             {/* 碎片展示 */}
-            <div className="mt-6 pt-6 border-t border-gray-800">
-              <p className="text-gray-400 text-sm mb-3 flex items-center gap-2">
+            <div className="pt-6 border-t border-gray-800">
+              <p className="text-gray-400 text-sm mb-3 flex items-center justify-center gap-2">
                 <Star className="w-4 h-4 text-yellow-400" />
                 我的碎片
               </p>
