@@ -37,6 +37,7 @@ function EnergyBar({ count, max }: { count: number; max: number }) {
           {count >= 35 ? '🎉 必中史诗！' : count >= 7 ? '⭐ 下一发必中稀有' : count >= 3 ? `🎯 ${3 - count}次必中普通` : `${count}/${max}`}
         </span>
       </div>
+      <p className="text-xs text-gray-500 mb-2">根据获得"感谢参与"次数进行保底奖励</p>
       <div className="h-5 bg-gray-800 rounded-full overflow-hidden relative">
         <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} className={`absolute inset-y-0 left-0 rounded-full ${
           stage === 'epic' ? 'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500' :
