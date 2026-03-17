@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus } from 'lucide-react';
+import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus, Star, Heart, Sparkle } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
 const GUARANTEE = { common: 3, rare: 7, epic: 35 };
 
-// 邀请任务配置 - 按好友开盒数
+// 邀请任务配置
 const INVITE_TASKS = [
-  { friends: 1, reward: 1, label: '1位好友开盒', desc: '基础奖励' },
-  { friends: 3, reward: 2, label: '3位好友开盒', desc: '进阶奖励' },
-  { friends: 15, reward: 3, label: '15位好友开盒', desc: '豪华大奖' },
+  { friends: 1, reward: 1, label: '1位好友开盒', desc: '基础奖励', icon: '👋' },
+  { friends: 3, reward: 2, label: '3位好友开盒', desc: '进阶奖励', icon: '🎉' },
+  { friends: 15, reward: 3, label: '15位好友开盒', desc: '豪华大奖', icon: '👑' },
 ];
 
 const FRAGMENT_CONFIG = {
@@ -88,26 +88,54 @@ function RewardCard({ type, count }: { type: string; count: number }) {
   );
 }
 
-// 邀请任务卡片
+// 邀请任务卡片 - 优化版
 function InviteTaskCard({ task, completed, progress }: { task: typeof INVITE_TASKS[0]; completed: boolean; progress: number }) {
   return (
-    <motion.div className={`relative overflow-hidden rounded-xl border-2 ${completed ? 'bg-green-500/10 border-green-500/50' : 'bg-gray-800/50 border-gray-700'}`}>
+    <motion.div 
+      whileHover={!completed ? { scale: 1.02 } : {}}
+      className={`relative overflow-hidden rounded-xl border-2 transition-all ${
+        completed 
+          ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 border-green-500/50' 
+          : 'bg-gray-800/30 border-gray-700/50'
+      }`}
+    >
+      {/* 进度填充 */}
       {!completed && (
-        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((progress / task.friends) * 100, 100)}%` }} className="absolute inset-y-0 left-0 bg-green-500/20" />
+        <motion.div 
+          initial={{ width: 0 }} 
+          animate={{ width: `${Math.min((progress / task.friends) * 100, 100)}%` }} 
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500/30 to-green-500/10"
+        />
       )}
       
       <div className="relative p-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${completed ? 'bg-green-500/30' : 'bg-gray-700'}`}>
-            {completed ? <CheckCircle className="w-5 h-5 text-green-400" /> : <UserPlus className="w-5 h-5 text-gray-400" />}
+          {/* 图标 */}
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${
+            completed ? 'bg-green-500/30' : 'bg-gray-700'
+          }`}>
+            {completed ? <CheckCircle className="w-6 h-6 text-green-400" /> : task.icon}
           </div>
+          
+          {/* 文字 */}
           <div>
-            <p className={`font-bold text-sm ${completed ? 'text-green-400' : 'text-white'}`}>{task.label}</p>
+            <p className={`font-bold text-sm ${completed ? 'text-green-400' : 'text-white'}`}>
+              {task.label}
+            </p>
             <p className="text-xs text-gray-500">{task.desc}</p>
           </div>
         </div>
         
-        <span className={`text-lg font-bold ${completed ? 'text-green-400' : 'text-yellow-400'}`}>+{task.reward}</span>
+        {/* 奖励 */}
+        <div className={`text-right`}>
+          <motion.span 
+            animate={completed ? { scale: [1, 1.2, 1] } : {}}
+            className={`text-lg font-bold block ${completed ? 'text-green-400' : 'text-yellow-400'}`}
+          >
+            +{task.reward}
+          </motion.span>
+          <span className="text-xs text-gray-500">次</span>
+        </div>
       </div>
     </motion.div>
   );
@@ -180,7 +208,7 @@ export default function BoxPage() {
   const [userData, setUserData] = useState({
     dailyFreeCount: 1,
     inviteBonus: 0,
-    uniqueFriendsToday: 0,  // 今日不同好友开盒数
+    uniqueFriendsToday: 0,
     noneCount: 0,
     fragments: { common: 0, rare: 0, epic: 0 },
   });
@@ -189,7 +217,6 @@ export default function BoxPage() {
   const canOpen = totalDailyCount > 0 && wallet.connected;
   const isEpic = userData.noneCount >= 35;
 
-  // 计算邀请奖励
   const calculateBonus = (friends: number) => {
     if (friends >= 15) return 3;
     if (friends >= 3) return 2;
@@ -296,39 +323,66 @@ export default function BoxPage() {
                   </div>
                 </div>
 
-                {/* 好友助攻 */}
-                <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700">
-                  <div className="flex items-center justify-between mb-3">
+                {/* 好友助攻 - 优化版 */}
+                <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700 overflow-hidden">
+                  {/* 头部 */}
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-green-500" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <Heart className="w-4 h-4 text-white" />
+                      </div>
                       <span className="text-gray-300 font-medium">好友助攻</span>
                     </div>
-                    <span className="text-xs text-gray-500">好友开盒你获次数</span>
-                  </div>
-                  
-                  {/* 当前好友数 */}
-                  <div className="bg-gray-800/50 rounded-xl p-3 mb-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">今日助攻好友</span>
-                      <span className="text-2xl font-bold text-green-400">{userData.uniqueFriendsToday}</span>
+                    <div className="text-right">
+                      <motion.span 
+                        key={userData.inviteBonus}
+                        initial={{ scale: 1.3 }}
+                        animate={{ scale: 1 }}
+                        className="text-2xl font-bold text-green-400"
+                      >
+                        +{userData.inviteBonus}
+                      </motion.span>
+                      <span className="text-xs text-gray-500 ml-1">次</span>
                     </div>
                   </div>
                   
+                  {/* 当前状态 */}
+                  <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-3 mb-4 border border-green-500/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkle className="w-4 h-4 text-green-400" />
+                        <span className="text-gray-400 text-sm">今日助攻好友</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-3xl font-black text-green-400">{userData.uniqueFriendsToday}</span>
+                        <span className="text-gray-500 text-sm">人</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 任务列表 */}
                   <div className="space-y-2">
-                    {INVITE_TASKS.map(task => (
-                      <InviteTaskCard 
-                        key={task.friends} 
-                        task={task} 
-                        completed={userData.uniqueFriendsToday >= task.friends}
-                        progress={userData.uniqueFriendsToday}
-                      />
+                    {INVITE_TASKS.map((task, index) => (
+                      <motion.div
+                        key={task.friends}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <InviteTaskCard 
+                          task={task} 
+                          completed={userData.uniqueFriendsToday >= task.friends}
+                          progress={userData.uniqueFriendsToday}
+                        />
+                      </motion.div>
                     ))}
                   </div>
                   
-                  {/* 当前奖励 */}
-                  <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
-                    <span className="text-sm text-gray-400">当前奖励</span>
-                    <span className="text-lg font-bold text-green-400">+{calculateBonus(userData.uniqueFriendsToday)}次</span>
+                  {/* 底部提示 */}
+                  <div className="mt-3 pt-3 border-t border-gray-700/50 flex items-center justify-center gap-1 text-xs text-gray-500">
+                    <Sparkle className="w-3 h-3" />
+                    <span>好友开盲盒，你获免费次数</span>
+                    <Sparkle className="w-3 h-3" />
                   </div>
                 </div>
               </motion.div>
