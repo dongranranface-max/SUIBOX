@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, Wallet, Share2, Copy, Check, Sparkles } from 'lucide-react';
+import { Gift, Zap, AlertCircle, Loader2, Users, Star, Crown, Wallet, Sparkles, CheckCircle2, Circle } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 
-// 规则配置
+// 规则
 const PROBABILITY = { common: 40, rare: 19, epic: 1, none: 40 };
 const GUARANTEE = { common: 3, rare: 7, epic: 35 };
+
+// 邀请任务配置
+const INVITE_TASKS = [
+  { friends: 1, reward: 1, label: '邀请1人' },
+  { friends: 3, reward: 1, label: '邀请3人' },
+  { friends: 15, reward: 2, label: '邀请15人' },
+];
 
 const FRAGMENT = {
   common: { name: '普通碎片', rarity: 'R', icon: '🎯', color: 'from-gray-400 to-gray-600', text: 'text-gray-300' },
@@ -16,42 +23,49 @@ const FRAGMENT = {
   none: { name: '感谢参与', rarity: '谢谢参与', icon: '🙏', color: 'from-gray-600 to-gray-800', text: 'text-gray-500' },
 };
 
-// 碎片展示组件
-function FragmentDisplay({ fragments }: { fragments: { common: number; rare: number; epic: number } }) {
+// 任务项组件
+function TaskItem({ task, completed, current }: { task: { friends: number; reward: number; label: string }; completed: boolean; current: number }) {
+  const progress = Math.min(current / task.friends, 1);
+  
+  return (
+    <div className={`flex items-center justify-between p-3 rounded-xl ${completed ? 'bg-green-500/20' : 'bg-gray-800/50'}`}>
+      <div className="flex items-center gap-3">
+        {completed ? (
+          <CheckCircle2 className="w-5 h-5 text-green-400" />
+        ) : (
+          <Circle className="w-5 h-5 text-gray-600" />
+        )}
+        <div>
+          <p className={`font-medium ${completed ? 'text-green-400' : 'text-gray-300'}`}>{task.label}</p>
+          <p className="text-xs text-gray-500">+{task.reward}次</p>
+        </div>
+      </div>
+      {!completed && (
+        <div className="text-right">
+          <p className="text-sm text-gray-400">{current}/{task.friends}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 碎片展示
+function MyFragments({ fragments }: { fragments: { common: number; rare: number; epic: number } }) {
   return (
     <div className="bg-gray-800/50 rounded-2xl p-4">
       <p className="text-gray-400 text-sm mb-3">我的碎片</p>
       <div className="flex justify-around">
         {[
-          { key: 'common', icon: '🎯', count: fragments.common },
-          { key: 'rare', icon: '⭐', count: fragments.rare },
-          { key: 'epic', icon: '💎', count: fragments.epic },
+          { key: 'common', icon: '🎯', count: fragments.common, name: '普通' },
+          { key: 'rare', icon: '⭐', count: fragments.rare, name: '稀有' },
+          { key: 'epic', icon: '💎', count: fragments.epic, name: '史诗' },
         ].map(item => (
           <div key={item.key} className="text-center">
             <div className="text-3xl mb-1">{item.icon}</div>
             <p className="text-2xl font-bold">{item.count}</p>
-            <p className="text-xs text-gray-500">{item.key === 'common' ? '普通' : item.key === 'rare' ? '稀有' : '史诗'}</p>
+            <p className="text-xs text-gray-500">{item.name}</p>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// 邀请面板
-function InvitePanel({ inviteCode, onCopy }: { inviteCode: string; onCopy: () => void }) {
-  return (
-    <div className="bg-gray-800/50 rounded-2xl p-4">
-      <p className="text-gray-400 text-sm mb-3">邀请好友得免费次数</p>
-      <div className="flex items-center gap-2">
-        <input 
-          value={inviteCode} 
-          readOnly 
-          className="flex-1 bg-gray-700 rounded-lg px-3 py-2 text-sm font-mono"
-        />
-        <button onClick={onCopy} className="p-2 bg-violet-600 rounded-lg">
-          <Copy className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
@@ -64,13 +78,13 @@ export default function BoxPage() {
   const [result, setResult] = useState<{ type: string; rarity: string } | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   
   const [userData, setUserData] = useState({
     dailyFreeCount: 1,
     inviteBonus: 0,
-    uniqueFriendsToday: 0,
+    inviteCount: 0,         // 总邀请人数
+    uniqueFriendsToday: 0,  // 今日不同好友
     noneCount: 0,
     inviteCode: 'SUIBOX001',
     fragments: { common: 0, rare: 0, epic: 0 },
@@ -121,12 +135,6 @@ export default function BoxPage() {
     setIsOpening(false);
   }, [wallet.connected, wallet.account?.address, totalDailyCount, userData.noneCount, fetchUserData]);
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(userData.inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* 背景 */}
@@ -152,28 +160,20 @@ export default function BoxPage() {
               <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
               <div className="absolute bottom-0 right-0 w-60 h-60 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3" />
               
-              {/* 盲盒图标 */}
+              {/* 盲盒 */}
               <motion.div
-                animate={{ 
-                  rotate: [0, 5, -5, 0],
-                  scale: [1, 1.05, 1]
-                }}
+                animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }}
                 transition={{ duration: 3, repeat: Infinity }}
-                className="relative z-10"
               >
                 <Gift className="w-32 h-32 md:w-48 md:h-48 mx-auto text-white/90 drop-shadow-2xl" />
               </motion.div>
 
-              <motion.div
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="relative z-10 mt-6"
-              >
+              <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="mt-6">
                 <Sparkles className="w-6 h-6 mx-auto text-yellow-300" />
               </motion.div>
 
               {/* 按钮 */}
-              <div className="relative z-10 mt-8">
+              <div className="mt-8">
                 {!wallet.connected ? (
                   <ConnectButton />
                 ) : (
@@ -189,11 +189,8 @@ export default function BoxPage() {
                 )}
               </div>
 
-              {/* 剩余次数 */}
               {wallet.connected && (
-                <p className="relative z-10 mt-4 text-white/70">
-                  今日剩余 {totalDailyCount} 次
-                </p>
+                <p className="mt-4 text-white/70">今日剩余 {totalDailyCount} 次</p>
               )}
             </motion.div>
 
@@ -219,14 +216,31 @@ export default function BoxPage() {
 
           {/* 右侧 */}
           <div className="space-y-4">
-            {/* 用户信息 */}
             {wallet.connected && !loading && (
-              <motion.div 
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-4"
-              >
-                {/* 进度 */}
+              <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                {/* 邀请任务 */}
+                <div className="bg-gray-900/50 rounded-2xl p-4">
+                  <p className="text-gray-400 text-sm mb-3">邀请好友抽盲盒</p>
+                  <div className="space-y-2">
+                    {INVITE_TASKS.map(task => (
+                      <TaskItem 
+                        key={task.friends} 
+                        task={task} 
+                        completed={userData.inviteCount >= task.friends}
+                        current={userData.inviteCount}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-700">
+                    <p className="text-sm text-gray-400">今日已获邀请奖励</p>
+                    <p className="text-2xl font-bold text-green-400">+{userData.inviteBonus}次</p>
+                  </div>
+                </div>
+
+                {/* 碎片 */}
+                <MyFragments fragments={userData.fragments} />
+
+                {/* 保底进度 */}
                 <div className="bg-gray-900/50 rounded-2xl p-4">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-400">保底进度</span>
@@ -242,22 +256,11 @@ export default function BoxPage() {
                     />
                   </div>
                 </div>
-
-                {/* 碎片 */}
-                <FragmentDisplay fragments={userData.fragments} />
-
-                {/* 邀请 */}
-                <InvitePanel inviteCode={userData.inviteCode} onCopy={copyCode} />
               </motion.div>
             )}
 
-            {/* 未连接 */}
             {!wallet.connected && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-gray-900/50 rounded-2xl p-8 text-center"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gray-900/50 rounded-2xl p-8 text-center">
                 <Wallet className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-gray-400 mb-4">连接钱包开始抽取</p>
                 <ConnectButton />
@@ -277,34 +280,14 @@ export default function BoxPage() {
         {/* 结果弹窗 */}
         <AnimatePresence>
           {showResult && result && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowResult(false)}
-            >
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                className="bg-gray-900 rounded-3xl p-8 text-center max-w-sm"
-                onClick={e => e.stopPropagation()}
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                  className="text-7xl mb-4"
-                >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowResult(false)}>
+              <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} className="bg-gray-900 rounded-3xl p-8 text-center max-w-sm" onClick={e => e.stopPropagation()}>
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-7xl mb-4">
                   {FRAGMENT[result.type as keyof typeof FRAGMENT]?.icon || '🙏'}
                 </motion.div>
-                <h2 className="text-2xl font-bold mb-2">
-                  {FRAGMENT[result.type as keyof typeof FRAGMENT]?.name || '感谢参与'}
-                </h2>
-                <p className={`text-3xl font-black mb-6 ${FRAGMENT[result.type as keyof typeof FRAGMENT]?.text}`}>
-                  {result.rarity}
-                </p>
-                <button onClick={() => setShowResult(false)} className="px-8 py-3 bg-violet-600 rounded-full font-bold">
-                  收下
-                </button>
+                <h2 className="text-2xl font-bold mb-2">{FRAGMENT[result.type as keyof typeof FRAGMENT]?.name || '感谢参与'}</h2>
+                <p className={`text-3xl font-black mb-6 ${FRAGMENT[result.type as keyof typeof FRAGMENT]?.text}`}>{result.rarity}</p>
+                <button onClick={() => setShowResult(false)} className="px-8 py-3 bg-violet-600 rounded-full font-bold">收下</button>
               </motion.div>
             </motion.div>
           )}
