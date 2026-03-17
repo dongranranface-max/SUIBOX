@@ -18,8 +18,7 @@ export default function WalletDebugPage() {
 
   const connect = async () => {
     setLogs([]);
-    setStatus('连接中...');
-    addLog('=== 开始 ===');
+    addLog('开始...');
     
     // @ts-ignore
     const eth = window.ethereum;
@@ -27,21 +26,19 @@ export default function WalletDebugPage() {
       setStatus('❌ 未找到钱包');
       return;
     }
-    
-    addLog('找到 ethereum');
 
-    // 先获取当前链
+    // 先检查链
     try {
       // @ts-ignore
       const chainId = await eth.request({ method: 'eth_chainId' });
-      addLog('当前链: ' + chainId);
+      addLog('链: ' + chainId);
     } catch (e) {
-      addLog('无法获取链ID');
+      addLog('无法获取链');
     }
 
-    // 方法1: suix_getAllAddresses (SUI专用)
+    // 方法1: 直接获取SUI地址
     try {
-      addLog('尝试 suix_getAllAddresses...');
+      addLog('1. suix_getAllAddresses...');
       // @ts-ignore
       const suiAddrs = await eth.request({ 
         method: 'suix_getAllAddresses' 
@@ -54,12 +51,12 @@ export default function WalletDebugPage() {
         return;
       }
     } catch (e: unknown) {
-      addLog('suix_getAllAddresses 失败');
+      addLog('方法1失败');
     }
 
-    // 方法2: requestAccounts
+    // 方法2: 获取账户
     try {
-      addLog('尝试 eth_requestAccounts...');
+      addLog('2. eth_requestAccounts...');
       // @ts-ignore
       const accounts = await eth.request({ 
         method: 'eth_requestAccounts' 
@@ -70,19 +67,13 @@ export default function WalletDebugPage() {
         // @ts-ignore
         const chainId = await eth.request({ method: 'eth_chainId' });
         
-        setStatus('⚠️ 连接成功\n' + accounts[0] + '\n\n当前链: ' + chainId);
+        setStatus('✅ 连接成功\n' + accounts[0] + '\n\n链ID: ' + chainId);
         addLog('地址: ' + accounts[0]);
         addLog('链: ' + chainId);
-        
-        // 判断是否是SUI链
-        if (chainId === '0x1' || chainId === '0x5') {
-          addLog('⚠️ 当前是以太坊链，需要切换到SUI');
-          setStatus(prev => prev + '\n\n⚠️ 请切换到SUI网络！');
-        }
         return;
       }
     } catch (e: unknown) {
-      addLog('eth_requestAccounts 失败: ' + (e instanceof Error ? e.message : String(e)));
+      addLog('方法2失败');
     }
 
     setStatus('❌ 连接失败');
@@ -92,17 +83,11 @@ export default function WalletDebugPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-2xl font-bold mb-4">🔗 钱包</h1>
+      <h1 className="text-2xl font-bold mb-4">🔗 SUI钱包</h1>
       
       <div className="bg-gray-800 p-4 rounded-lg mb-4">
         <p className="whitespace-pre-wrap">{status}</p>
       </div>
-
-      {address && (
-        <div className="bg-green-900 p-4 rounded-lg mb-4">
-          <p className="font-mono text-sm break-all">{address}</p>
-        </div>
-      )}
 
       <button 
         onClick={connect}
