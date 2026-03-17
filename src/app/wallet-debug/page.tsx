@@ -6,6 +6,7 @@ export default function WalletDebugPage() {
   const [status, setStatus] = useState<string>('检测中...');
   const [address, setAddress] = useState<string>('');
   const [chain, setChain] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const connectSuiWallet = async () => {
@@ -17,10 +18,10 @@ export default function WalletDebugPage() {
         return;
       }
 
-      setStatus('✅ 找到钱包，尝试连接 SUI 链...');
+      setStatus('✅ 找到钱包，尝试连接...');
 
+      // 先尝试 suix_getAllAddresses
       try {
-        // 先尝试 SUI 链的方法 - suix_getAllAddresses
         // @ts-ignore
         const suiAddresses = await ethereum.request({ 
           method: 'suix_getAllAddresses' 
@@ -32,8 +33,12 @@ export default function WalletDebugPage() {
           setStatus('✅ 连接到 SUI 链！');
           return;
         }
+      } catch (e: unknown) {
+        setError(`suix_getAllAddresses: ${e instanceof Error ? e.message : String(e)}`);
+      }
 
-        // 如果没有 SUI 地址，尝试以太坊
+      // 再尝试 eth_requestAccounts
+      try {
         // @ts-ignore
         const ethAccounts = await ethereum.request({ 
           method: 'eth_requestAccounts' 
@@ -42,12 +47,35 @@ export default function WalletDebugPage() {
         if (ethAccounts && ethAccounts.length > 0) {
           setAddress(ethAccounts[0]);
           setChain('Ethereum');
-          setStatus('⚠️ 连接到以太坊链，不是 SUI 链');
-        } else {
-          setStatus('⚠️ 用户未授权');
+          setStatus('⚠️ 连接到以太坊链');
+          return;
         }
       } catch (e: unknown) {
-        setStatus(`❌ 连接失败: ${e instanceof Error ? e.message : '未知错误'}`);
+        setError(prev => prev + `\neth_requestAccounts: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
+      // 尝试切换到 SUI 链
+      try {
+        // @ts-ignore
+        await ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x1' }], // SUI chain ID
+        });
+        setStatus('🔄 已切换链，再试一次...');
+        
+        // 重试获取地址
+        // @ts-ignore
+        const suiAddresses = await ethereum.request({ 
+          method: 'suix_getAllAddresses' 
+        });
+        
+        if (suiAddresses && suiAddresses.length > 0) {
+          setAddress(suiAddresses[0]);
+          setChain('SUI');
+          setStatus('✅ 切换到 SUI 链成功！');
+        }
+      } catch (e: unknown) {
+        setError(prev => prev + `\nwallet_switchEthereumChain: ${e instanceof Error ? e.message : String(e)}`);
       }
     };
 
@@ -66,6 +94,13 @@ export default function WalletDebugPage() {
             <p className="text-green-400 font-bold mb-2">当前链: {chain}</p>
             <p className="text-gray-400 text-sm mb-2">钱包地址:</p>
             <p className="font-mono text-lg">{address}</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-900 rounded-lg whitespace-pre-wrap">
+            <p className="text-red-400 font-bold mb-2">错误详情:</p>
+            <p className="font-mono text-sm">{error}</p>
           </div>
         )}
       </div>
