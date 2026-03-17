@@ -10,8 +10,6 @@ function WalletInfo() {
     chain, 
     status,
     allAvailableWallets,
-    configuredWallets,
-    detectedWallets 
   } = useWallet();
 
   if (status === 'connecting') {
