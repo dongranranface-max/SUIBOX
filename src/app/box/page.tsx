@@ -3,10 +3,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Zap, AlertCircle, Loader2 } from 'lucide-react';
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 import { SUI_CONFIG } from '@/config/sui';
 import { Transaction } from '@mysten/sui/transactions';
-import { useSuiClient, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useSuiClient } from '@mysten/dapp-kit';
 
 // 碎片数据
 const fragmentData = {
@@ -31,15 +31,14 @@ const guaranteeConfig = {
 
 // 盒子价格
 const boxPrices = {
-  common: 1,    // 1 SUI
-  rare: 5,      // 5 SUI
-  epic: 10,     // 10 SUI
+  common: 1,
+  rare: 5,
+  epic: 10,
 };
 
 export default function BoxPage() {
-  const { address, connected } = useWallet();
+  const wallet = useWallet();
   const client = useSuiClient();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   
   const [isOpening, setIsOpening] = useState(false);
   const [result, setResult] = useState<{ name: string; rarity: string; image: string; txDigest?: string } | null>(null);
@@ -51,16 +50,16 @@ export default function BoxPage() {
 
   // 获取余额
   useEffect(() => {
-    if (!address) return;
+    if (!wallet.account?.address) return;
     
-    client.getBalance({ owner: address })
+    client.getBalance({ owner: wallet.account.address })
       .then(b => setBalance((Number(b.totalBalance) / 1e9).toFixed(2)))
       .catch(console.error);
-  }, [address, client]);
+  }, [wallet.account?.address, client]);
 
   // 开盲盒
   const handleOpenBox = useCallback(async (boxType: 'common' | 'rare' | 'epic') => {
-    if (!connected) {
+    if (!wallet.connected) {
       setError('请先连接SUI钱包！');
       return;
     }
@@ -73,17 +72,18 @@ export default function BoxPage() {
     try {
       const tx = new Transaction();
       
-      // 调用合约开盲盒
       tx.moveCall({
         target: `${SUI_CONFIG.devnet.packageId}::box::open_common_box`,
         arguments: [tx.object.clock()],
       });
 
-      const res = await signAndExecute({ transaction: tx });
+      // 使用钱包签名交易
+      const res = await wallet.signAndExecuteTransaction({
+        transaction: tx,
+      });
       
       console.log('开盲盒成功:', res.digest);
       
-      // 模拟开盒结果（实际应该从事件中获取）
       const rand = Math.random() * 100;
       let rarity: string;
       
@@ -123,7 +123,6 @@ export default function BoxPage() {
       });
       setShowResult(true);
       
-      // 更新碎片
       if (rarity === 'SSR' || rarity === 'SR') {
         setMyFragments(prev => ({
           ...prev,
@@ -146,7 +145,7 @@ export default function BoxPage() {
     }
     
     setIsOpening(false);
-  }, [connected, consecutiveNone, signAndExecute]);
+  }, [wallet, consecutiveNone]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -165,11 +164,19 @@ export default function BoxPage() {
             </h1>
             <span className="text-5xl">💎</span>
           </motion.div>
-          <p className="text-gray-400">SUI Devnet 链上盲盒 · {SUI_CONFIG.devnet.packageId.slice(0, 10)}...</p>
+          <p className="text-gray-400">SUI Devnet 链上盲盒</p>
         </div>
 
+        {/* 连接钱包 */}
+        {!wallet.connected && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6 text-center">
+            <p className="text-amber-400 mb-4">请先连接SUI钱包体验链上开盲盒！</p>
+            <ConnectButton />
+          </div>
+        )}
+
         {/* 余额显示 */}
-        {connected && (
+        {wallet.connected && (
           <div className="bg-gray-900 rounded-xl p-4 mb-6 flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">钱包余额</p>
@@ -214,7 +221,7 @@ export default function BoxPage() {
                   <span className="text-2xl font-bold text-yellow-400">{box.price} SUI</span>
                   <button
                     onClick={() => handleOpenBox(box.type)}
-                    disabled={isOpening || !connected}
+                    disabled={isOpening || !wallet.connected}
                     className="px-6 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {isOpening ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
