@@ -199,9 +199,17 @@ export default function AuctionPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
-              className="bg-gray-900 rounded-t-2xl md:rounded-2xl w-full md:max-w-md max-h-[85vh] overflow-y-auto"
+              className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[90vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
+              {/* 关闭按钮 - 移动端 */}
+              <button 
+                onClick={() => setSelectedAuction(null)}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/60 backdrop-blur rounded-full flex items-center justify-center text-white md:hidden"
+              >
+                ✕
+              </button>
+              
               {/* 图片 */}
               <div className="aspect-square relative bg-gray-800">
                 <Image src={selectedAuction.image} alt={selectedAuction.name} fill className="object-cover" />
@@ -210,12 +218,6 @@ export default function AuctionPage() {
                 }`}>
                   {selectedAuction.rarity === 'Epic' ? 'SSR' : 'SR'}
                 </div>
-                <button 
-                  onClick={() => setSelectedAuction(null)}
-                  className="absolute top-4 right-4 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
-                >
-                  ✕
-                </button>
               </div>
               
               <div className="p-4 md:p-6">
