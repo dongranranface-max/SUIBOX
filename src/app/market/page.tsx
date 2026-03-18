@@ -452,29 +452,37 @@ export default function MarketPage() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4"
             onClick={() => setSelectedNFT(null)}
           >
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg max-h-[85vh] overflow-y-auto"
+              transition={{ type: 'spring', damping: 25 }}
+              className="bg-gray-900 rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl shadow-violet-500/20"
               onClick={e => e.stopPropagation()}
             >
               {/* Close */}
               <button 
                 onClick={() => setSelectedNFT(null)}
-                className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white md:hidden"
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white md:hidden"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
               
               {/* Image */}
-              <div className="aspect-square bg-gray-800 flex items-center justify-center text-8xl relative">
-                {selectedNFT.image}
-                <span className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-sm font-bold ${getRarityColor(selectedNFT.rarity)}`}>
-                  {selectedNFT.rarity}
+              <div className="aspect-square md:aspect-video bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-[150px] relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-violet-500/20 via-transparent to-transparent" />
+                <motion.span 
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="drop-shadow-2xl"
+                >
+                  {selectedNFT.image}
+                </motion.span>
+                <span className={`absolute top-4 left-4 px-4 py-2 rounded-full text-sm font-bold ${getRarityColor(selectedNFT.rarity)}`}>
+                  👑 {selectedNFT.rarity}
                 </span>
               </div>
               
