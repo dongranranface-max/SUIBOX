@@ -588,44 +588,107 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* 出价弹窗 */}
+      {/* 出价弹窗 - 响应式 */}
       {bidModal.show && bidModal.auction && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-2xl w-full max-w-md p-6 relative">
-            <button onClick={() => setBidModal({show: false})} className="absolute top-4 right-4 text-gray-400 hover:text-white">
-              <X className="w-6 h-6" />
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+          onClick={() => setBidModal({show: false})}
+        >
+          <motion.div 
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25 }}
+            className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 关闭按钮 - 移动端 */}
+            <button 
+              onClick={() => setBidModal({show: false})}
+              className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white md:hidden"
+            >
+              <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-bold mb-4">参与竞拍</h3>
-            <div className="flex items-center gap-4 mb-6 p-4 bg-gray-800 rounded-xl">
-              <div className="w-16 h-16 rounded-lg overflow-hidden relative">
-                <img src={bidModal.auction.image} alt={bidModal.auction.name} className="w-full h-full object-cover" />
+            
+            {/* 图片 */}
+            <div className="aspect-square bg-gray-800 relative flex items-center justify-center text-8xl">
+              <img src={bidModal.auction.image} alt={bidModal.auction.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+              <span className={`absolute top-4 left-4 px-4 py-1.5 rounded-full text-sm font-bold ${
+                bidModal.auction.rarity === '传说' ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-gradient-to-r from-purple-500 to-pink-500'
+              }`}>
+                {bidModal.auction.rarity === '传说' ? '⭐ SSR' : '💎 SR'}
+              </span>
+            </div>
+            
+            <div className="p-4 md:p-6 -mt-8 relative">
+              {/* NFT信息卡片 */}
+              <div className="bg-gray-800/90 backdrop-blur rounded-2xl p-4 mb-4 border border-gray-700">
+                <h3 className="text-xl md:text-2xl font-bold mb-1">{bidModal.auction.name}</h3>
+                <p className="text-gray-400 text-sm">by {bidModal.auction.artist}</p>
               </div>
-              <div>
-                <p className="font-bold">{bidModal.auction.name}</p>
-                <p className="text-gray-400 text-sm">当前价: {bidModal.auction.price} SUI</p>
+              
+              {/* 价格信息 */}
+              <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl p-4 mb-4 border border-orange-500/20">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">当前价</p>
+                    <p className="text-3xl md:text-4xl font-black text-orange-400">{bidModal.auction.price}</p>
+                    <p className="text-orange-400/60 text-sm">BOX</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-400 text-xs">{bidModal.auction.bids}次出价</p>
+                    <p className="text-red-400 text-sm font-medium">🔥 {formatCountdown(bidModal.auction.id)}</p>
+                  </div>
+                </div>
               </div>
+              
+              {/* 出价输入 */}
+              <div className="mb-4">
+                <label className="text-gray-400 text-sm block mb-2">出价金额 (BOX)</label>
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    value={bidPrice}
+                    onChange={(e) => setBidPrice(e.target.value)}
+                    className="w-full bg-gray-800/80 border border-gray-600 rounded-xl py-4 px-4 pr-16 text-white text-xl font-bold text-center"
+                    placeholder="请输入出价金额"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">
+                    BOX
+                  </span>
+                </div>
+                <p className="text-gray-500 text-xs text-center mt-2">
+                  最低出价: {Math.floor(bidModal.auction.price * 1.1)} BOX
+                </p>
+              </div>
+              
+              {/* 按钮 */}
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setBidModal({show: false})} 
+                  className="flex-1 py-4 bg-gray-700 rounded-xl font-bold hover:bg-gray-600 transition-colors"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={submitBid} 
+                  className="flex-1 py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all"
+                >
+                  ⚡ 确认出价
+                </button>
+              </div>
+              
+              {/* 说明 */}
+              <p className="text-gray-500 text-xs text-center mt-4">
+                📊 卖家到手 95% | 🔥 平台销毁 5%
+              </p>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-2">出价金额 (SUI)</label>
-              <input 
-                type="number" 
-                value={bidPrice}
-                onChange={(e) => setBidPrice(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-violet-500 focus:outline-none"
-                placeholder="请输入出价金额"
-              />
-              <p className="text-xs text-gray-500 mt-2">最低出价: {Math.floor(bidModal.auction.price * 1.1)} SUI</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setBidModal({show: false})} className="flex-1 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition-colors">
-                取消
-              </button>
-              <button onClick={submitBid} className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold hover:from-violet-500 hover:to-pink-500 transition-all">
-                确认出价
-              </button>
-            </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </div>
   );
