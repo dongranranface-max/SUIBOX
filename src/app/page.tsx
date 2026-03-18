@@ -213,70 +213,43 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 热门拍卖 */}
+        {/* 热门拍卖 - 2x4布局 */}
         <section className="bg-gray-900/30 -mx-4 px-4 py-6 md:py-8 rounded-2xl md:rounded-3xl">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
               <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
               热门拍卖
             </h2>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setAuctionFilter('ending')}
-                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'ending' ? 'bg-orange-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
-              >
-                即将结束
-              </button>
-              <button 
-                onClick={() => setAuctionFilter('new')}
-                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'new' ? 'bg-violet-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
-              >
-                最新上架
-              </button>
-              <Link href="/auction" className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
-                查看全部
-              </Link>
-            </div>
+            <Link href="/auction" className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
+              查看全部
+            </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {filteredAuctions.map((auction) => (
-              <div key={auction.id} className="group bg-gray-800/50 rounded-xl md:rounded-2xl overflow-hidden hover:bg-gray-700/50 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
-                <div className="aspect-square relative bg-gray-700 cursor-pointer" onClick={() => handleBid(auction)}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {filteredAuctions.slice(0, 8).map((auction) => (
+              <div key={auction.id} className="group bg-gray-800/50 rounded-xl overflow-hidden hover:bg-gray-700/50 transition-all cursor-pointer" onClick={() => handleBid(auction)}>
+                <div className="aspect-square relative bg-gray-700">
                   <img src={auction.image} alt={auction.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="px-4 md:px-6 py-2 md:py-3 bg-violet-600 rounded-xl font-bold text-sm md:text-lg">参与竞拍</span>
-                  </div>
-                  <div className="absolute top-2 md:top-3 left-2 md:left-3 right-2 md:right-3 flex justify-between">
-                    <span className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold flex items-center gap-0.5 md:gap-1 ${
+                  <div className="absolute top-2 left-2 right-2 flex justify-between">
+                    <span className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-0.5 ${
                       countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1 
                         ? 'bg-red-600 animate-pulse' 
                         : 'bg-orange-600/80 backdrop-blur-sm'
                     }`}>
-                      <Clock className="w-3 md:w-4 h-3 md:h-4" /> 
+                      <Clock className="w-3 h-3" /> 
                       <span>{formatCountdown(auction.id)}</span>
                     </span>
-                    <span className={`px-1.5 md:px-2 py-0.5 md:py-1 backdrop-blur-sm rounded-lg text-[10px] md:text-xs ${auction.rarity === '传说' ? 'bg-orange-500/60' : 'bg-purple-500/60'}`}>{auction.rarity}</span>
+                    <span className={`px-1.5 py-0.5 backdrop-blur-sm rounded-lg text-[10px] ${auction.rarity === '传说' ? 'bg-orange-500/60' : 'bg-purple-500/60'}`}>{auction.rarity === '传说' ? 'SSR' : 'SR'}</span>
                   </div>
                 </div>
-                <div className="p-3 md:p-5">
-                  <h3 className="font-bold text-base md:text-lg mb-0.5 md:mb-1">{auction.name}</h3>
-                  <p className="text-gray-400 text-xs md:text-sm mb-2 md:mb-4">by {auction.artist}</p>
-                  <div className="flex justify-between items-end">
+                <div className="p-2 md:p-3">
+                  <h3 className="font-bold text-sm truncate">{auction.name}</h3>
+                  <div className="flex items-center justify-between mt-1">
                     <div>
-                      <p className="text-[10px] md:text-xs text-gray-400">当前价</p>
-                      <p className="text-lg md:text-xl font-bold text-violet-400">{auction.price} SUI</p>
+                      <p className="text-[10px] text-gray-500">当前价</p>
+                      <p className="text-orange-400 font-bold text-sm">{auction.price} BOX</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">{auction.bids}次出价</p>
-                      <p className="text-xs text-green-400">+{Math.floor(auction.price / 500 * 100)}%</p>
-                    </div>
+                    <p className="text-[10px] text-gray-500">{auction.bids}次</p>
                   </div>
-                  <button 
-                    onClick={() => handleBid(auction)}
-                    className="w-full mt-4 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold hover:from-violet-500 hover:to-pink-500 transition-all"
-                  >
-                    参与竞拍
-                  </button>
                 </div>
               </div>
             ))}
