@@ -172,21 +172,52 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-white/10">
+          <div className="md:hidden py-4 border-t border-white/10 max-h-[80vh] overflow-y-auto">
             <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
-                <Link 
-                  key={item.name}
-                  href={item.href || '#'}
-                  className={`px-3 py-2 text-sm rounded-lg ${
-                    item.highlight 
-                      ? 'text-amber-400 font-bold' 
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.icon && <span>{item.icon}</span>} {item.name}
-                </Link>
+                <div key={item.name}>
+                  {item.hasDropdown ? (
+                    <button 
+                      onClick={() => setDropdownOpen(dropdownOpen === item.menu ? null : item.menu)}
+                      className={`w-full px-3 py-2 text-sm rounded-lg flex items-center justify-between ${
+                        item.highlight 
+                          ? 'text-amber-400 font-bold' 
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      <span>{item.icon && <span>{item.icon}</span>} {item.name}</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen === item.menu ? 'rotate-180' : ''}`} />
+                    </button>
+                  ) : (
+                    <Link 
+                      href={item.href || '#'}
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        item.highlight 
+                          ? 'text-amber-400 font-bold' 
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.icon && <span>{item.icon}</span>} {item.name}
+                    </Link>
+                  )}
+                  
+                  {/* Mobile Dropdown */}
+                  {item.hasDropdown && dropdownOpen === item.menu && (
+                    <div className="ml-4 mt-1 space-y-1 border-l border-gray-700 pl-2">
+                      {dropdowns[item.menu || '']?.map((sub) => (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg"
+                          onClick={() => { setMobileMenuOpen(false); setDropdownOpen(null); }}
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
           </div>
