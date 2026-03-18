@@ -49,10 +49,18 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-3 md:px-4">
         <div className="flex items-center justify-between h-14 md:h-16">
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 md:gap-2">
-            <img src="/suibox-logo.png" alt="SUIBOX" className="h-6 w-auto md:h-8" />
-            <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+          {/* Logo - 放大1.3倍 + 发光特效 */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative">
+              <img 
+                src="/suibox-logo.png" 
+                alt="SUIBOX" 
+                className="h-10 w-auto md:h-12 transition-transform duration-300 group-hover:scale-110" 
+              />
+              {/* 发光特效 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/40 to-pink-500/40 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 rounded-full" />
+            </div>
+            <span className="text-xl md:text-2xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
               SUIBOX
             </span>
           </Link>
