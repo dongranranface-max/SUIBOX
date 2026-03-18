@@ -139,11 +139,15 @@ export default function Header() {
 
           {/* Right Side */}
           <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            {/* Notifications */}
-            <Link href="/announcements" className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            </Link>
+            {/* Notifications with badge */}
+            <div className="relative">
+              <Link href="/announcements" className="flex items-center p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                  3
+                </span>
+              </Link>
+            </div>
 
             {/* Language - PC */}
             <div className="hidden sm:block relative">
@@ -226,7 +230,7 @@ export default function Header() {
                       <Link href={item.href || '/'} className={`flex items-center gap-2 px-4 py-3 text-sm rounded-lg ${item.highlight ? 'text-amber-400 font-medium' : 'text-gray-400 hover:text-white hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
                         {item.icon && <item.icon className="w-5 h-5" />}
                         {item.name}
-                        {item.badge && <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${item.badge === 'HOT' ? 'bg-red-500 text-white' : item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}`}>{item.badge}</span>}
+                        {item.badge && <span className={`ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full ${item.badge === 'HOT' ? 'bg-red-500 text-white' : item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}`}>{item.badge}</span>}
                       </Link>
                     )}
                   </div>
