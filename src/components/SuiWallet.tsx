@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 import { Wallet, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
 import '@suiet/wallet-kit/style.css';
 
 function shortenAddress(addr: string): string {
@@ -26,25 +27,29 @@ export function SuiWalletButton() {
       <div className="relative">
         <button 
           onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <Wallet className="w-4 h-4" />
           <span>{shortenAddress(wallet.account.address)}</span>
         </button>
         
         {showMenu && (
-          <div className="absolute right-0 mt-2 w-32 bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden z-50">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute right-0 mt-2 w-40 bg-gray-900/95 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden z-[100]"
+          >
             <button
               onClick={() => {
                 wallet.disconnect();
                 setShowMenu(false);
               }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               断开连接
             </button>
-          </div>
+          </motion.div>
         )}
       </div>
     );
