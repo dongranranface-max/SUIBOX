@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lock, Zap, Crown, Wallet, ArrowRight, RefreshCw, Layers, Rocket, Atom, ChevronRight } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
+import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
 
 // NFT视频配置
 const NFT_VIDEOS = { common: '/nft-common.mp4', rare: '/nft-rare.mp4', epic: '/nft-epic.mp4' };
@@ -51,6 +52,7 @@ function TierBadge({ tier }: { tier: number }) {
 
 export default function CraftPage() {
   const wallet = useWallet();
+  const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
   const [activeTab, setActiveTab] = useState<'fragment' | 'nft'>('fragment');
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
   const [synthesizing, setSynthesizing] = useState(false);

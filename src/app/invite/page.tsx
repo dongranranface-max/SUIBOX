@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Gift, Zap, Star, Wallet, Copy, Check, Lock, Award, TrendingUp, Link, Share2, Twitter, MessageCircle, QrCode, Download, ExternalLink } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
+import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
 
 // 邀请任务配置
 const INVITE_TASKS = [
@@ -20,6 +21,7 @@ const TIER_CONFIG = {
 
 export default function InvitePage() {
   const wallet = useWallet();
+  const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
   const [copied, setCopied] = useState(false);
   const [hasEnough, setHasEnough] = useState(false);
   const [loading, setLoading] = useState(true);

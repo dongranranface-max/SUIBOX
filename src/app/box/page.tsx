@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus, Star, Heart, Sparkle } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
+import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
 
 const GUARANTEE = { common: 3, rare: 7, epic: 25 };
 
@@ -198,6 +199,7 @@ function OpeningAnimation() {
 
 export default function BoxPage() {
   const wallet = useWallet();
+  const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
   const [isOpening, setIsOpening] = useState(false);
   const [showOpening, setShowOpening] = useState(false);
   const [result, setResult] = useState<{ type: string } | null>(null);
@@ -298,6 +300,18 @@ export default function BoxPage() {
               </div>
 
               {wallet.connected && <p className="mt-3 text-gray-400 text-sm">剩余 <span className="text-orange-400 font-bold text-xl">{totalDailyCount}</span> 次</p>}
+              
+              {/* 网络错误提示 */}
+              {(isWrongNetwork || isSwitching) && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 text-center">
+                  <p className="text-yellow-400 text-sm font-medium">
+                    {isSwitching ? '🔄 正在切换到SUI网络...' : '⚠️ 请切换到SUI网络 (Devnet)'}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    在钱包中手动切换网络，或刷新页面重试
+                  </p>
+                </motion.div>
+              )}
 
               <div className="mt-5">
                 <p className="text-gray-500 text-xs mb-2">概率公示</p>
