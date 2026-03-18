@@ -304,8 +304,7 @@ export default function AuctionPage() {
                 </div>
               </div>
             </motion.div>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
     </div>
   );
 }
