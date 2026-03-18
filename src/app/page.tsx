@@ -264,6 +264,12 @@ export default function Home() {
                     </div>
                     <p className="text-[10px] text-gray-500">{auction.bids}次</p>
                   </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleBid(auction); }}
+                    className="w-full mt-2 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-xs font-bold"
+                  >
+                    参与竞拍
+                  </button>
                 </div>
               </div>
             ))}
