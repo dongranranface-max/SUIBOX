@@ -476,7 +476,7 @@ export default function MarketPage() {
                 </div>
                 
                 {/* Tab Buttons */}
-                <div className="flex border-b border-gray-700 mb-4">
+                <div className="flex border-b border-gray-700 mb-6">
                   {[
                     { key: 'buy', label: '立即购买', icon: ShoppingCart },
                     { key: 'offer', label: '发起报价', icon: DollarSign },
@@ -485,12 +485,14 @@ export default function MarketPage() {
                     <button
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key as any)}
-                      className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${
-                        activeTab === tab.key ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-500 hover:text-white'
+                      className={`flex-1 py-4 flex items-center justify-center gap-2 border-b-2 transition-all ${
+                        activeTab === tab.key 
+                          ? 'border-violet-500 text-violet-400 bg-violet-500/10' 
+                          : 'border-transparent text-gray-500 hover:text-white hover:bg-gray-800'
                       }`}
                     >
-                      <tab.icon className="w-4 h-4" />
-                      {tab.label}
+                      <tab.icon className="w-5 h-5" />
+                      <span className="font-bold">{tab.label}</span>
                     </button>
                   ))}
                 </div>
@@ -521,90 +523,119 @@ export default function MarketPage() {
                     </div>
                     
                     {/* Buy Button */}
-                    <button className="w-full py-4 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold flex items-center justify-center gap-2">
-                      <ShoppingCart className="w-5 h-5" />
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-4 bg-gradient-to-r from-violet-600 via-pink-600 to-purple-600 rounded-2xl font-bold text-lg shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                    >
+                      <ShoppingCart className="w-6 h-6" />
                       立即购买 {selectedNFT.price} {selectedNFT.priceUnit}
-                    </button>
+                    </motion.button>
                   </>
                 )}
                 
                 {activeTab === 'offer' && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-gray-400 text-sm mb-2 block">报价金额</label>
+                    <div className="bg-gray-800/50 rounded-2xl p-4">
+                      <label className="text-gray-400 text-sm mb-2 block">输入报价金额</label>
                       <input 
                         type="number" 
                         value={offerPrice}
                         onChange={(e) => setOfferPrice(e.target.value)}
-                        placeholder="输入报价金额"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white"
+                        placeholder="输入金额"
+                        className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-4 text-white text-lg focus:outline-none focus:border-violet-500"
                       />
                     </div>
+                    
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setOfferType('溢价')}
-                        className={`flex-1 py-2 rounded-lg font-bold ${offerType === '溢价' ? 'bg-green-600' : 'bg-gray-800 text-gray-400'}`}
+                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${offerType === '溢价' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                       >
-                        溢价 +{offerPercent}%
+                        📈 溢价 +{offerPercent}%
                       </button>
                       <button 
                         onClick={() => setOfferType('折价')}
-                        className={`flex-1 py-2 rounded-lg font-bold ${offerType === '折价' ? 'bg-red-600' : 'bg-gray-800 text-gray-400'}`}
+                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${offerType === '折价' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                       >
-                        折价 -{offerPercent}%
+                        📉 折价 -{offerPercent}%
                       </button>
                     </div>
+                    
                     <div className="flex gap-2">
-                      {['5', '10', '15', '20'].map(p => (
+                      {['5', '10', '15', '20', '30'].map(p => (
                         <button
                           key={p}
                           onClick={() => setOfferPercent(p)}
-                          className={`flex-1 py-2 rounded-lg text-sm ${offerPercent === p ? 'bg-violet-600' : 'bg-gray-800 text-gray-400'}`}
+                          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${offerPercent === p ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                         >
                           {p}%
                         </button>
                       ))}
                     </div>
-                    <button 
+                    
+                    {offerPrice && (
+                      <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 text-center">
+                        <p className="text-gray-400 text-sm">最终报价</p>
+                        <p className="text-2xl font-black text-violet-400">
+                          {offerType === '溢价' 
+                            ? (Number(offerPrice) * (1 + Number(offerPercent) / 100)).toFixed(0)
+                            : (Number(offerPrice) * (1 - Number(offerPercent) / 100)).toFixed(0)
+                          } {selectedNFT.priceUnit}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => offerPrice && alert(`报价提交: ${offerPrice} ${selectedNFT.priceUnit}`)}
-                      className="w-full py-3 bg-green-600 rounded-xl font-bold"
+                      className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-2xl font-bold text-lg flex items-center justify-center gap-2"
                     >
+                      <DollarSign className="w-6 h-6" />
                       确认报价
-                    </button>
+                    </motion.button>
                   </div>
                 )}
                 
                 {activeTab === 'comments' && (
-                  <div className="space-y-3">
-                    {comments[selectedNFT.id]?.map(c => (
-                      <div key={c.id} className="flex gap-3 p-3 bg-gray-800/50 rounded-xl">
-                        <span className="text-2xl">{c.avatar}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-sm">{c.user}</span>
-                            <span className="text-gray-500 text-xs">{c.time}</span>
+                  <div className="space-y-4">
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {comments[selectedNFT.id]?.map(c => (
+                        <div key={c.id} className="flex gap-3 p-4 bg-gray-800/50 rounded-2xl">
+                          <span className="text-3xl">{c.avatar}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold">{c.user}</span>
+                              <span className="text-gray-500 text-xs">{c.time}</span>
+                            </div>
+                            <p className="text-gray-300">{c.text}</p>
                           </div>
-                          <p className="text-gray-300 text-sm">{c.text}</p>
                         </div>
-                      </div>
-                    ))}
-                    {(!comments[selectedNFT.id] || comments[selectedNFT.id].length === 0) && (
-                      <p className="text-center text-gray-500 py-4">暂无评论</p>
-                    )}
+                      ))}
+                      {(!comments[selectedNFT.id] || comments[selectedNFT.id].length === 0) && (
+                        <div className="text-center py-8 text-gray-500">
+                          <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>暂无评论，快来抢沙发吧！</p>
+                        </div>
+                      )}
+                    </div>
+                    
                     <div className="flex gap-2 mt-4">
                       <input 
                         type="text" 
                         value={newComment} 
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="发表评论..." 
-                        className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white" 
+                        placeholder="发表你的看法..." 
+                        className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500" 
                       />
-                      <button 
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
                         onClick={handleSendComment}
-                        className="px-4 bg-violet-600 rounded-xl"
+                        className="px-6 bg-violet-600 hover:bg-violet-500 rounded-xl flex items-center justify-center"
                       >
                         <Send className="w-5 h-5" />
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 )}
