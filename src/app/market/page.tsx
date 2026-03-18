@@ -42,6 +42,7 @@ interface Offer {
 
 export default function MarketPage() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCoin, setActiveCoin] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('hot');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,10 +65,18 @@ export default function MarketPage() {
   const [newComment, setNewComment] = useState('');
 
   const categories = [
+    { key: 'all', label: '全部', count: 156 },
+    { key: 'common', label: '普通', count: 89 },
+    { key: 'rare', label: '稀有', count: 45 },
+    { key: 'epic', label: '史诗', count: 18 },
+    { key: 'collector', label: '藏家', count: 12 },
+    { key: 'digital', label: '数字IP', count: 8 },
+  ];
+
+  const coins = [
     { key: 'all', label: '全部' },
-    { key: 'common', label: '普通' },
-    { key: 'rare', label: '稀有' },
-    { key: 'epic', label: '史诗' },
+    { key: 'BOX', label: 'BOX交易' },
+    { key: 'SUI', label: 'SUI交易' },
   ];
 
   const priceRanges = [
@@ -99,10 +108,15 @@ export default function MarketPage() {
     let result = [...nfts];
     
     // 搜索过滤
+    // 模糊搜索 - 名称、艺术家、描述、稀有度、分类
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       result = result.filter(nft => 
-        nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        nft.artist.toLowerCase().includes(searchQuery.toLowerCase())
+        nft.name.toLowerCase().includes(query) ||
+        nft.artist.toLowerCase().includes(query) ||
+        nft.description.toLowerCase().includes(query) ||
+        nft.rarity.toLowerCase().includes(query) ||
+        nft.category?.toLowerCase().includes(query)
       );
     }
     
@@ -114,6 +128,10 @@ export default function MarketPage() {
     }
     
     // 价格过滤
+    if (activeCoin !== 'all') {
+      result = result.filter(nft => nft.priceUnit === activeCoin);
+    }
+    
     if (priceRange !== 'all') {
       result = result.filter(nft => {
         if (priceRange === 'low') return nft.price < 100;
@@ -140,7 +158,7 @@ export default function MarketPage() {
     }
     
     return result;
-  }, [nfts, searchQuery, activeCategory, priceRange, sortBy]);
+  }, [nfts, searchQuery, activeCategory, activeCoin, priceRange, sortBy]);
 
   const toggleFavorite = (id: number) => {
     setFavorites(prev => 
@@ -161,7 +179,7 @@ export default function MarketPage() {
       {/* Header */}
       <div className="bg-gradient-to-b from-violet-900/20 to-transparent pt-8 pb-6">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">🛒 NFT市场</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">🛒 NFT大厅 鉴赏与交易</h1>
           <p className="text-gray-400">浏览和购买稀有NFT</p>
         </div>
       </div>
