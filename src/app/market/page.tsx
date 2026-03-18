@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Grid, List, Heart, ShoppingCart, X, ChevronDown, Star, Flame, Clock, Zap, DollarSign, MessageCircle, Send, CheckCircle, Eye } from 'lucide-react';
+import { Search, Filter, Grid, List, Heart, ShoppingCart, X, ChevronDown, Star, Flame, Clock, Zap, DollarSign, MessageCircle, Send, CheckCircle, Eye, TrendingUp, RefreshCw } from 'lucide-react';
 
 interface NFT {
   id: number;
@@ -177,10 +177,31 @@ export default function MarketPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-b from-violet-900/20 to-transparent pt-8 pb-6">
+      <div className="bg-gradient-to-b from-violet-900/30 via-purple-900/20 to-transparent pt-8 pb-6">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">🛒 NFT大厅 鉴赏与交易</h1>
-          <p className="text-gray-400">浏览和购买稀有NFT</p>
+          {/* Title & Stats */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black mb-2">
+                <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                  🛒 NFT大厅 鉴赏与交易
+                </span>
+              </h1>
+              <p className="text-gray-400">发现、收藏、交易稀有的数字艺术品</p>
+            </div>
+            
+            {/* Stats */}
+            <div className="flex gap-3">
+              <motion.div whileHover={{ scale: 1.05 }} className="bg-gray-800/80 backdrop-blur rounded-2xl px-5 py-3 border border-white/5">
+                <p className="text-gray-400 text-xs">在线NFT</p>
+                <p className="text-2xl font-black text-violet-400">{filteredNFTs.length}</p>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} className="bg-gray-800/80 backdrop-blur rounded-2xl px-5 py-3 border border-white/5">
+                <p className="text-gray-400 text-xs">今日交易</p>
+                <p className="text-2xl font-black text-green-400">¥12.5K</p>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -292,36 +313,64 @@ export default function MarketPage() {
             {filteredNFTs.map((nft) => (
               <motion.div
                 key={nft.id}
-                whileHover={{ scale: 1.02 }}
-                className="bg-gray-900 rounded-xl overflow-hidden cursor-pointer group"
-                onClick={() => setSelectedNFT(nft)}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-gray-900 rounded-2xl overflow-hidden cursor-pointer group border border-white/5 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all"
+                onClick={() => { setSelectedNFT(nft); setActiveTab('buy'); }}
               >
                 {/* Image */}
-                <div className="aspect-square bg-gray-800 flex items-center justify-center text-6xl relative">
-                  {nft.image}
-                  <button 
+                <div className="aspect-square bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-7xl relative overflow-hidden">
+                  <motion.span 
+                    className="drop-shadow-2xl"
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                  >
+                    {nft.image}
+                  </motion.span>
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-violet-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                    <span className="px-4 py-2 bg-white/20 backdrop-blur rounded-full text-sm font-bold">查看详情</span>
+                  </div>
+                  
+                  {/* Favorite */}
+                  <motion.button 
+                    whileTap={{ scale: 0.8 }}
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(nft.id); }}
-                    className="absolute top-2 right-2 p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+                    className="absolute top-3 right-3 p-2 bg-black/50 backdrop-blur rounded-full hover:bg-black/70 transition-colors"
                   >
                     <Heart className={`w-5 h-5 ${favorites.includes(nft.id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-                  </button>
-                  <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold ${getRarityColor(nft.rarity)}`}>
+                  </motion.button>
+                  
+                  {/* Rarity Badge */}
+                  <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold ${getRarityColor(nft.rarity)}`}>
                     {nft.rarity}
                   </span>
                 </div>
                 
                 {/* Info */}
-                <div className="p-3">
-                  <h3 className="font-bold text-sm truncate">{nft.name}</h3>
-                  <p className="text-gray-500 text-xs mb-2">by {nft.artist}</p>
+                <div className="p-4">
+                  <h3 className="font-bold text-sm truncate mb-1">{nft.name}</h3>
+                  <p className="text-gray-500 text-xs mb-3">by {nft.artist}</p>
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-gray-500 text-xs">价格</p>
-                      <p className="text-violet-400 font-bold">{nft.price} {nft.priceUnit}</p>
+                      <p className="text-lg font-black text-violet-400">{nft.price} <span className="text-xs">{nft.priceUnit}</span></p>
                     </div>
                     <div className="text-right">
                       <p className="text-gray-500 text-xs">剩余</p>
-                      <p className="text-gray-300">{nft.remaining}/{nft.supply}</p>
+                      <p className="font-bold">{nft.remaining}</p>
+                    </div>
+                  </div>
+                  {/* Quick Stats */}
+                  <div className="flex gap-3 mt-3 pt-3 border-t border-gray-800">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Heart className="w-3 h-3" /> {nft.likes}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Eye className="w-3 h-3" /> {nft.comments}
                     </div>
                   </div>
                 </div>
