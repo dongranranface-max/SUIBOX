@@ -230,7 +230,7 @@ export default function MarketPage() {
             </div>
           </div>
           
-          {/* Categories & Price Filter */}
+          {/* Categories & Coin Filter */}
           <div className="flex flex-col sm:flex-row gap-3 mt-3">
             <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
               {categories.map(cat => (
@@ -243,20 +243,39 @@ export default function MarketPage() {
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                   }`}
                 >
-                  {cat.label}
+                  {cat.label} {cat.count && <span className="ml-1 text-xs opacity-70">({cat.count})</span>}
                 </button>
               ))}
             </div>
-            <select 
-              value={priceRange}
-              onChange={(e) => setPriceRange(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none"
-            >
-              {priceRanges.map(pr => (
-                <option key={pr.key} value={pr.key}>{pr.label}</option>
+            
+            {/* Coin Filter */}
+            <div className="flex gap-2">
+              {coins.map(coin => (
+                <button
+                  key={coin.key}
+                  onClick={() => setActiveCoin(coin.key)}
+                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCoin === coin.key 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {coin.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
+          
+          {/* Price Filter */}
+          <select 
+            value={priceRange}
+            onChange={(e) => setPriceRange(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none"
+          >
+            {priceRanges.map(pr => (
+              <option key={pr.key} value={pr.key}>{pr.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -407,8 +426,142 @@ export default function MarketPage() {
                   </div>
                 </div>
                 
-                {/* Buttons */}
-                <div className="flex gap-3">
+                {/* Tab Buttons */}
+                <div className="flex border-b border-gray-700 mb-4">
+                  {[
+                    { key: 'buy', label: '立即购买', icon: ShoppingCart },
+                    { key: 'offer', label: '发起报价', icon: DollarSign },
+                    { key: 'comments', label: '评论', icon: MessageCircle },
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key as any)}
+                      className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${
+                        activeTab === tab.key ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-500 hover:text-white'
+                      }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Tab Content */}
+                {activeTab === 'buy' && (
+                  <>
+                    <p className="text-gray-300 text-sm mb-6">{selectedNFT.description}</p>
+                    
+                    {/* Stats */}
+                    <div className="grid grid-cols-4 gap-4 mb-6">
+                      <div className="text-center">
+                        <p className="text-gray-500 text-xs">价格</p>
+                        <p className="text-violet-400 font-bold">{selectedNFT.price} {selectedNFT.priceUnit}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-gray-500 text-xs">剩余</p>
+                        <p className="text-white font-bold">{selectedNFT.remaining}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-gray-500 text-xs">销量</p>
+                        <p className="text-white font-bold">{selectedNFT.sales}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-gray-500 text-xs">热度</p>
+                        <p className="text-red-400 font-bold">❤️ {selectedNFT.likes}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Buy Button */}
+                    <button className="w-full py-4 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold flex items-center justify-center gap-2">
+                      <ShoppingCart className="w-5 h-5" />
+                      立即购买 {selectedNFT.price} {selectedNFT.priceUnit}
+                    </button>
+                  </>
+                )}
+                
+                {activeTab === 'offer' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-gray-400 text-sm mb-2 block">报价金额</label>
+                      <input 
+                        type="number" 
+                        value={offerPrice}
+                        onChange={(e) => setOfferPrice(e.target.value)}
+                        placeholder="输入报价金额"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setOfferType('溢价')}
+                        className={`flex-1 py-2 rounded-lg font-bold ${offerType === '溢价' ? 'bg-green-600' : 'bg-gray-800 text-gray-400'}`}
+                      >
+                        溢价 +{offerPercent}%
+                      </button>
+                      <button 
+                        onClick={() => setOfferType('折价')}
+                        className={`flex-1 py-2 rounded-lg font-bold ${offerType === '折价' ? 'bg-red-600' : 'bg-gray-800 text-gray-400'}`}
+                      >
+                        折价 -{offerPercent}%
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      {['5', '10', '15', '20'].map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setOfferPercent(p)}
+                          className={`flex-1 py-2 rounded-lg text-sm ${offerPercent === p ? 'bg-violet-600' : 'bg-gray-800 text-gray-400'}`}
+                        >
+                          {p}%
+                        </button>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={() => offerPrice && alert(`报价提交: ${offerPrice} ${selectedNFT.priceUnit}`)}
+                      className="w-full py-3 bg-green-600 rounded-xl font-bold"
+                    >
+                      确认报价
+                    </button>
+                  </div>
+                )}
+                
+                {activeTab === 'comments' && (
+                  <div className="space-y-3">
+                    {comments[selectedNFT.id]?.map(c => (
+                      <div key={c.id} className="flex gap-3 p-3 bg-gray-800/50 rounded-xl">
+                        <span className="text-2xl">{c.avatar}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm">{c.user}</span>
+                            <span className="text-gray-500 text-xs">{c.time}</span>
+                          </div>
+                          <p className="text-gray-300 text-sm">{c.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!comments[selectedNFT.id] || comments[selectedNFT.id].length === 0) && (
+                      <p className="text-center text-gray-500 py-4">暂无评论</p>
+                    )}
+                    <div className="flex gap-2 mt-4">
+                      <input 
+                        type="text" 
+                        value={newComment} 
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="发表评论..." 
+                        className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white" 
+                      />
+                      <button 
+                        onClick={handleSendComment}
+                        className="px-4 bg-violet-600 rounded-xl"
+                      >
+                        <Send className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Favorite Button */}
+                <div className="flex gap-3 mt-4">
                   <button 
                     onClick={() => toggleFavorite(selectedNFT.id)}
                     className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 ${
@@ -419,10 +572,6 @@ export default function MarketPage() {
                   >
                     <Heart className={`w-5 h-5 ${favorites.includes(selectedNFT.id) ? 'fill-current' : ''}`} />
                     {favorites.includes(selectedNFT.id) ? '已收藏' : '收藏'}
-                  </button>
-                  <button className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <ShoppingCart className="w-5 h-5" />
-                    立即购买
                   </button>
                 </div>
               </div>
