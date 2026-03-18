@@ -149,13 +149,14 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Language - PC */}
-            <div className="hidden sm:block relative">
+            {/* Language */}
+            <div className="relative">
               <button 
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
                 className="flex items-center gap-1.5 px-2 py-2 hover:bg-white/5 rounded-lg text-sm text-gray-400 transition-all"
               >
                 <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">语言</span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               
