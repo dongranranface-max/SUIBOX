@@ -177,8 +177,12 @@ export default function MarketPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-b from-violet-900/30 via-purple-900/20 to-transparent pt-8 pb-6">
-        <div className="max-w-7xl mx-auto px-4">
+      <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 via-purple-900/20 to-gray-950 pt-8 pb-6">
+        {/* Animated Background Orbs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        
+        <div className="max-w-7xl mx-auto px-4 relative">
           {/* Title & Stats */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
