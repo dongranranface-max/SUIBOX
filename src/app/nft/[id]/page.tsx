@@ -5,15 +5,33 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Heart, ShoppingCart, DollarSign, MessageCircle, Share2, Flag, ChevronLeft, CheckCircle, Eye, Flame, Clock, TrendingUp, Send, Copy, Twitter, Telegram } from 'lucide-react';
 
+interface Comment {
+  id: number;
+  user: string;
+  avatar: string;
+  text: string;
+  time: string;
+  likes: number;
+}
+
+interface Offer {
+  id: number;
+  buyer: string;
+  price: number;
+  unit: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  time: string;
+}
+
 export default function NFTDetailPage({ params }: { params: { id: string } }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(123);
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'history' | 'offers'>('comments');
-  const [comments, setComments] = useState([
-    { user: 'CryptoFan', avatar: '🎨', text: '太帅了！想要！', time: '2小时前', likes: 5, address: '0x3b2f...8c1a' },
-    { user: 'SUILover', avatar: '🦄', text: '稀有度拉满', time: '5小时前', likes: 3, address: '0x9d4e...2f7b' },
-    { user: 'NFTHunter', avatar: '🎯', text: '什么时候开售？', time: '1天前', likes: 1, address: '0x1a5c...9d3e' },
+  const [comments, setComments] = useState<Comment[]>([
+    { id: 1, user: 'CryptoFan', avatar: '🎮', text: '太帅了！想要！', time: '2小时前', likes: 5 },
+    { id: 2, user: 'SUILover', avatar: '🦄', text: '稀有度拉满', time: '5小时前', likes: 3 },
+    { id: 3, user: 'NFTHunter', avatar: '🎯', text: '什么时候开售？', time: '1天前', likes: 1 },
   ]);
 
   const nft = {
@@ -45,17 +63,28 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
       { action: '铸造', price: 0, from: '系统', to: '0x1b4c...9d2e', time: '5天前' },
     ],
     offers: [
-      { buyer: '0x7d9e...f3a', price: 450, unit: 'SUI', time: '1小时前', status: 'pending' },
-      { buyer: '0x5c2d...8e1f', price: 420, unit: 'SUI', time: '3小时前', status: 'pending' },
+      { id: 1, buyer: '0x7d9e...f3a', price: 450, unit: 'SUI', time: '1小时前', status: 'pending' },
+      { id: 2, buyer: '0x5c2d...8e1f', price: 420, unit: 'SUI', time: '3小时前', status: 'pending' },
     ],
   };
 
   const handleLike = () => { setLiked(!liked); setLikeCount(liked ? likeCount - 1 : likeCount + 1); };
-  const handleComment = () => { if (comment.trim()) { setComments([...comments, { user: '你', avatar: '👤', text: comment, time: '刚刚', likes: 0, address: '0x7a9f...3d2e' }]); setComment(''); } };
+  
+  const handleComment = () => { 
+    if (comment.trim()) { 
+      setComments([...comments, { id: Date.now(), user: '你', avatar: '👤', text: comment, time: '刚刚', likes: 0 }]); 
+      setComment(''); 
+    } 
+  };
+
   const copyAddress = (addr: string) => { navigator.clipboard.writeText(addr); alert('地址已复制!'); };
 
   const getRarityColor = (rarity: string) => {
-    switch (rarity.toLowerCase()) { case 'epic': return 'from-purple-500 to-pink-500'; case 'rare': return 'from-blue-500 to-cyan-500'; default: return 'from-gray-500 to-gray-600'; }
+    switch (rarity.toLowerCase()) { 
+      case 'epic': return 'from-purple-500 to-pink-500'; 
+      case 'rare': return 'from-blue-500 to-cyan-500'; 
+      default: return 'from-gray-500 to-gray-600'; 
+    }
   };
 
   return (
@@ -64,7 +93,7 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
       <div className="sticky top-14 md:top-16 z-40 bg-gray-900/95 backdrop-blur-lg border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <Link href="/market" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <ChevronLeft className="w-5 h-5" />返回市场
+            <ChevronLeft className="w-5 h-5" />返回NFT大厅
           </Link>
         </div>
       </div>
@@ -144,9 +173,14 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
             {/* Tabs */}
             <div className="border-b border-gray-700">
               <div className="flex gap-1">
-                {[{ key: 'comments', label: '评论', icon: MessageCircle }, { key: 'history', label: '历史', icon: Clock }, { key: 'offers', label: '报价', icon: DollarSign }].map(tab => (
+                {[
+                  { key: 'comments', label: '评论', icon: MessageCircle, count: comments.length }, 
+                  { key: 'history', label: '历史', icon: Clock }, 
+                  { key: 'offers', label: '报价', icon: DollarSign, count: nft.offers.length }
+                ].map(tab => (
                   <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === tab.key ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
                     <tab.icon className="w-4 h-4" />{tab.label}
+                    {tab.count !== undefined && <span className="text-xs bg-gray-700 px-1.5 rounded-full">{tab.count}</span>}
                   </button>
                 ))}
               </div>
@@ -160,12 +194,15 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
                     <div key={i} className="flex gap-3 p-3 bg-gray-800/30 rounded-xl">
                       <span className="text-2xl">{c.avatar}</span>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1"><span className="font-bold text-sm">{c.user}</span><span className="text-gray-500 text-xs">{c.time}</span><button className="text-gray-500 hover:text-red-400 text-xs">❤️ {c.likes}</button></div>
+                        <div className="flex items-center gap-2 mb-1"><span className="font-bold text-sm">{c.user}</span><span className="text-gray-500 text-xs">{c.time}</span></div>
                         <p className="text-gray-300 text-sm">{c.text}</p>
                       </div>
                     </div>
                   ))}
-                  <div className="flex gap-2"><input type="text" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="发表评论..." className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white" /><button onClick={handleComment} className="px-4 bg-violet-600 rounded-xl"><Send className="w-5 h-5" /></button></div>
+                  <div className="flex gap-2 mt-4">
+                    <input type="text" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="发表评论..." className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white" />
+                    <button onClick={handleComment} className="px-4 bg-violet-600 rounded-xl"><Send className="w-5 h-5" /></button>
+                  </div>
                 </div>
               )}
               {activeTab === 'history' && (
@@ -176,7 +213,7 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
                         <span className={`px-2 py-1 rounded text-xs font-bold ${h.action === '铸造' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>{h.action}</span>
                         <div><p className="text-sm font-bold">{h.price > 0 ? `${h.price} SUI` : '-'}</p><p className="text-gray-500 text-xs">{h.time}</p></div>
                       </div>
-                      <div className="text-right"><p className="text-xs text-gray-500">from</p><p className="text-xs text-violet-400 cursor-pointer" onClick={() => copyAddress(h.from)}>{h.from}</p></div>
+                      <div className="text-right"><p className="text-gray-500 text-xs">from</p><p className="text-xs text-violet-400 cursor-pointer" onClick={() => copyAddress(h.from)}>{h.from}</p></div>
                     </div>
                   ))}
                 </div>
@@ -188,7 +225,7 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
                       <div><p className="font-bold text-violet-400">{o.price} {o.unit}</p><p className="text-gray-500 text-xs">{o.time}</p></div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 rounded text-xs ${o.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>{o.status === 'pending' ? '待确认' : '已确认'}</span>
-                        <button className="px-3 py-1 bg-green-600 rounded-lg text-xs font-bold">接受</button>
+                        {o.status === 'pending' && <button className="px-3 py-1 bg-green-600 rounded-lg text-xs font-bold">接受</button>}
                       </div>
                     </div>
                   ))}
