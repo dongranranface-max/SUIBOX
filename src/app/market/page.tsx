@@ -89,7 +89,16 @@ export default function MarketPage() {
 
   const filteredNFTs = useMemo(() => {
     let result = [...nfts];
-    if (searchQuery) result = result.filter(nft => nft.name.toLowerCase().includes(searchQuery.toLowerCase()) || nft.artist.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(nft => 
+        nft.name.toLowerCase().includes(query) ||
+        nft.artist.toLowerCase().includes(query) ||
+        nft.description.toLowerCase().includes(query) ||
+        nft.rarity.toLowerCase().includes(query) ||
+        nft.category.toLowerCase().includes(query)
+      );
+    }
     if (activeCategory !== 'all') result = result.filter(nft => nft.rarity.toLowerCase() === activeCategory || nft.category === activeCategory);
     if (activeCoin !== 'all') result = result.filter(nft => nft.priceUnit === activeCoin);
     if (priceRange !== 'all') result = result.filter(nft => { if (priceRange === 'low') return nft.price < 100; if (priceRange === 'mid') return nft.price >= 100 && nft.price <= 500; if (priceRange === 'high') return nft.price > 500; return true; });
@@ -129,7 +138,7 @@ export default function MarketPage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">🛒 NFT市场</h1>
+              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">🛒 NFT大厅 鉴赏与交易</h1>
               <p className="text-gray-400 mt-1">浏览和购买稀有NFT · 已有 2,456 笔交易</p>
             </div>
             <div className="flex gap-4">
