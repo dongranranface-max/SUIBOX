@@ -78,10 +78,10 @@ export default function Home() {
   const { stats, loading: statsLoading } = useStats();
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // 过滤拍卖数据 - 显示6个
+  // 过滤拍卖数据 - 显示8个
   const filteredAuctions = auctionFilter === 'ending' 
-    ? [...hotAuctions].sort((a, b) => a.endTime - b.endTime).slice(0, 6)
-    : [...hotAuctions].sort((a, b) => b.id - a.id).slice(0, 6);
+    ? [...hotAuctions].sort((a, b) => a.endTime - b.endTime).slice(0, 8)
+    : [...hotAuctions].sort((a, b) => b.id - a.id).slice(0, 8);
 
   // 价格显示用变量
   const suiChangeVal = stats?.sui?.change ?? 0.56;
@@ -225,7 +225,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {filteredAuctions.slice(0, 8).map((auction) => (
+            {filteredAuctions.map((auction) => (
               <div key={auction.id} className="group bg-gray-800/50 rounded-xl overflow-hidden hover:bg-gray-700/50 transition-all cursor-pointer" onClick={() => handleBid(auction)}>
                 <div className="aspect-square relative bg-gray-700">
                   <img src={auction.image} alt={auction.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
