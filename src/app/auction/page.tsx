@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Clock, Zap, Hexagon } from 'lucide-react';
 
+// 汇率: 1 SUI = 100 BOX
+const SUI_TO_BOX_RATE = 100;
+
 // 模拟拍卖数据
 const now = Date.now();
 const auctionList = [
@@ -17,6 +20,25 @@ const auctionList = [
   { id: 7, name: '金色凤凰 #55', artist: 'Phoenix', rarity: 'Epic', currentPrice: 2888, bids: 78, endTime: now + 4*60*60*1000, image: '/fragment-epic.png', buyNowPrice: 4000 },
   { id: 8, name: '绿茵王者 #10', artist: 'SoccerKing', rarity: 'Rare', currentPrice: 388, bids: 19, endTime: now + 12*60*60*1000, image: '/nft-common.png', buyNowPrice: 600 },
 ];
+
+// 价格换算函数
+const convertPrice = (priceInBOX: number, token: 'BOX' | 'SUI') => {
+  if (token === 'BOX') {
+    return { amount: priceInBOX, display: `${priceInBOX} BOX` };
+  } else {
+    const suiAmount = Math.ceil(priceInBOX / SUI_TO_BOX_RATE);
+    return { amount: suiAmount, display: `${suiAmount} SUI` };
+  }
+};
+
+// 获取显示价格
+const getDisplayPrice = (priceInBOX: number, token: 'BOX' | 'SUI') => {
+  const result = convertPrice(priceInBOX, token);
+  if (token === 'SUI') {
+    return `${result.amount} SUI (~${priceInBOX} BOX)`;
+  }
+  return result.display;
+};
 
 export default function AuctionPage() {
   const [activeTab, setActiveTab] = useState<'hot' | 'ending' | 'new'>('hot');
@@ -117,6 +139,23 @@ export default function AuctionPage() {
       {/* 拍卖列表 - 2x4网格 */}
       <div className="max-w-7xl mx-auto px-4 pb-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {/* 价格显示切换 */}
+          <div className="col-span-2 md:col-span-4 flex justify-end mb-2">
+            <div className="flex bg-gray-800 rounded-lg p-1">
+              <button 
+                onClick={() => setPayToken('BOX')}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${payToken === 'BOX' ? 'bg-orange-600 text-white' : 'text-gray-400'}`}
+              >
+                BOX
+              </button>
+              <button 
+                onClick={() => setPayToken('SUI')}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${payToken === 'SUI' ? 'bg-cyan-600 text-white' : 'text-gray-400'}`}
+              >
+                SUI
+              </button>
+            </div>
+          </div>
           {filteredAuctions.slice(0, 8).map((auction) => (
             <motion.div 
               key={auction.id}
@@ -146,7 +185,7 @@ export default function AuctionPage() {
                 <div className="flex items-center justify-between mt-1 md:mt-2">
                   <div>
                     <p className="text-[10px] md:text-xs text-gray-500">当前价</p>
-                    <p className="text-orange-400 font-bold text-sm md:text-lg">{auction.currentPrice} BOX</p>
+                    <p className="text-orange-400 font-bold text-sm md:text-lg">{getDisplayPrice(auction.currentPrice, payToken)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] md:text-xs text-gray-500">{auction.bids}出价</p>
@@ -200,12 +239,17 @@ export default function AuctionPage() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-gray-400 text-xs">当前价</p>
-                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{selectedAuction.currentPrice} BOX</p>
+                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{getDisplayPrice(selectedAuction.currentPrice, payToken)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-gray-400 text-xs">{selectedAuction.bids}次出价</p>
                     <p className="text-xs text-gray-500">剩余 {formatCountdown(selectedAuction.id)}</p>
                   </div>
+                </div>
+
+                {/* 汇率说明 */}
+                <div className="mb-4 p-2 bg-gray-800/50 rounded-lg text-center">
+                  <p className="text-gray-500 text-xs">💡 1 SUI = {SUI_TO_BOX_RATE} BOX</p>
                 </div>
 
                 {/* 支付代币选择 */}
@@ -235,13 +279,16 @@ export default function AuctionPage() {
                       type="number" 
                       value={bidPrice}
                       onChange={(e) => setBidPrice(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 pr-12 text-white text-lg"
-                      placeholder={`最低 ${selectedAuction.currentPrice + 10}`}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 pr-16 text-white text-lg"
+                      placeholder={`最低 ${payToken === 'BOX' ? selectedAuction.currentPrice + 10 : Math.ceil((selectedAuction.currentPrice + 10) / SUI_TO_BOX_RATE)}`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                       {payToken}
                     </span>
                   </div>
+                  <p className="text-gray-500 text-xs mt-1">
+                    ≈ {payToken === 'BOX' ? bidPrice ? Math.ceil(Number(bidPrice) * SUI_TO_BOX_RATE) : 0 : bidPrice ? Math.ceil(Number(bidPrice) * SUI_TO_BOX_RATE) : 0} BOX
+                  </p>
                 </div>
 
                 {/* 按钮 */}
@@ -257,14 +304,19 @@ export default function AuctionPage() {
                     className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-bold flex items-center justify-center gap-2"
                   >
                     <span>一口价购买</span>
-                    <span className="text-sm opacity-80">({selectedAuction.buyNowPrice} {payToken})</span>
+                    <span className="text-sm opacity-80">({getDisplayPrice(selectedAuction.buyNowPrice, payToken)})</span>
                   </button>
                 </div>
 
                 {/* 说明 */}
-                <p className="text-gray-500 text-xs text-center mt-4">
-                  出价后需等待更高出价或拍卖结束
-                </p>
+                <div className="mt-4 space-y-2">
+                  <p className="text-gray-500 text-xs text-center">
+                    出价后需等待更高出价或拍卖结束
+                  </p>
+                  <p className="text-gray-600 text-xs text-center">
+                    卖家到手 95% | 平台销毁 5%
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
