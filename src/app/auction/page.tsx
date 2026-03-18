@@ -199,13 +199,18 @@ export default function AuctionPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
-              className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[90vh] overflow-y-auto"
+              className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-t border-gray-700"
               onClick={e => e.stopPropagation()}
             >
-              {/* 关闭按钮 - 移动端 */}
+              {/* 顶部装饰条 */}
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="w-12 h-1 bg-gray-600 rounded-full" />
+              </div>
+              
+              {/* 关闭按钮 */}
               <button 
                 onClick={() => setSelectedAuction(null)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/60 backdrop-blur rounded-full flex items-center justify-center text-white md:hidden"
+                className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
               >
                 ✕
               </button>
@@ -213,80 +218,92 @@ export default function AuctionPage() {
               {/* 图片 */}
               <div className="aspect-square relative bg-gray-800">
                 <Image src={selectedAuction.image} alt={selectedAuction.name} fill className="object-cover" />
-                <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-lg text-sm font-bold ${
-                  selectedAuction.rarity === 'Epic' ? 'bg-purple-500' : 'bg-blue-500'
+                {/* 渐变遮罩 */}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent" />
+                
+                {/* 稀有度标签 */}
+                <div className={`absolute top-4 left-4 px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${
+                  selectedAuction.rarity === 'Epic' 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-500' 
+                    : 'bg-gradient-to-r from-blue-500 to-cyan-400'
                 }`}>
-                  {selectedAuction.rarity === 'Epic' ? 'SSR' : 'SR'}
+                  {selectedAuction.rarity === 'Epic' ? '⭐ SSR' : '💎 SR'}
                 </div>
               </div>
               
-              <div className="p-4 md:p-6">
-                <h2 className="text-xl md:text-2xl font-bold mb-1">{selectedAuction.name}</h2>
-                <p className="text-gray-400 text-sm mb-4">by {selectedAuction.artist}</p>
+              <div className="p-4 md:p-6 -mt-6 relative">
+                {/* NFT名称卡片 */}
+                <div className="bg-gray-800/90 backdrop-blur rounded-2xl p-4 mb-4 border border-gray-700 shadow-lg">
+                  <h2 className="text-xl md:text-2xl font-bold mb-1">{selectedAuction.name}</h2>
+                  <p className="text-gray-400 text-sm">by {selectedAuction.artist}</p>
+                </div>
                 
                 {/* 价格信息 */}
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <p className="text-gray-400 text-xs">当前价</p>
-                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{selectedAuction.currentPrice} BOX</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-gray-400 text-xs">{selectedAuction.bids}次出价</p>
-                    <p className="text-xs text-gray-500">剩余 {formatCountdown(selectedAuction.id)}</p>
+                <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl p-4 mb-4 border border-orange-500/20">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">当前价</p>
+                      <p className="text-3xl md:text-4xl font-black text-orange-400">{selectedAuction.currentPrice}</p>
+                      <p className="text-orange-400/60 text-sm">BOX</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-400 text-xs">{selectedAuction.bids}次出价</p>
+                      <p className="text-red-400 text-sm font-medium">⏱️ {formatCountdown(selectedAuction.id)}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* 支付方式 */}
-                <div className="mb-4 p-2 bg-gray-800/50 rounded-lg text-center">
-                  <p className="text-orange-400 text-sm font-medium">💰 仅支持 BOX 支付</p>
+                {/* 一口价 */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-yellow-400 font-medium">一口价</span>
+                    <span className="text-yellow-400 font-bold">{selectedAuction.buyNowPrice} BOX</span>
+                  </div>
                 </div>
 
                 {/* 出价输入 */}
                 <div className="mb-4">
-                  <label className="text-gray-400 text-sm block mb-2">出价金额 (BOX)</label>
+                  <label className="text-gray-400 text-sm block mb-2">出价金额</label>
                   <div className="relative">
                     <input 
                       type="number" 
                       value={bidPrice}
                       onChange={(e) => setBidPrice(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 pr-16 text-white text-lg"
+                      className="w-full bg-gray-800/80 border border-gray-600 rounded-xl py-4 px-4 pr-20 text-white text-xl font-bold text-center"
                       placeholder={`最低 ${selectedAuction.currentPrice + 10}`}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">
                       BOX
                     </span>
                   </div>
+                  <p className="text-gray-500 text-xs text-center mt-2">
+                    最低出价: {selectedAuction.currentPrice + 10} BOX
+                  </p>
                 </div>
 
                 {/* 按钮 */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <button 
                     onClick={handleSubmitBid}
-                    className="w-full py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold"
+                    className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all hover:scale-[1.02]"
                   >
-                    确认出价
+                    ⚡ 确认出价
                   </button>
                   <button 
                     onClick={handleBuyNow}
-                    className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-bold flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all hover:scale-[1.02]"
                   >
-                    <span>一口价购买</span>
-                    <span className="text-sm opacity-80">({selectedAuction.buyNowPrice} BOX)</span>
+                    💰 一口价购买
                   </button>
                 </div>
 
                 {/* 说明 */}
-                <div className="mt-4 space-y-2">
-                  <p className="text-gray-500 text-xs text-center">
-                    出价后需等待更高出价或拍卖结束
-                  </p>
-                  <p className="text-gray-600 text-xs text-center">
-                    卖家到手 95% | 平台销毁 5%
-                  </p>
+                <div className="mt-4 flex justify-center gap-4 text-xs text-gray-500">
+                  <span>📊 卖家到手 95%</span>
+                  <span>🔥 平台销毁 5%</span>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </div>
