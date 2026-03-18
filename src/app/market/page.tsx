@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Grid, List, Heart, ShoppingCart, X, ChevronDown, Star, Flame, Clock, Zap } from 'lucide-react';
 
 interface NFT {
   id: number;
@@ -17,214 +17,360 @@ interface NFT {
   description: string;
   likes: number;
   comments: number;
+  sales: number;
+  createdAt: string;
 }
 
 export default function MarketPage() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [activeCoin, setActiveCoin] = useState('all');
+  const [priceRange, setPriceRange] = useState('all');
+  const [sortBy, setSortBy] = useState('hot');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const categories = [
-    { key: 'all', label: '所有', icon: '🏠' },
-    { key: 'common', label: '普通NFT', icon: '⭐' },
-    { key: 'rare', label: '稀有NFT', icon: '💎' },
-    { key: 'epic', label: '史诗NFT', icon: '👑' },
-    { key: 'premium', label: '精品NFT', icon: '💍' },
-    { key: 'artist', label: '作家IP', icon: '🎨' },
-    { key: 'nomad', label: '数字游民', icon: '🌍' },
+    { key: 'all', label: '全部' },
+    { key: 'common', label: '普通' },
+    { key: 'rare', label: '稀有' },
+    { key: 'epic', label: '史诗' },
   ];
 
-  const coins = [
-    { key: 'all', label: '全部', icon: '📊' },
-    { key: 'SUI', label: 'SUI', icon: '⚡' },
-    { key: 'USDC', label: 'USDC', icon: '💵' },
-    { key: 'BOX', label: 'BOX', icon: '📦' },
+  const priceRanges = [
+    { key: 'all', label: '全部价格' },
+    { key: 'low', label: '0-100' },
+    { key: 'mid', label: '100-500' },
+    { key: 'high', label: '500+' },
+  ];
+
+  const sortOptions = [
+    { key: 'hot', label: '热度', icon: Flame },
+    { key: 'new', label: '最新', icon: Clock },
+    { key: 'price-asc', label: '价格低', icon: Zap },
+    { key: 'price-desc', label: '价格高', icon: Zap },
   ];
 
   const nfts: NFT[] = [
-    { id: 1, name: '星辰大海 #88', image: '🌟', price: 500, priceUnit: 'SUI', supply: 100, remaining: 45, rarity: 'Epic', artist: 'CryptoArtist', description: '稀有的星空主题NFT，蕴含宇宙的神秘力量。全球限量100枚，每一枚都是独特的艺术品。', likes: 234, comments: 56 },
-    { id: 2, name: '烈焰麒麟 #66', image: '🔥', price: 150, priceUnit: 'SUI', supply: 500, remaining: 230, rarity: 'Rare', artist: 'FireMaster', description: '燃烧的麒麟兽，代表着热情与力量。拥有独特的火焰特效。', likes: 189, comments: 42 },
-    { id: 3, name: '冰晶之心 #55', image: '❄️', price: 120, priceUnit: 'SUI', supply: 500, remaining: 312, rarity: 'Rare', artist: 'IceQueen', description: '冰冷的钻石之心，极寒之美。蕴含冰雪女王的神秘力量。', likes: 156, comments: 38 },
-    { id: 4, name: '大地之怒 #33', image: '🌍', price: 30, priceUnit: 'SUI', supply: 1000, remaining: 567, rarity: 'Common', artist: 'EarthKing', description: '大地的力量，象征着稳固与坚韧。入门级NFT首选。', likes: 89, comments: 15 },
-    { id: 5, name: '机械之心 #77', image: '⚙️', price: 800, priceUnit: 'SUI', supply: 50, remaining: 12, rarity: 'Epic', artist: 'RoboArtist', description: '未来科技结晶，机械美学的巅峰之作。拥有独特的动态效果。', likes: 312, comments: 78 },
-    { id: 6, name: '暗黑天使 #99', image: '😈', price: 666, priceUnit: 'SUI', supply: 80, remaining: 34, rarity: 'Epic', artist: 'DarkSoul', description: '暗黑系顶级艺术品，极致奢华。代表着黑暗与优雅的完美结合。', likes: 267, comments: 63 },
-    { id: 7, name: '精灵之光 #44', image: '🧝', price: 45, priceUnit: 'SUI', supply: 800, remaining: 445, rarity: 'Common', artist: 'ElfArtist', description: '精灵族的守护之光，充满生机与活力。', likes: 78, comments: 12 },
-    { id: 8, name: '宇宙之心 #01', image: '🌌', price: 2000, priceUnit: 'SUI', supply: 10, remaining: 3, rarity: 'Legendary', artist: 'StarArtist', description: '宇宙级传奇NFT，仅此一件！蕴含宇宙的终极奥秘。', likes: 567, comments: 123 },
-    { id: 9, name: '深海之蓝 #12', image: '🌊', price: 125, priceUnit: 'USDC', supply: 300, remaining: 156, rarity: 'Rare', artist: 'OceanArtist', description: '深海的神秘蓝色，蕴含海洋的力量。', likes: 145, comments: 32 },
-    { id: 10, name: '森林之子 #08', image: '🌲', price: 50, priceUnit: 'USDC', supply: 600, remaining: 320, rarity: 'Common', artist: 'NatureArt', description: '森林的守护者，自然的化身。', likes: 67, comments: 18 },
-    { id: 11, name: '黄金时代 #05', image: '🏆', price: 588, priceUnit: 'BOX', supply: 50, remaining: 22, rarity: 'Epic', artist: 'GoldMaster', description: '黄金时代的辉煌，财富的象征。', likes: 289, comments: 55 },
-    { id: 12, name: '白银骑士 #23', image: '🛡️', price: 235, priceUnit: 'BOX', supply: 200, remaining: 89, rarity: 'Rare', artist: 'SilverKing', description: '白银打造的骑士，守护着荣耀。', likes: 134, comments: 28 },
+    { id: 1, name: '星辰大海 #88', image: '🌟', price: 500, priceUnit: 'SUI', supply: 100, remaining: 45, rarity: 'Epic', artist: 'CryptoArtist', description: '稀有的星空主题NFT，蕴含宇宙的神秘力量。全球限量100枚，每一枚都是独特的艺术品。', likes: 234, comments: 56, sales: 89, createdAt: '2026-03-01' },
+    { id: 2, name: '烈焰麒麟 #66', image: '🔥', price: 150, priceUnit: 'SUI', supply: 500, remaining: 230, rarity: 'Rare', artist: 'FireMaster', description: '燃烧的麒麟兽，代表着热情与力量。拥有独特的火焰特效。', likes: 189, comments: 42, sales: 156, createdAt: '2026-03-05' },
+    { id: 3, name: '冰晶之心 #55', image: '❄️', price: 120, priceUnit: 'SUI', supply: 500, remaining: 312, rarity: 'Rare', artist: 'IceQueen', description: '冰冷的钻石之心，极寒之美。蕴含冰雪女王的神秘力量。', likes: 156, comments: 38, sales: 98, createdAt: '2026-03-08' },
+    { id: 4, name: '大地之怒 #33', image: '🌍', price: 30, priceUnit: 'SUI', supply: 1000, remaining: 567, rarity: 'Common', artist: 'EarthKing', description: '大地的力量，象征着稳固与坚韧。入门级NFT首选。', likes: 89, comments: 15, sales: 234, createdAt: '2026-03-10' },
+    { id: 5, name: '机械之心 #77', image: '⚙️', price: 800, priceUnit: 'SUI', supply: 50, remaining: 12, rarity: 'Epic', artist: 'RoboArtist', description: '未来科技结晶，机械美学的巅峰之作。拥有独特的动态效果。', likes: 312, comments: 78, sales: 45, createdAt: '2026-03-12' },
+    { id: 6, name: '暗黑天使 #99', image: '😈', price: 666, priceUnit: 'SUI', supply: 80, remaining: 34, rarity: 'Epic', artist: 'DarkSoul', description: '暗黑系顶级艺术品，极致奢华。代表着黑暗与优雅的完美结合。', likes: 267, comments: 63, sales: 67, createdAt: '2026-03-14' },
+    { id: 7, name: '金色凤凰 #11', image: '🐦', price: 999, priceUnit: 'SUI', supply: 30, remaining: 8, rarity: 'Epic', artist: 'Phoenix', description: '浴火重生的凤凰，极致稀有。拥有炫目的金色光芒。', likes: 456, comments: 89, sales: 28, createdAt: '2026-03-15' },
+    { id: 8, name: '绿茵王者 #22', image: '⚽', price: 50, priceUnit: 'SUI', supply: 800, remaining: 445, rarity: 'Common', artist: 'SoccerKing', description: '足球主题NFT，体育爱好者的首选。', likes: 123, comments: 28, sales: 312, createdAt: '2026-03-16' },
   ];
 
-  const filteredNFTs = nfts.filter(nft => {
-    if (activeCoin !== 'all' && nft.priceUnit !== activeCoin) return false;
-    if (activeCategory === 'all') return true;
-    if (activeCategory === 'common') return nft.rarity === 'Common';
-    if (activeCategory === 'rare') return nft.rarity === 'Rare';
-    if (activeCategory === 'epic') return nft.rarity === 'Epic' || nft.rarity === 'Legendary';
-    if (activeCategory === 'premium') return nft.price >= 500;
-    if (activeCategory === 'artist') return nft.artist === 'CryptoArtist';
-    if (activeCategory === 'nomad') return nft.name.includes('宇宙') || nft.name.includes('星辰');
-    return true;
-  });
+  const filteredNFTs = useMemo(() => {
+    let result = [...nfts];
+    
+    // 搜索过滤
+    if (searchQuery) {
+      result = result.filter(nft => 
+        nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        nft.artist.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // 分类过滤
+    if (activeCategory !== 'all') {
+      result = result.filter(nft => 
+        nft.rarity.toLowerCase() === activeCategory
+      );
+    }
+    
+    // 价格过滤
+    if (priceRange !== 'all') {
+      result = result.filter(nft => {
+        if (priceRange === 'low') return nft.price < 100;
+        if (priceRange === 'mid') return nft.price >= 100 && nft.price <= 500;
+        if (priceRange === 'high') return nft.price > 500;
+        return true;
+      });
+    }
+    
+    // 排序
+    switch (sortBy) {
+      case 'hot':
+        result.sort((a, b) => b.likes - a.likes);
+        break;
+      case 'new':
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'price-asc':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        result.sort((a, b) => b.price - a.price);
+        break;
+    }
+    
+    return result;
+  }, [nfts, searchQuery, activeCategory, priceRange, sortBy]);
+
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
 
   const getRarityColor = (rarity: string) => {
-    const colors: Record<string, string> = {
-      Legendary: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      Epic: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      Rare: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      Common: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-    };
-    return colors[rarity] || colors.Common;
+    switch (rarity.toLowerCase()) {
+      case 'epic': return 'bg-gradient-to-r from-purple-500 to-pink-500';
+      case 'rare': return 'bg-gradient-to-r from-blue-500 to-cyan-500';
+      default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* 主内容 */}
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Header */}
+      <div className="bg-gradient-to-b from-violet-900/20 to-transparent pt-8 pb-6">
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">🛒 NFT市场</h1>
+          <p className="text-gray-400">浏览和购买稀有NFT</p>
+        </div>
+      </div>
 
-      {/* 主内容 */}
-      <main className="max-w-6xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-5 gap-6">
-          {/* 左侧边栏 */}
-          <div className="space-y-4">
-            {/* 藏品分类 */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <h3 className="font-bold mb-3 text-sm text-gray-400">🏷️ 藏品归纳</h3>
-              <div className="space-y-1">
-                {categories.map(cat => (
-                  <button
-                    key={cat.key}
-                    onClick={() => setActiveCategory(cat.key)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${activeCategory === cat.key ? 'bg-violet-600 text-white' : 'hover:bg-white/5 text-gray-400'}`}
-                  >
-                    <span>{cat.icon}</span>
-                    <span className="text-sm">{cat.label}</span>
-                  </button>
-                ))}
-              </div>
+      {/* Search & Filter Bar */}
+      <div className="sticky top-14 md:top-16 z-40 bg-gray-900/95 backdrop-blur-lg border-b border-white/5 py-3">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <input 
+                type="text"
+                placeholder="搜索NFT名称或艺术家..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
+              />
             </div>
-
-            {/* 硬币归类 */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <h3 className="font-bold mb-3 text-sm text-gray-400">💰 硬币归类</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {coins.map(coin => (
-                  <button
-                    key={coin.key}
-                    onClick={() => setActiveCoin(coin.key)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition ${activeCoin === coin.key ? 'bg-violet-600' : 'bg-white/5 hover:bg-white/10'}`}
-                  >
-                    <span className="text-lg">{coin.icon}</span>
-                    <span className="text-xs font-bold">{coin.key}</span>
-                  </button>
+            
+            {/* Sort */}
+            <div className="flex gap-2">
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+              >
+                {sortOptions.map(opt => (
+                  <option key={opt.key} value={opt.key}>{opt.label}</option>
                 ))}
+              </select>
+              
+              {/* View Mode */}
+              <div className="flex bg-gray-800 rounded-xl overflow-hidden">
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2.5 ${viewMode === 'grid' ? 'bg-violet-600' : 'hover:bg-gray-700'}`}
+                >
+                  <Grid className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`p-2.5 ${viewMode === 'list' ? 'bg-violet-600' : 'hover:bg-gray-700'}`}
+                >
+                  <List className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>
-
-          {/* NFT网格 */}
-          <div className="col-span-4">
-            <div className="grid grid-cols-4 gap-4">
-              {filteredNFTs.map(nft => (
-                <motion.div
-                  key={nft.id}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setSelectedNFT(nft)}
-                  className="bg-white/5 rounded-xl border border-white/10 overflow-hidden cursor-pointer"
+          
+          {/* Categories & Price Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+              {categories.map(cat => (
+                <button
+                  key={cat.key}
+                  onClick={() => setActiveCategory(cat.key)}
+                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCategory === cat.key 
+                      ? 'bg-violet-600 text-white' 
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
                 >
-                  <div className={`h-36 flex items-center justify-center ${nft.rarity === 'Epic' || nft.rarity === 'Legendary' ? 'bg-gradient-to-br from-purple-600/30 to-pink-600/30' : nft.rarity === 'Rare' ? 'bg-gradient-to-br from-blue-600/30 to-cyan-600/30' : 'bg-gradient-to-br from-gray-600/30 to-gray-700/30'}`}>
-                    <span className="text-6xl">{nft.image}</span>
-                  </div>
-                  <div className="p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs px-2 py-0.5 rounded border ${getRarityColor(nft.rarity)}`}>{nft.rarity}</span>
-                      <span className="text-xs text-gray-500">❤ {nft.likes}</span>
-                    </div>
-                    <div className="font-medium text-sm mb-2 truncate">{nft.name}</div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-violet-400">{nft.price} {nft.priceUnit}</span>
-                      <span className="text-xs text-gray-500">{nft.remaining}/{nft.supply}</span>
-                    </div>
-                  </div>
-                </motion.div>
+                  {cat.label}
+                </button>
               ))}
             </div>
+            <select 
+              value={priceRange}
+              onChange={(e) => setPriceRange(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none"
+            >
+              {priceRanges.map(pr => (
+                <option key={pr.key} value={pr.key}>{pr.label}</option>
+              ))}
+            </select>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* NFT详情弹窗 */}
+      {/* Results */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <p className="text-gray-400 text-sm mb-4">找到 {filteredNFTs.length} 个NFT</p>
+        
+        {filteredNFTs.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg">没有找到匹配的NFT</p>
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredNFTs.map((nft) => (
+              <motion.div
+                key={nft.id}
+                whileHover={{ scale: 1.02 }}
+                className="bg-gray-900 rounded-xl overflow-hidden cursor-pointer group"
+                onClick={() => setSelectedNFT(nft)}
+              >
+                {/* Image */}
+                <div className="aspect-square bg-gray-800 flex items-center justify-center text-6xl relative">
+                  {nft.image}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(nft.id); }}
+                    className="absolute top-2 right-2 p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <Heart className={`w-5 h-5 ${favorites.includes(nft.id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                  </button>
+                  <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold ${getRarityColor(nft.rarity)}`}>
+                    {nft.rarity}
+                  </span>
+                </div>
+                
+                {/* Info */}
+                <div className="p-3">
+                  <h3 className="font-bold text-sm truncate">{nft.name}</h3>
+                  <p className="text-gray-500 text-xs mb-2">by {nft.artist}</p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-gray-500 text-xs">价格</p>
+                      <p className="text-violet-400 font-bold">{nft.price} {nft.priceUnit}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-500 text-xs">剩余</p>
+                      <p className="text-gray-300">{nft.remaining}/{nft.supply}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredNFTs.map((nft) => (
+              <motion.div
+                key={nft.id}
+                whileHover={{ scale: 1.01 }}
+                className="bg-gray-900 rounded-xl p-4 flex gap-4 cursor-pointer"
+                onClick={() => setSelectedNFT(nft)}
+              >
+                <div className="w-20 h-20 bg-gray-800 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
+                  {nft.image}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold">{nft.name}</h3>
+                      <p className="text-gray-500 text-sm">by {nft.artist}</p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(nft.id); }}
+                      className="p-1"
+                    >
+                      <Heart className={`w-5 h-5 ${favorites.includes(nft.id) ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${getRarityColor(nft.rarity)}`}>
+                      {nft.rarity}
+                    </span>
+                    <span className="text-violet-400 font-bold">{nft.price} {nft.priceUnit}</span>
+                    <span className="text-gray-500 text-sm">剩余 {nft.remaining}/{nft.supply}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Detail Modal */}
       <AnimatePresence>
         {selectedNFT && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
             onClick={() => setSelectedNFT(null)}
           >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              className="w-full max-w-lg bg-[#0a0a0a] rounded-3xl border border-white/10 overflow-hidden"
+            <motion.div 
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
-              <div className={`h-48 ${selectedNFT.rarity === 'Epic' || selectedNFT.rarity === 'Legendary' ? 'bg-gradient-to-br from-purple-600 to-pink-600' : selectedNFT.rarity === 'Rare' ? 'bg-gradient-to-br from-blue-600 to-cyan-600' : 'bg-gradient-to-br from-gray-600 to-gray-700'} flex items-center justify-center relative`}>
-                <span className="text-8xl">{selectedNFT.image}</span>
-                <div className="absolute top-4 left-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${getRarityColor(selectedNFT.rarity)}`}>{selectedNFT.rarity}</span>
-                </div>
-                <button onClick={() => setSelectedNFT(null)} className="absolute top-4 right-4 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">✕</button>
+              {/* Close */}
+              <button 
+                onClick={() => setSelectedNFT(null)}
+                className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white md:hidden"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              {/* Image */}
+              <div className="aspect-square bg-gray-800 flex items-center justify-center text-8xl relative">
+                {selectedNFT.image}
+                <span className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-sm font-bold ${getRarityColor(selectedNFT.rarity)}`}>
+                  {selectedNFT.rarity}
+                </span>
               </div>
               
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedNFT.name}</h2>
-                    <p className="text-gray-500">by {selectedNFT.artist}</p>
+              <div className="p-4 md:p-6">
+                <h2 className="text-2xl font-bold mb-1">{selectedNFT.name}</h2>
+                <p className="text-gray-400 mb-4">by {selectedNFT.artist}</p>
+                
+                <p className="text-gray-300 text-sm mb-6">{selectedNFT.description}</p>
+                
+                {/* Stats */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="text-center">
+                    <p className="text-gray-500 text-xs">价格</p>
+                    <p className="text-violet-400 font-bold">{selectedNFT.price}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">售价</div>
-                    <div className="text-2xl font-bold text-violet-400">{selectedNFT.price} {selectedNFT.priceUnit}</div>
+                  <div className="text-center">
+                    <p className="text-gray-500 text-xs">剩余</p>
+                    <p className="text-white font-bold">{selectedNFT.remaining}</p>
                   </div>
-                </div>
-
-                <p className="text-gray-400 mb-4">{selectedNFT.description}</p>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-white/5 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold">{selectedNFT.supply}</div>
-                    <div className="text-xs text-gray-500">总量</div>
+                  <div className="text-center">
+                    <p className="text-gray-500 text-xs">销量</p>
+                    <p className="text-white font-bold">{selectedNFT.sales}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold">{selectedNFT.remaining}</div>
-                    <div className="text-xs text-gray-500">剩余</div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold">💬 点评</span>
-                    <span className="text-xs text-gray-500">{selectedNFT.comments} 条评论</span>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-3 space-y-2 max-h-32 overflow-y-auto">
-                    <div className="text-sm">
-                      <span className="text-violet-400">@CryptoFan:</span>
-                      <span className="text-gray-400"> 非常漂亮的NFT，期待已久！</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-violet-400">@NFTCollector:</span>
-                      <span className="text-gray-400"> 稀有度很高，值得收藏</span>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-gray-500 text-xs">热度</p>
+                    <p className="text-red-400 font-bold">❤️ {selectedNFT.likes}</p>
                   </div>
                 </div>
-
+                
+                {/* Buttons */}
                 <div className="flex gap-3">
-                  <button className="flex-1 py-3 bg-violet-600 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <span>❤</span> 收藏
+                  <button 
+                    onClick={() => toggleFavorite(selectedNFT.id)}
+                    className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 ${
+                      favorites.includes(selectedNFT.id) 
+                        ? 'bg-red-500/20 text-red-400 border border-red-500' 
+                        : 'bg-gray-800 text-white'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${favorites.includes(selectedNFT.id) ? 'fill-current' : ''}`} />
+                    {favorites.includes(selectedNFT.id) ? '已收藏' : '收藏'}
                   </button>
-                  <button className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold">
+                  <button className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold flex items-center justify-center gap-2">
+                    <ShoppingCart className="w-5 h-5" />
                     立即购买
                   </button>
                 </div>
