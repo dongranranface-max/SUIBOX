@@ -50,8 +50,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-            SUIBOX
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/suibox-logo.png" alt="SUIBOX" className="h-8 w-auto" />
+            <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+              SUIBOX
+            </span>
           </Link>
 
           {/* Desktop Nav */}
