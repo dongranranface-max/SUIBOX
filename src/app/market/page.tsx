@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Grid, List, Heart, ShoppingCart, X, ChevronDown, Star, Flame, Clock, Zap } from 'lucide-react';
+import { Search, Filter, Grid, List, Heart, ShoppingCart, X, ChevronDown, Star, Flame, Clock, Zap, DollarSign, MessageCircle, Send, CheckCircle, Eye } from 'lucide-react';
 
 interface NFT {
   id: number;
@@ -13,12 +13,31 @@ interface NFT {
   supply: number;
   remaining: number;
   rarity: string;
+  category: string;
   artist: string;
   description: string;
   likes: number;
   comments: number;
   sales: number;
+  views: number;
   createdAt: string;
+  verified: boolean;
+}
+
+interface Comment {
+  id: number;
+  user: string;
+  avatar: string;
+  text: string;
+  time: string;
+}
+
+interface Offer {
+  id: number;
+  buyer: string;
+  price: number;
+  unit: string;
+  status: 'pending' | 'accepted' | 'rejected';
 }
 
 export default function MarketPage() {
@@ -27,8 +46,22 @@ export default function MarketPage() {
   const [sortBy, setSortBy] = useState('hot');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [activeTab, setActiveTab] = useState<'buy' | 'offer' | 'comments'>('buy');
   const [favorites, setFavorites] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [offerPrice, setOfferPrice] = useState('');
+  const [offerType, setOfferType] = useState<'溢价' | '折价'>('溢价');
+  const [offerPercent, setOfferPercent] = useState('10');
+  const [comments, setComments] = useState<Record<number, Comment[]>>({
+    1: [
+      { id: 1, user: 'CryptoFan', avatar: '🎮', text: '太漂亮了！必须入手', time: '2小时前' },
+      { id: 2, user: 'NFTCollector', avatar: '💎', text: '稀有度拉满', time: '5小时前' },
+    ],
+    2: [
+      { id: 1, user: 'SuiLover', avatar: '⚡', text: '火焰特效太帅了', time: '1天前' },
+    ],
+  });
+  const [newComment, setNewComment] = useState('');
 
   const categories = [
     { key: 'all', label: '全部' },
