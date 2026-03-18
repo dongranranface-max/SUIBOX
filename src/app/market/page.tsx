@@ -309,26 +309,51 @@ export default function MarketPage() {
         <p className="text-gray-400 text-sm mb-4">找到 {filteredNFTs.length} 个NFT</p>
         
         {filteredNFTs.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">没有找到匹配的NFT</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center py-24"
+          >
+            <div className="w-24 h-24 mb-6 relative">
+              <div className="absolute inset-0 bg-violet-500/20 rounded-full animate-pulse" />
+              <div className="relative bg-gray-800 rounded-full w-full h-full flex items-center justify-center text-5xl">
+                🔍
+              </div>
+            </div>
+            <p className="text-gray-400 text-xl mb-2">没有找到匹配的NFT</p>
+            <p className="text-gray-500 mb-6">试试调整筛选条件</p>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setSearchQuery(''); setActiveCategory('all'); setActiveCoin('all'); setPriceRange('all'); }}
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold"
+            >
+              清除筛选
+            </motion.button>
+          </motion.div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredNFTs.map((nft) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {filteredNFTs.map((nft, index) => (
               <motion.div
                 key={nft.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.03, y: -8 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-gray-900 rounded-2xl overflow-hidden cursor-pointer group border border-white/5 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all"
+                className="relative bg-gray-900 rounded-2xl overflow-hidden cursor-pointer group"
                 onClick={() => { setSelectedNFT(nft); setActiveTab('buy'); }}
               >
+                {/* Glow Border */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/0 via-pink-500/0 to-cyan-500/0 group-hover:from-violet-500/10 group-hover:via-pink-500/10 group-hover:to-cyan-500/10 transition-all duration-500" />
+                <div className="absolute inset-0 border border-white/5 group-hover:border-white/20 rounded-2xl transition-all" />
+                
                 {/* Image */}
-                <div className="aspect-square bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-7xl relative overflow-hidden">
+                <div className="aspect-square bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-7xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <motion.span 
                     className="drop-shadow-2xl"
-                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    whileHover={{ scale: 1.2, rotate: 5 }}
                     transition={{ type: 'spring', stiffness: 300 }}
                   >
                     {nft.image}
