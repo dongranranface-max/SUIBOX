@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, TrendingUp, Megaphone } from 'lucide-react';
+import { Search, Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, TrendingUp, Megaphone, Globe, Sparkles } from 'lucide-react';
 import { SuiWalletButton } from './SuiWallet';
 
 // 导航配置
@@ -161,27 +161,34 @@ export default function Header() {
             <div className="hidden md:block relative">
               <button 
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-2 hover:bg-white/5 rounded-xl text-sm text-gray-400 transition-all"
+                className="flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-xl text-sm text-gray-400 transition-all group"
               >
-                <span>🇨🇳</span>
-                <ChevronDown className="w-3 h-3" />
+                <Globe className="w-4 h-4" />
+                <span className="group-hover:text-white transition-colors">语言</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {langMenuOpen && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-36 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden"
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute right-0 mt-2 w-44 bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
                 >
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all"
-                    >
-                      <span>{lang.flag}</span>
-                      <span>{lang.name}</span>
-                    </button>
-                  ))}
+                  <div className="px-4 py-3 border-b border-white/5">
+                    <p className="text-xs text-gray-500 font-medium">选择语言 / Select Language</p>
+                  </div>
+                  <div className="py-2">
+                    {languages.map((lang, i) => (
+                      <button
+                        key={lang.code}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                      >
+                        <span className="text-lg">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                        <Sparkles className="w-3 h-3 ml-auto text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </div>
@@ -285,14 +292,18 @@ export default function Header() {
                 
                 {/* Mobile Language */}
                 <div className="px-4 pb-4 border-t border-white/5 pt-4">
-                  <p className="text-xs text-gray-600 mb-2">语言 / Language</p>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="w-4 h-4 text-gray-500" />
+                    <p className="text-xs text-gray-500 font-medium">选择语言 / Select Language</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
-                        className="flex-1 py-2.5 bg-white/5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                        className="flex items-center gap-2 py-3 px-4 bg-white/5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all"
                       >
-                        {lang.flag} {lang.name}
+                        <span className="text-lg">{lang.flag}</span>
+                        <span>{lang.name}</span>
                       </button>
                     ))}
                   </div>
