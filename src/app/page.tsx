@@ -220,9 +220,23 @@ export default function Home() {
               <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
               热门拍卖
             </h2>
-            <Link href="/auction" className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
-              查看全部
-            </Link>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setAuctionFilter('ending')}
+                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'ending' ? 'bg-orange-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
+              >
+                即将结束
+              </button>
+              <button 
+                onClick={() => setAuctionFilter('new')}
+                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'new' ? 'bg-violet-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
+              >
+                最新上架
+              </button>
+              <Link href="/auction" className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
+                查看全部
+              </Link>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {filteredAuctions.map((auction) => (
