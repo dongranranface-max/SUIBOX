@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Clock, Zap, Hexagon } from 'lucide-react';
 
-// 汇率: 1 SUI = 100 BOX
+// 汇率: 仅支持BOX
 const SUI_TO_BOX_RATE = 100;
 
 // 模拟拍卖数据
@@ -44,7 +44,8 @@ export default function AuctionPage() {
   const [activeTab, setActiveTab] = useState<'hot' | 'ending' | 'new'>('hot');
   const [selectedAuction, setSelectedAuction] = useState<any>(null);
   const [countdown, setCountdown] = useState<Record<number, {days: number; hours: number; minutes: number; seconds: number}>>({});
-  const [payToken, setPayToken] = useState<'BOX' | 'SUI'>('BOX');
+  // 支付方式固定为BOX
+                const payToken = 'BOX' as const;
   const [bidPrice, setBidPrice] = useState('');
 
   useEffect(() => {
@@ -74,8 +75,8 @@ export default function AuctionPage() {
   const formatCountdown = (auctionId: number) => {
     const c = countdown[auctionId];
     if (!c) return '已结束';
-    if (c.days > 0) return `${c.days}天${c.hours}时`;
-    if (c.hours > 0) return `${c.hours}时${c.minutes}分`;
+    if (c.days > 0) return `${c.days}天${c.hours}时${c.minutes}分${c.seconds}秒`;
+    if (c.hours > 0) return `${c.hours}时${c.minutes}分${c.seconds}秒`;
     if (c.minutes > 0) return `${c.minutes}分${c.seconds}秒`;
     return `${c.seconds}秒`;
   };
@@ -108,7 +109,7 @@ export default function AuctionPage() {
       <div className="bg-gradient-to-b from-violet-900/20 to-transparent pt-8 pb-6">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">🔥 NFT拍卖</h1>
-          <p className="text-gray-400">参与拍卖，竞得稀有NFT！支持BOX/SUI支付</p>
+          <p className="text-gray-400">参与拍卖，竞得稀有NFT！支持BOX支付</p>
         </div>
       </div>
 
@@ -139,23 +140,6 @@ export default function AuctionPage() {
       {/* 拍卖列表 - 2x4网格 */}
       <div className="max-w-7xl mx-auto px-4 pb-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          {/* 价格显示切换 */}
-          <div className="col-span-2 md:col-span-4 flex justify-end mb-2">
-            <div className="flex bg-gray-800 rounded-lg p-1">
-              <button 
-                onClick={() => setPayToken('BOX')}
-                className={`px-3 py-1 rounded text-xs font-medium transition-all ${payToken === 'BOX' ? 'bg-orange-600 text-white' : 'text-gray-400'}`}
-              >
-                BOX
-              </button>
-              <button 
-                onClick={() => setPayToken('SUI')}
-                className={`px-3 py-1 rounded text-xs font-medium transition-all ${payToken === 'SUI' ? 'bg-cyan-600 text-white' : 'text-gray-400'}`}
-              >
-                SUI
-              </button>
-            </div>
-          </div>
           {filteredAuctions.slice(0, 8).map((auction) => (
             <motion.div 
               key={auction.id}
@@ -185,11 +169,14 @@ export default function AuctionPage() {
                 <div className="flex items-center justify-between mt-1 md:mt-2">
                   <div>
                     <p className="text-[10px] md:text-xs text-gray-500">当前价</p>
-                    <p className="text-orange-400 font-bold text-sm md:text-lg">{getDisplayPrice(auction.currentPrice, payToken)}</p>
+                    <p className="text-orange-400 font-bold text-sm md:text-lg">{auction.currentPrice} BOX</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] md:text-xs text-gray-500">{auction.bids}出价</p>
-                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleBid(auction); }}
+                    className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-xs font-bold"
+                  >
+                    参与竞拍
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -239,7 +226,7 @@ export default function AuctionPage() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-gray-400 text-xs">当前价</p>
-                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{getDisplayPrice(selectedAuction.currentPrice, payToken)}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{selectedAuction.currentPrice} BOX</p>
                   </div>
                   <div className="text-right">
                     <p className="text-gray-400 text-xs">{selectedAuction.bids}次出价</p>
@@ -247,48 +234,26 @@ export default function AuctionPage() {
                   </div>
                 </div>
 
-                {/* 汇率说明 */}
+                {/* 支付方式 */}
                 <div className="mb-4 p-2 bg-gray-800/50 rounded-lg text-center">
-                  <p className="text-gray-500 text-xs">💡 1 SUI = {SUI_TO_BOX_RATE} BOX</p>
-                </div>
-
-                {/* 支付代币选择 */}
-                <div className="mb-4">
-                  <p className="text-gray-400 text-sm mb-2">支付方式</p>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setPayToken('BOX')}
-                      className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition-all ${payToken === 'BOX' ? 'bg-orange-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-                    >
-                      <Zap className="w-4 h-4" /> BOX
-                    </button>
-                    <button 
-                      onClick={() => setPayToken('SUI')}
-                      className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition-all ${payToken === 'SUI' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-                    >
-                      <Hexagon className="w-4 h-4" /> SUI
-                    </button>
-                  </div>
+                  <p className="text-orange-400 text-sm font-medium">💰 仅支持 BOX 支付</p>
                 </div>
 
                 {/* 出价输入 */}
                 <div className="mb-4">
-                  <label className="text-gray-400 text-sm block mb-2">出价金额</label>
+                  <label className="text-gray-400 text-sm block mb-2">出价金额 (BOX)</label>
                   <div className="relative">
                     <input 
                       type="number" 
                       value={bidPrice}
                       onChange={(e) => setBidPrice(e.target.value)}
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 pr-16 text-white text-lg"
-                      placeholder={`最低 ${payToken === 'BOX' ? selectedAuction.currentPrice + 10 : Math.ceil((selectedAuction.currentPrice + 10) / SUI_TO_BOX_RATE)}`}
+                      placeholder={`最低 ${selectedAuction.currentPrice + 10}`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                      {payToken}
+                      BOX
                     </span>
                   </div>
-                  <p className="text-gray-500 text-xs mt-1">
-                    ≈ {payToken === 'BOX' ? bidPrice ? Math.ceil(Number(bidPrice) * SUI_TO_BOX_RATE) : 0 : bidPrice ? Math.ceil(Number(bidPrice) * SUI_TO_BOX_RATE) : 0} BOX
-                  </p>
                 </div>
 
                 {/* 按钮 */}
@@ -304,7 +269,7 @@ export default function AuctionPage() {
                     className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-bold flex items-center justify-center gap-2"
                   >
                     <span>一口价购买</span>
-                    <span className="text-sm opacity-80">({getDisplayPrice(selectedAuction.buyNowPrice, payToken)})</span>
+                    <span className="text-sm opacity-80">({selectedAuction.buyNowPrice} BOX)</span>
                   </button>
                 </div>
 
