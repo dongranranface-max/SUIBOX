@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Clock, Zap, Sui } from 'lucide-react';
+import { Clock, Zap, Hexagon } from 'lucide-react';
 
 // 模拟拍卖数据
 const now = Date.now();
@@ -222,7 +222,7 @@ export default function AuctionPage() {
                       onClick={() => setPayToken('SUI')}
                       className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition-all ${payToken === 'SUI' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}
                     >
-                      <Sui className="w-4 h-4" /> SUI
+                      <Hexagon className="w-4 h-4" /> SUI
                     </button>
                   </div>
                 </div>
