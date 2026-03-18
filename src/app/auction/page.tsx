@@ -3,25 +3,27 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Clock } from 'lucide-react';
+import { Clock, Zap, Sui } from 'lucide-react';
 
 // 模拟拍卖数据
 const now = Date.now();
 const auctionList = [
-  { id: 1, name: '星辰大海 #01', artist: 'CryptoArtist', rarity: 'Epic', currentPrice: 888, bids: 23, endTime: now + 2*60*60*1000 + 30*60*1000, image: '/fragment-epic.png' },
-  { id: 2, name: '烈焰麒麟 #99', artist: 'FireMaster', rarity: 'Epic', currentPrice: 1500, bids: 56, endTime: now + 5*60*60*1000 + 45*60*1000, image: '/fragment-epic.png' },
-  { id: 3, name: '冰晶之心 #88', artist: 'IceQueen', rarity: 'Epic', currentPrice: 2000, bids: 89, endTime: now + 8*60*60*1000, image: '/fragment-rare.png' },
-  { id: 4, name: '机械之心 #77', artist: 'RoboMaster', rarity: 'Rare', currentPrice: 666, bids: 34, endTime: now + 1*24*60*60*1000, image: '/nft-common.png' },
-  { id: 5, name: '暗黑天使 #33', artist: 'DarkArtist', rarity: 'Rare', currentPrice: 520, bids: 12, endTime: now + 2*24*60*60*1000, image: '/fragment-epic.png' },
-  { id: 6, name: '深海巨兽 #12', artist: 'SeaMaster', rarity: 'Rare', currentPrice: 999, bids: 45, endTime: now + 3*24*60*60*1000, image: '/fragment-epic.png' },
-  { id: 7, name: '金色凤凰 #55', artist: 'Phoenix', rarity: 'Epic', currentPrice: 2888, bids: 78, endTime: now + 4*60*60*1000, image: '/fragment-epic.png' },
-  { id: 8, name: '绿茵王者 #10', artist: 'SoccerKing', rarity: 'Rare', currentPrice: 388, bids: 19, endTime: now + 12*60*60*1000, image: '/nft-common.png' },
+  { id: 1, name: '星辰大海 #01', artist: 'CryptoArtist', rarity: 'Epic', currentPrice: 888, bids: 23, endTime: now + 2*60*60*1000 + 30*60*1000, image: '/fragment-epic.png', buyNowPrice: 1500 },
+  { id: 2, name: '烈焰麒麟 #99', artist: 'FireMaster', rarity: 'Epic', currentPrice: 1500, bids: 56, endTime: now + 5*60*60*1000 + 45*60*1000, image: '/fragment-epic.png', buyNowPrice: 2500 },
+  { id: 3, name: '冰晶之心 #88', artist: 'IceQueen', rarity: 'Epic', currentPrice: 2000, bids: 89, endTime: now + 8*60*60*1000, image: '/fragment-rare.png', buyNowPrice: 3000 },
+  { id: 4, name: '机械之心 #77', artist: 'RoboMaster', rarity: 'Rare', currentPrice: 666, bids: 34, endTime: now + 1*24*60*60*1000, image: '/nft-common.png', buyNowPrice: 1000 },
+  { id: 5, name: '暗黑天使 #33', artist: 'DarkArtist', rarity: 'Rare', currentPrice: 520, bids: 12, endTime: now + 2*24*60*60*1000, image: '/fragment-epic.png', buyNowPrice: 800 },
+  { id: 6, name: '深海巨兽 #12', artist: 'SeaMaster', rarity: 'Rare', currentPrice: 999, bids: 45, endTime: now + 3*24*60*60*1000, image: '/fragment-epic.png', buyNowPrice: 1500 },
+  { id: 7, name: '金色凤凰 #55', artist: 'Phoenix', rarity: 'Epic', currentPrice: 2888, bids: 78, endTime: now + 4*60*60*1000, image: '/fragment-epic.png', buyNowPrice: 4000 },
+  { id: 8, name: '绿茵王者 #10', artist: 'SoccerKing', rarity: 'Rare', currentPrice: 388, bids: 19, endTime: now + 12*60*60*1000, image: '/nft-common.png', buyNowPrice: 600 },
 ];
 
 export default function AuctionPage() {
   const [activeTab, setActiveTab] = useState<'hot' | 'ending' | 'new'>('hot');
   const [selectedAuction, setSelectedAuction] = useState<any>(null);
   const [countdown, setCountdown] = useState<Record<number, {days: number; hours: number; minutes: number; seconds: number}>>({});
+  const [payToken, setPayToken] = useState<'BOX' | 'SUI'>('BOX');
+  const [bidPrice, setBidPrice] = useState('');
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -62,13 +64,29 @@ export default function AuctionPage() {
     ? [...auctionList].sort((a, b) => b.id - a.id)
     : [...auctionList].sort((a, b) => b.bids - a.bids);
 
+  const handleBid = (auction: any) => {
+    setSelectedAuction(auction);
+    setBidPrice((auction.currentPrice + 10).toString());
+  };
+
+  const handleSubmitBid = () => {
+    alert(`出价成功！\n金额: ${bidPrice} ${payToken}`);
+    setSelectedAuction(null);
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedAuction) return;
+    alert(`一口价购买成功！\n金额: ${selectedAuction.buyNowPrice} ${payToken}`);
+    setSelectedAuction(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* 头部 */}
       <div className="bg-gradient-to-b from-violet-900/20 to-transparent pt-8 pb-6">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">🔥 NFT拍卖</h1>
-          <p className="text-gray-400">参与拍卖，竞得稀有NFT！</p>
+          <p className="text-gray-400">参与拍卖，竞得稀有NFT！支持BOX/SUI支付</p>
         </div>
       </div>
 
@@ -104,7 +122,7 @@ export default function AuctionPage() {
               key={auction.id}
               whileHover={{ scale: 1.02 }}
               className="bg-gray-900 rounded-xl overflow-hidden cursor-pointer"
-              onClick={() => setSelectedAuction(auction)}
+              onClick={() => handleBid(auction)}
             >
               <div className="aspect-square relative bg-gray-800">
                 <Image src={auction.image} alt={auction.name} fill className="object-cover" />
@@ -140,49 +158,113 @@ export default function AuctionPage() {
         </div>
       </div>
 
-      {/* 详情弹窗 */}
+      {/* 出价弹窗 - 响应式 */}
       <AnimatePresence>
         {selectedAuction && (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
             onClick={() => setSelectedAuction(null)}
           >
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="bg-gray-900 rounded-t-2xl md:rounded-2xl w-full md:max-w-md max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
-              <div className="aspect-square relative">
-                <Image src={selectedAuction.image} alt={selectedAuction.name} fill className="object-cover rounded-t-2xl" />
+              {/* 图片 */}
+              <div className="aspect-square relative bg-gray-800">
+                <Image src={selectedAuction.image} alt={selectedAuction.name} fill className="object-cover" />
                 <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-lg text-sm font-bold ${
                   selectedAuction.rarity === 'Epic' ? 'bg-purple-500' : 'bg-blue-500'
                 }`}>
                   {selectedAuction.rarity === 'Epic' ? 'SSR' : 'SR'}
                 </div>
+                <button 
+                  onClick={() => setSelectedAuction(null)}
+                  className="absolute top-4 right-4 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-2">{selectedAuction.name}</h2>
-                <p className="text-gray-400 mb-4">by {selectedAuction.artist}</p>
+              
+              <div className="p-4 md:p-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-1">{selectedAuction.name}</h2>
+                <p className="text-gray-400 text-sm mb-4">by {selectedAuction.artist}</p>
                 
-                <div className="flex justify-between items-center mb-6">
+                {/* 价格信息 */}
+                <div className="flex justify-between items-center mb-4">
                   <div>
-                    <p className="text-gray-400 text-sm">当前价</p>
-                    <p className="text-3xl font-bold text-orange-400">{selectedAuction.currentPrice} BOX</p>
+                    <p className="text-gray-400 text-xs">当前价</p>
+                    <p className="text-2xl md:text-3xl font-bold text-orange-400">{selectedAuction.currentPrice} BOX</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-gray-400 text-sm">竞价次数</p>
-                    <p className="text-xl font-bold">{selectedAuction.bids}次</p>
+                    <p className="text-gray-400 text-xs">{selectedAuction.bids}次出价</p>
+                    <p className="text-xs text-gray-500">剩余 {formatCountdown(selectedAuction.id)}</p>
                   </div>
                 </div>
 
-                <button className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-bold text-lg hover:opacity-90">
-                  立即出价
-                </button>
+                {/* 支付代币选择 */}
+                <div className="mb-4">
+                  <p className="text-gray-400 text-sm mb-2">支付方式</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setPayToken('BOX')}
+                      className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition-all ${payToken === 'BOX' ? 'bg-orange-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+                    >
+                      <Zap className="w-4 h-4" /> BOX
+                    </button>
+                    <button 
+                      onClick={() => setPayToken('SUI')}
+                      className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition-all ${payToken === 'SUI' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+                    >
+                      <Sui className="w-4 h-4" /> SUI
+                    </button>
+                  </div>
+                </div>
+
+                {/* 出价输入 */}
+                <div className="mb-4">
+                  <label className="text-gray-400 text-sm block mb-2">出价金额</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={bidPrice}
+                      onChange={(e) => setBidPrice(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 pr-12 text-white text-lg"
+                      placeholder={`最低 ${selectedAuction.currentPrice + 10}`}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                      {payToken}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 按钮 */}
+                <div className="space-y-2">
+                  <button 
+                    onClick={handleSubmitBid}
+                    className="w-full py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold"
+                  >
+                    确认出价
+                  </button>
+                  <button 
+                    onClick={handleBuyNow}
+                    className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-bold flex items-center justify-center gap-2"
+                  >
+                    <span>一口价购买</span>
+                    <span className="text-sm opacity-80">({selectedAuction.buyNowPrice} {payToken})</span>
+                  </button>
+                </div>
+
+                {/* 说明 */}
+                <p className="text-gray-500 text-xs text-center mt-4">
+                  出价后需等待更高出价或拍卖结束
+                </p>
               </div>
             </motion.div>
           </motion.div>
