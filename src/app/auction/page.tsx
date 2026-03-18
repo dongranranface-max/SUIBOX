@@ -185,23 +185,22 @@ export default function AuctionPage() {
       </div>
 
       {/* 出价弹窗 - 响应式 */}
-      <AnimatePresence>
-        {selectedAuction && (
+      {selectedAuction && (
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
+          onClick={() => setSelectedAuction(null)}
+        >
           <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
-            onClick={() => setSelectedAuction(null)}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25 }}
+            className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-t border-gray-700"
+            onClick={e => e.stopPropagation()}
           >
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-t border-gray-700"
-              onClick={e => e.stopPropagation()}
-            >
               {/* 顶部装饰条 */}
               <div className="flex justify-center pt-3 pb-1 md:hidden">
                 <div className="w-12 h-1 bg-gray-600 rounded-full" />
@@ -304,7 +303,8 @@ export default function AuctionPage() {
                 </div>
               </div>
             </motion.div>
-          </AnimatePresence>
+          </motion.div>
+        )}
     </div>
   );
 }
