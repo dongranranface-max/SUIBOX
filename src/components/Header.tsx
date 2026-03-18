@@ -55,15 +55,18 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-2 md:px-4">
         <div className="flex items-center justify-between h-14 md:h-16">
           
-          {/* Logo */}
+          {/* Logo - 3D旋转特效 */}
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
             <div className="relative">
               <img 
                 src="/suibox-logo.png" 
                 alt="SUIBOX" 
-                className="h-9 w-auto md:h-11 transition-transform duration-300 group-hover:scale-105" 
+                className="h-9 w-auto md:h-11 transition-all duration-500 group-hover:rotate-y-180"
+                style={{ transformStyle: 'preserve-3d' }}
               />
-              <div className="absolute -inset-2 bg-gradient-to-r from-violet-500 via-pink-500 to-cyan-500 blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500 -z-10 rounded-full" />
+              {/* 3D光晕效果 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-pink-500 to-cyan-500 rounded-full blur-xl opacity-0 group-hover:opacity-70 transition-all duration-500 animate-pulse" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/50 to-pink-500/50 blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300 -z-10 rounded-full" />
             </div>
             <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
               SUIBOX
