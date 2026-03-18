@@ -15,6 +15,8 @@ const auctionList = [
   { id: 4, name: '机械之心 #77', artist: 'RoboMaster', rarity: 'Rare', currentPrice: 666, startPrice: 300, bids: 34, endTime: now + 1*24*60*60*1000, image: '/nft-common.png', desc: '未来科技感NFT！' },
   { id: 5, name: '暗黑天使 #33', artist: 'DarkArtist', rarity: 'Rare', currentPrice: 520, startPrice: 200, bids: 12, endTime: now + 2*24*60*60*1000, image: '/fragment-epic.png', desc: '黑暗系艺术品！' },
   { id: 6, name: '深海巨兽 #12', artist: 'SeaMaster', rarity: 'Rare', currentPrice: 999, startPrice: 400, bids: 45, endTime: now + 3*24*60*60*1000, image: '/fragment-epic.png', desc: '神秘海洋生物！' },
+  { id: 7, name: '金色凤凰 #55', artist: 'Phoenix', rarity: 'Epic', currentPrice: 2888, startPrice: 1500, bids: 78, endTime: now + 4*60*60*1000, image: '/fragment-epic.png', desc: '浴火重生的凤凰！' },
+  { id: 8, name: '绿茵王者 #10', artist: 'SoccerKing', rarity: 'Rare', currentPrice: 388, startPrice: 150, bids: 19, endTime: now + 12*60*60*1000, image: '/nft-common.png', desc: '足球主题NFT！' },
 ];
 
 export default function AuctionPage() {
@@ -98,17 +100,51 @@ export default function AuctionPage() {
         </div>
       </div>
 
-      {/* 拍卖列表 */}
+      {/* 拍卖列表 - 2排4列 */}
       <div className="max-w-7xl mx-auto px-4 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAuctions.map((auction) => (
-            <div 
-              key={auction.id} 
-              className="bg-gray-900 rounded-2xl overflow-hidden hover:ring-2 hover:ring-violet-500 transition-all cursor-pointer"
+        {/* 2x4 网格布局 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {filteredAuctions.slice(0, 8).map((auction) => (
+            <motion.div 
+              key={auction.id}
+              whileHover={{ scale: 1.02 }}
+              className="bg-gray-900 rounded-xl overflow-hidden cursor-pointer"
               onClick={() => setSelectedAuction(auction)}
             >
               <div className="aspect-square relative bg-gray-800">
                 <Image src={auction.image} alt={auction.name} fill className="object-cover" />
+                {/* 倒计时 */}
+                <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold flex items-center gap-0.5 ${
+                  countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1 
+                    ? 'bg-red-600 animate-pulse' 
+                    : 'bg-orange-600/80 backdrop-blur-sm'
+                }`}>
+                  <Clock className="w-3 h-3" />
+                  <span>{formatCountdown(auction.id)}</span>
+                </div>
+                {/* 稀有度 */}
+                <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  auction.rarity === 'Epic' ? 'bg-purple-500' : 'bg-blue-500'
+                }`}>
+                  {auction.rarity === 'Epic' ? 'SSR' : 'SR'}
+                </div>
+              </div>
+              
+              <div className="p-2 md:p-3">
+                <h3 className="font-bold text-sm md:text-base truncate">{auction.name}</h3>
+                <div className="flex items-center justify-between mt-1 md:mt-2">
+                  <div>
+                    <p className="text-[10px] md:text-xs text-gray-500">当前价</p>
+                    <p className="text-orange-400 font-bold text-sm md:text-lg">{auction.currentPrice} BOX</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] md:text-xs text-gray-500">{auction.bids}出价</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
                 {/* 倒计时 */}
                 <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 ${
                   countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1 
