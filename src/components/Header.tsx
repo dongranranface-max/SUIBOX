@@ -14,6 +14,7 @@ const navItems = [
   { name: '交易', hasDropdown: true, menu: 'trade', icon: ShoppingCart },
   { name: 'DAO', hasDropdown: true, menu: 'dao', icon: Landmark, highlight: true },
   { name: '邀请', href: '/invite', icon: User, badge: 'FREE' },
+  { name: '入驻', hasDropdown: true, menu: 'join', icon: UserPlus },
   { name: 'Ranking', href: '/ranking', icon: TrendingUp },
 ];
 
@@ -26,6 +27,12 @@ const dropdowns: Record<string, { name: string; href: string; icon?: any }[]> = 
   dao: [
     { name: '社区治理', href: '/governance', icon: Megaphone },
     { name: '质押Staking', href: '/mine', icon: Landmark },
+  ],
+  join: [
+    { name: '申请入驻', href: '/join' },
+    { name: '创作', href: '/create' },
+    { name: '个人主页', href: '/profile' },
+    { name: '机构管理', href: '/institution' },
   ],
 };
 
