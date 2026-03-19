@@ -15,13 +15,14 @@
     "@mysten/wallet-adapter-wallet-standard": "^0.8.0",
     "@mysten/walrus": "^1.0.4",
     "@suiet/wallet-kit": "^0.5.1",
-    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query": "^5.91.0",
     "framer-motion": "^12.35.2",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-intl": "^4.8.3",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

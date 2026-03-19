@@ -1,0 +1,11 @@
+# Cloudflare Pages configuration
+name = "suibox"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".vercel/output/static"
+
+[[pages]]
+binding = "kv"
+namespace_id = "SUIBOX_KV"
+
+[vars]
+NEXT_PUBLIC_APP_URL = "https://suibox.pages.dev"

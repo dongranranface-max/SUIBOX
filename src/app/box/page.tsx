@@ -174,24 +174,102 @@ function ResultModal({ result, onClose }: { result: { type: string }; onClose: (
   );
 }
 
-// 开盒动画
+// 开盒动画 - 增强版
 function OpeningAnimation() {
   const [phase, setPhase] = useState(0);
   
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 400);
-    const t2 = setTimeout(() => setPhase(2), 1200);
-    const t3 = setTimeout(() => setPhase(3), 2200);
+    const t1 = setTimeout(() => setPhase(1), 300);
+    const t2 = setTimeout(() => setPhase(2), 1000);
+    const t3 = setTimeout(() => setPhase(3), 2000);
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, []);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
-      <div className="text-center">
-        <motion.div animate={phase >= 1 ? { x: [-25, 25, -25, 25, 0] } : {}} transition={{ duration: 0.4 }}><Gift className="w-28 h-28 text-yellow-500" /></motion.div>
-        {phase >= 2 && <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 2, 3] }} className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-60 h-60 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-full blur-3xl opacity-40" /></motion.div>}
-        {phase >= 3 && <motion.div className="absolute inset-0 pointer-events-none">{[...Array(20)].map((_, i) => (<motion.div key={i} initial={{ x: 0, y: 0, opacity: 1 }} animate={{ x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 500, opacity: 0 }} transition={{ duration: 0.8 }} className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full ${i % 4 === 0 ? 'bg-yellow-400' : i % 4 === 1 ? 'bg-orange-400' : i % 4 === 2 ? 'bg-red-400' : 'bg-white'}`} />))}</motion.div>}
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: phase >= 2 ? 1 : 0, y: phase >= 2 ? 0 : 20 }} className="mt-8 text-2xl font-black text-white">{phase >= 3 ? '✨ 恭喜！' : '🎁 开启中...'}</motion.p>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/95 flex items-center justify-center z-50"
+    >
+      {/* 背景光效 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div 
+          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-full blur-3xl"
+        />
+      </div>
+      
+      <div className="relative z-10 text-center">
+        {/* 礼物盒动画 */}
+        <motion.div
+          animate={phase >= 1 ? { 
+            x: [0, -20, 20, -20, 20, 0],
+            rotate: [0, -10, 10, -10, 10, 0]
+          } : {}}
+          transition={{ duration: 0.5 }}
+        >
+          <Gift className="w-32 h-32 text-yellow-400 mx-auto" />
+        </motion.div>
+        
+        {/* 光晕效果 */}
+        {phase >= 2 && (
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          >
+            <div className="w-64 h-64 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-full blur-3xl opacity-40" />
+          </motion.div>
+        )}
+        
+        {/* 粒子爆炸 */}
+        {phase >= 3 && (
+          <motion.div className="absolute inset-0 pointer-events-none">
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                animate={{ 
+                  x: (Math.random() - 0.5) * 600, 
+                  y: (Math.random() - 0.5) * 600, 
+                  opacity: 0,
+                  scale: 0
+                }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full ${
+                  i % 5 === 0 ? 'bg-yellow-400' : 
+                  i % 5 === 1 ? 'bg-orange-400' : 
+                  i % 5 === 2 ? 'bg-red-400' : 
+                  i % 5 === 3 ? 'bg-white' : 'bg-pink-400'
+                }`}
+              />
+            ))}
+          </motion.div>
+        )}
+        
+        {/* 文字 */}
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ 
+            opacity: phase >= 2 ? 1 : 0, 
+            y: phase >= 2 ? 0 : 20,
+            scale: phase >= 3 ? [1, 1.2, 1] : 1
+          }} 
+          className="mt-10 text-3xl font-black text-white"
+        >
+          {phase >= 3 ? '✨ 恭喜获得！' : '🎁 开启中...'}
+        </motion.p>
+        
+        {/* 进度条 */}
+        <div className="mt-6 w-48 mx-auto h-2 bg-gray-800 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: '0%' }}
+            animate={{ width: phase >= 3 ? '100%' : `${phase * 33}%` }}
+            className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500"
+          />
+        </div>
       </div>
     </motion.div>
   );

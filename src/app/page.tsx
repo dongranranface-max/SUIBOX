@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { ChevronRight, ArrowUp, ArrowDown, Clock, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStats } from '@/hooks/useStats';
 
 // 轮播图
@@ -11,7 +12,7 @@ const banners = [
   { id: 1, title: 'NFT盲盒', desc: '打开盲盒，赢取稀有NFT！', link: '/box', bg: 'from-violet-600 via-purple-600 to-pink-600', emoji: '🎁' },
   { id: 2, title: '碎片合成', desc: '碎片合成NFT，赢取BOX奖励！', link: '/craft', bg: 'from-blue-600 via-cyan-600 to-teal-600', emoji: '⚗️' },
   { id: 3, title: 'NFT拍卖', desc: '稀有NFT正在拍卖中！', link: '/auction', bg: 'from-orange-600 via-red-600 to-pink-600', emoji: '🔨' },
-  { id: 4, title: 'DAO治理', desc: '参与治理，质押BOX获取收益！', link: '/governance', bg: 'from-green-600 via-emerald-600 to-teal-600', emoji: '🏛️' },
+  { id: 4, title: 'DAO治理', desc: '参与治理，质押BOX获取收益！', link: '/mine', bg: 'from-green-600 via-emerald-600 to-teal-600', emoji: '🏛️' },
 ];
 
 const hotNFTs = [
@@ -31,17 +32,17 @@ const hotNFTs = [
 const now = Date.now();
 const hotAuctions = [
   // 即将结束 (结束时间短的排前面)
-  { id: 4, name: '烈焰麒麟 #55', artist: 'FireMaster', price: 888, bids: 23, endTime: now + 2*60*60*1000 + 30*60*1000, rarity: '史诗', image: '/fragment-epic.png' },
-  { id: 5, name: '冰晶之心 #88', artist: 'IceArtist', price: 666, bids: 18, endTime: now + 5*60*60*1000 + 45*60*1000, rarity: '史诗', image: '/fragment-rare.png' },
-  { id: 6, name: '暗黑天使 #33', artist: 'DarkArtist', price: 520, bids: 12, endTime: now + 8*60*60*1000, rarity: '稀有', image: '/fragment-epic.png' },
+  { id: 4, name: '烈焰麒麟 #55', artist: 'FireMaster', price: 888, bids: 23, endTime: now + 2*60*60*1000 + 30*60*1000, rarity: '史诗', image: '/fragment-epic.png', buyNowPrice: 1500 },
+  { id: 5, name: '冰晶之心 #88', artist: 'IceArtist', price: 666, bids: 18, endTime: now + 5*60*60*1000 + 45*60*1000, rarity: '史诗', image: '/fragment-rare.png', buyNowPrice: 1000 },
+  { id: 6, name: '暗黑天使 #33', artist: 'DarkArtist', price: 520, bids: 12, endTime: now + 8*60*60*1000, rarity: '稀有', image: '/fragment-epic.png', buyNowPrice: 800 },
   // 最新上架 (ID大的排前面)
-  { id: 9, name: '星辰大海 #99', artist: 'StarMaster', price: 3888, bids: 89, endTime: now + 10*24*60*60*1000, rarity: '传说', image: '/nft-common.png' },
-  { id: 8, name: '机械之心 #88', artist: 'RoboMaster', price: 1888, bids: 45, endTime: now + 8*24*60*60*1000, rarity: '史诗', image: '/nft-common.png' },
-  { id: 7, name: '深海巨兽 #12', artist: 'SeaMaster', price: 999, bids: 34, endTime: now + 5*24*60*60*1000, rarity: '稀有', image: '/fragment-epic.png' },
+  { id: 9, name: '星辰大海 #99', artist: 'StarMaster', price: 3888, bids: 89, endTime: now + 10*24*60*60*1000, rarity: '传说', image: '/nft-common.png', buyNowPrice: 5000 },
+  { id: 8, name: '机械之心 #88', artist: 'RoboMaster', price: 1888, bids: 45, endTime: now + 8*24*60*60*1000, rarity: '史诗', image: '/nft-common.png', buyNowPrice: 2500 },
+  { id: 7, name: '深海巨兽 #12', artist: 'SeaMaster', price: 999, bids: 34, endTime: now + 5*24*60*60*1000, rarity: '稀有', image: '/fragment-epic.png', buyNowPrice: 1500 },
   // 即将结束
-  { id: 1, name: '宇宙之心 #01', artist: 'StarArtist', price: 5000, bids: 156, endTime: now + 6*24*60*60*1000 + 19*60*60*1000, rarity: '传说', image: '/nft-common.png' },
-  { id: 2, name: '机械之心 #77', artist: 'RoboArtist', price: 2000, bids: 89, endTime: now + 2*24*60*60*1000 + 11*60*60*1000, rarity: '史诗', image: '/nft-common.png' },
-  { id: 3, name: '烈焰麒麟 #99', artist: 'FireMaster', price: 1500, bids: 56, endTime: now + 1*24*60*60*1000 + 19*60*60*1000, rarity: '史诗', image: '/fragment-epic.png' },
+  { id: 1, name: '宇宙之心 #01', artist: 'StarArtist', price: 5000, bids: 156, endTime: now + 6*24*60*60*1000 + 19*60*60*1000, rarity: '传说', image: '/nft-common.png', buyNowPrice: 8000 },
+  { id: 2, name: '机械之心 #77', artist: 'RoboArtist', price: 2000, bids: 89, endTime: now + 2*24*60*60*1000 + 11*60*60*1000, rarity: '史诗', image: '/nft-common.png', buyNowPrice: 3000 },
+  { id: 3, name: '烈焰麒麟 #99', artist: 'FireMaster', price: 1500, bids: 56, endTime: now + 1*24*60*60*1000 + 19*60*60*1000, rarity: '史诗', image: '/fragment-epic.png', buyNowPrice: 2500 },
 ];
 
 const nftRankings = [
@@ -72,8 +73,9 @@ const rarityColors: Record<string, string> = {
 export default function Home() {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [countdown, setCountdown] = useState<Record<number, {days: number, hours: number, minutes: number, seconds: number}>>({});
-  const [bidModal, setBidModal] = useState<{show: boolean, auction?: typeof hotAuctions[0]}>({show: false});
+  const [bidModal, setBidModal] = useState<{show: boolean, auction?: any}>({show: false});
   const [bidPrice, setBidPrice] = useState('');
+  const [bidError, setBidError] = useState('');
   const [auctionFilter, setAuctionFilter] = useState<'ending' | 'new'>('ending');
   const { stats, loading: statsLoading } = useStats();
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -95,7 +97,17 @@ export default function Home() {
         setHasLoadedOnce(true);
       }
     }
-  }, [statsLoading, stats, hasLoadedOnce]);
+  }, [stats, statsLoading, hasLoadedOnce]);
+
+  // 轮播图自动滑动
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % banners.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 拍卖倒计时
   useEffect(() => {
     const calculateCountdown = () => {
       const newCountdown: Record<number, {days: number, hours: number, minutes: number, seconds: number}> = {};
@@ -128,14 +140,29 @@ export default function Home() {
   };
 
   // 出价
-  const handleBid = (auction: typeof hotAuctions[0]) => {
-    const minBid = Math.floor(auction.price * 1.1);
-    setBidPrice(minBid.toString());
-    setBidModal({show: true, auction});
+  const handleBid = (auction: any) => {
+    // 设置弹窗显示
+    setBidModal({show: true, auction: auction});
+  };
+
+  const validateBid = (price: string) => {
+    const num = parseFloat(price);
+    const minPrice = Math.floor(bidModal.auction.price * 1.1);
+    if (isNaN(num) || num <= 0) return '请输入有效金额';
+    if (num < minPrice) return `最低出价 ${minPrice} BOX`;
+    return '';
   };
 
   const submitBid = () => {
-    alert(`出价成功！出价: ${bidPrice} SUI`);
+    const error = validateBid(bidPrice);
+    if (error) { setBidError(error); return; }
+    alert(`出价成功！出价: ${bidPrice} BOX`);
+    setBidModal({show: false});
+  };
+
+  const handleBuyNow = () => {
+    if (!bidModal.auction) return;
+    alert(`一口价购买成功！金额: ${bidModal.auction.buyNowPrice} BOX`);
     setBidModal({show: false});
   };
 
@@ -179,61 +206,27 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-10 space-y-8 md:space-y-12">
 
-        {/* 热门NFT */}
-        <section>
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-              <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-violet-500 to-pink-500 rounded-full" />
-              热门NFT
-            </h2>
-            <Link href="/market" className="text-violet-400 hover:text-violet-300 flex items-center gap-1">
-              查看全部 <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-            {hotNFTs.map((nft) => (
-              <Link key={nft.id} href={`/nft/${nft.id}`} className="group bg-gray-900/60 rounded-xl md:rounded-2xl overflow-hidden hover:bg-gray-800/80 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
-                <div className="aspect-square relative bg-gray-800">
-                  <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                  <span className={`absolute top-2 md:top-3 right-2 md:right-3 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs font-bold ${rarityColors[nft.rarity] || 'bg-gray-600'}`}>{nft.rarity}</span>
-                </div>
-                <div className="p-2 md:p-4">
-                  <p className="text-[10px] md:text-xs text-gray-400">{nft.collection}</p>
-                  <p className="text-sm font-medium truncate mb-1 md:mb-2">{nft.name}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-violet-400 font-bold text-sm">{nft.price} SUI</span>
-                    <span className={`text-[10px] md:text-xs flex items-center gap-0.5 md:gap-1 ${nft.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {nft.change >= 0 ? <ArrowUp className="w-2 md:w-3 h-2 md:h-3" /> : <ArrowDown className="w-2 md:w-3 h-2 md:h-3" />}
-                      {Math.abs(nft.change)}%
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* 热门拍卖 - 2x4布局 */}
         <section className="bg-gray-900/30 -mx-4 px-4 py-6 md:py-8 rounded-2xl md:rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-2xl font-bold flex items-center gap-2">
               <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
               热门拍卖
             </h2>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-2 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
               <button 
                 onClick={() => setAuctionFilter('ending')}
-                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'ending' ? 'bg-orange-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
+                className={`flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'ending' ? 'bg-orange-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
               >
-                即将结束
+                ⏰ 即将结束
               </button>
               <button 
                 onClick={() => setAuctionFilter('new')}
-                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'new' ? 'bg-violet-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
+                className={`flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'new' ? 'bg-violet-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
               >
-                最新上架
+                🆕 最新上架
               </button>
-              <Link href="/auction" className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
+              <Link href="/auction" className="flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
                 查看全部
               </Link>
             </div>
@@ -272,6 +265,40 @@ export default function Home() {
                   </button>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 热门NFT */}
+        <section>
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-violet-500 to-pink-500 rounded-full" />
+              热门NFT
+            </h2>
+            <Link href="/market" className="text-violet-400 hover:text-violet-300 flex items-center gap-1">
+              查看全部 <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {hotNFTs.map((nft) => (
+              <Link key={nft.id} href={`/nft/${nft.id}`} className="group bg-gray-900/60 rounded-xl md:rounded-2xl overflow-hidden hover:bg-gray-800/80 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
+                <div className="aspect-square relative bg-gray-800">
+                  <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                  <span className={`absolute top-2 md:top-3 right-2 md:right-3 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs font-bold ${rarityColors[nft.rarity] || 'bg-gray-600'}`}>{nft.rarity}</span>
+                </div>
+                <div className="p-2 md:p-4">
+                  <p className="text-[10px] md:text-xs text-gray-400">{nft.collection}</p>
+                  <p className="text-sm font-medium truncate mb-1 md:mb-2">{nft.name}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-violet-400 font-bold text-sm">{nft.price} SUI</span>
+                    <span className={`text-[10px] md:text-xs flex items-center gap-0.5 md:gap-1 ${nft.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {nft.change >= 0 ? <ArrowUp className="w-2 md:w-3 h-2 md:h-3" /> : <ArrowDown className="w-2 md:w-3 h-2 md:h-3" />}
+                      {Math.abs(nft.change)}%
+                    </span>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         </section>
@@ -653,33 +680,49 @@ export default function Home() {
                   <input 
                     type="number" 
                     value={bidPrice}
-                    onChange={(e) => setBidPrice(e.target.value)}
-                    className="w-full bg-gray-800/80 border border-gray-600 rounded-xl py-4 px-4 pr-16 text-white text-xl font-bold text-center"
+                    onChange={(e) => { setBidPrice(e.target.value); setBidError(''); }}
+                    className={`w-full bg-gray-800/80 border rounded-xl py-4 px-4 pr-16 text-white text-xl font-bold text-center ${bidError ? 'border-red-500' : 'border-gray-600'}`}
                     placeholder="请输入出价金额"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">
                     BOX
                   </span>
                 </div>
-                <p className="text-gray-500 text-xs text-center mt-2">
-                  最低出价: {Math.floor(bidModal.auction.price * 1.1)} BOX
-                </p>
+                {bidError ? (
+                  <p className="text-red-400 text-xs text-center mt-2">{bidError}</p>
+                ) : (
+                  <p className="text-gray-500 text-xs text-center mt-2">
+                    最低出价: {Math.floor(bidModal.auction.price * 1.1)} BOX
+                  </p>
+                )}
               </div>
+
+              {/* 一口价 */}
+              {bidModal.auction.buyNowPrice && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-yellow-400 font-medium">一口价</span>
+                    <span className="text-yellow-400 font-bold">{bidModal.auction.buyNowPrice} BOX</span>
+                  </div>
+                </div>
+              )}
               
               {/* 按钮 */}
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setBidModal({show: false})} 
-                  className="flex-1 py-4 bg-gray-700 rounded-xl font-bold hover:bg-gray-600 transition-colors"
-                >
-                  取消
-                </button>
+              <div className="space-y-3">
                 <button 
                   onClick={submitBid} 
-                  className="flex-1 py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all"
+                  className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all"
                 >
                   ⚡ 确认出价
                 </button>
+                {bidModal.auction.buyNowPrice && (
+                  <button 
+                    onClick={handleBuyNow}
+                    className="w-full py-4 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all"
+                  >
+                    💰 一口价购买
+                  </button>
+                )}
               </div>
               
               {/* 说明 */}

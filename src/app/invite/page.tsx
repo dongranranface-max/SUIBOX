@@ -110,37 +110,37 @@ export default function InvitePage() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-600/20 rounded-full blur-[150px]" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-4xl mx-auto px-3 md:px-4 py-6 md:py-8">
         {/* 标题 */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
             邀请好友
           </h1>
-          <p className="text-gray-400">邀请好友参与盲盒，双方获得 BOX 空投！</p>
+          <p className="text-gray-400 text-sm md:text-base">邀请好友参与盲盒，双方获得 BOX 空投！</p>
         </motion.div>
 
         {/* 推荐链接 */}
         {wallet.connected && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-lg flex items-center gap-2">
-                <Link className="w-5 h-5" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="font-bold text-base md:text-lg flex items-center gap-2">
+                <Link className="w-4 md:w-5 h-4 md:h-5" />
                 你的推荐链接
               </h2>
               <span className="text-xs bg-white/20 px-2 py-1 rounded">唯一专属</span>
             </div>
             
-            <div className="flex items-center gap-3 bg-black/30 rounded-xl p-1">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 bg-black/30 rounded-xl p-1">
               <input 
                 value={inviteLink}
                 readOnly
-                className="flex-1 bg-transparent px-4 py-3 text-sm outline-none"
+                className="flex-1 bg-transparent px-3 md:px-4 py-2.5 md:py-3 text-sm outline-none min-h-[44px]"
               />
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={copyLink}
-                className={`px-6 py-3 rounded-lg font-bold flex items-center gap-2 ${copied ? 'bg-green-500' : 'bg-white/20 hover:bg-white/30'}`}
+                className={`px-4 md:px-6 py-2.5 md:py-3 min-h-[44px] rounded-lg font-bold flex items-center justify-center gap-2 text-sm ${copied ? 'bg-green-500' : 'bg-white/20 hover:bg-white/30'}`}
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 {copied ? '已复制' : '复制'}
@@ -148,38 +148,38 @@ export default function InvitePage() {
             </div>
 
             {/* 分享按钮 */}
-            <div className="mt-4 pt-4 border-t border-white/20">
-              <p className="text-sm text-white/70 mb-3 flex items-center gap-2">
+            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-white/20">
+              <p className="text-xs md:text-sm text-white/70 mb-2 md:mb-3 flex items-center gap-2">
                 <Share2 className="w-4 h-4" />
                 分享到社交平台
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-2 md:gap-3">
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={shareToTwitter}
-                  className="flex-1 py-3 bg-[#1DA1F2] rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 md:py-3 min-h-[44px] bg-[#1DA1F2] rounded-xl font-bold flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm"
                 >
-                  <Twitter className="w-5 h-5" />
-                  Twitter
+                  <Twitter className="w-4 md:w-5 h-4 md:h-5" />
+                  <span className="hidden sm:inline">Twitter</span>
                 </motion.button>
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={shareToTelegram}
-                  className="flex-1 py-3 bg-[#0088cc] rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 md:py-3 min-h-[44px] bg-[#0088cc] rounded-xl font-bold flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  Telegram
+                  <MessageCircle className="w-4 md:w-5 h-4 md:h-5" />
+                  <span className="hidden sm:inline">Telegram</span>
                 </motion.button>
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={generatePoster}
-                  className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 md:py-3 min-h-[44px] bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm"
                 >
-                  <QrCode className="w-5 h-5" />
-                  海报
+                  <QrCode className="w-4 md:w-5 h-4 md:h-5" />
+                  <span className="hidden sm:inline">海报</span>
                 </motion.button>
               </div>
             </div>
@@ -191,41 +191,41 @@ export default function InvitePage() {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-3 md:p-4"
             onClick={() => setShowPoster(false)}
           >
             <motion.div 
               initial={{ scale: 0.8 }} 
               animate={{ scale: 1 }} 
-              className="bg-gray-900 rounded-2xl p-6 max-w-sm w-full"
+              className="bg-gray-900 rounded-2xl p-4 md:p-6 max-w-sm w-full mx-4"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="font-bold text-lg mb-4 text-center">分享海报</h3>
-              <div ref={posterRef} className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-xl p-6 text-center">
-                <h1 className="text-2xl font-black text-white mb-2">SUI GIFT</h1>
-                <p className="text-white/80 text-sm mb-4">盲盒空投 1500万 BOX</p>
-                <div className="bg-white rounded-lg p-4 mb-4">
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-center">分享海报</h3>
+              <div ref={posterRef} className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-xl p-4 md:p-6 text-center">
+                <h1 className="text-xl md:text-2xl font-black text-white mb-2">SUI GIFT</h1>
+                <p className="text-white/80 text-xs md:text-sm mb-3 md:mb-4">盲盒空投 1500万 BOX</p>
+                <div className="bg-white rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                   <p className="text-gray-500 text-xs mb-1">邀请码</p>
-                  <p className="text-xl font-bold text-violet-600">{inviteCode}</p>
+                  <p className="text-lg md:text-xl font-bold text-violet-600">{inviteCode}</p>
                 </div>
                 <p className="text-white/60 text-xs">扫码或点击链接参与</p>
-                <p className="text-white/60 text-xs mt-1">{inviteLink}</p>
+                <p className="text-white/60 text-xs mt-1 break-all">{inviteLink}</p>
               </div>
-              <div className="flex gap-3 mt-4">
+              <div className="flex gap-2 md:gap-3 mt-3 md:mt-4">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={downloadPoster}
-                  className="flex-1 py-3 bg-violet-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 md:py-3 min-h-[44px] bg-violet-600 rounded-xl font-bold flex items-center justify-center gap-1.5 md:gap-2 text-sm"
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-4 md:w-5 h-4 md:h-5" />
                   下载海报
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowPoster(false)}
-                  className="flex-1 py-3 bg-gray-700 rounded-xl font-bold"
+                  className="flex-1 py-2.5 md:py-3 min-h-[44px] bg-gray-700 rounded-xl font-bold text-sm"
                 >
                   关闭
                 </motion.button>

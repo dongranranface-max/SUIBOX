@@ -75,23 +75,23 @@ export default function AnnouncementsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* 头部 */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 to-black py-10">
+      <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 to-black py-6 md:py-10">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, violet 0%, transparent 50%)' }} />
-        <div className="max-w-4xl mx-auto px-6 relative z-10">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-3xl font-bold mb-3 flex items-center gap-3">
-              <Bell className="w-8 h-8 text-amber-400" />
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3 flex items-center gap-2 md:gap-3">
+              <Bell className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
               平台公告
             </h1>
-            <p className="text-gray-400">了解 SUIBOX 最新动态和重要通知</p>
+            <p className="text-gray-400 text-sm md:text-base">了解 SUIBOX 最新动态和重要通知</p>
             
             {/* 统计 */}
-            <div className="flex gap-4 mt-6">
-              <div className="bg-white/5 rounded-xl px-4 py-2 border border-white/10">
+            <div className="flex gap-2 md:gap-4 mt-4 md:mt-6">
+              <div className="bg-white/5 rounded-xl px-3 md:px-4 py-2 border border-white/10 min-h-[44px] flex items-center">
                 <span className="text-amber-400 font-bold">{announcements.length}</span>
                 <span className="text-gray-400 text-sm ml-1">条公告</span>
               </div>
-              <div className="bg-white/5 rounded-xl px-4 py-2 border border-white/10">
+              <div className="bg-white/5 rounded-xl px-3 md:px-4 py-2 border border-white/10 min-h-[44px] flex items-center">
                 <span className="text-red-400 font-bold">{pinnedAnnouncements.length}</span>
                 <span className="text-gray-400 text-sm ml-1">条置顶</span>
               </div>
@@ -101,7 +101,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* 主内容 */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 md:py-8">
         {/* 置顶公告 */}
         {pinnedAnnouncements.length > 0 && (
           <div className="mb-8">
@@ -118,15 +118,15 @@ export default function AnnouncementsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setSelectedAnnouncement(announcement)}
-                    className={`${config.bg} rounded-xl p-4 border cursor-pointer hover:opacity-80 transition`}
+                    className={`${config.bg} rounded-xl p-3 md:p-4 border cursor-pointer hover:opacity-80 transition min-h-[44px] md:min-h-auto`}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{announcement.icon}</span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold">{announcement.title}</h3>
-                            <span className={`${config.text} text-xs px-2 py-0.5 rounded-full ${config.bg}`}>
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <span className="text-xl md:text-2xl flex-shrink-0">{announcement.icon}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-sm md:text-base truncate">{announcement.title}</h3>
+                            <span className={`${config.text} text-xs px-2 py-0.5 rounded-full ${config.bg} flex-shrink-0`}>
                               {announcement.typeText}
                             </span>
                           </div>
@@ -136,7 +136,7 @@ export default function AnnouncementsPage() {
                           </div>
                         </div>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                      <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
                     </div>
                   </motion.div>
                 );
@@ -160,20 +160,20 @@ export default function AnnouncementsPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedAnnouncement(announcement)}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10 cursor-pointer hover:bg-white/10 transition"
+                  className="bg-white/5 rounded-xl p-3 md:p-4 border border-white/10 cursor-pointer hover:bg-white/10 transition min-h-[44px]"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{announcement.icon}</span>
-                      <div>
-                        <h3 className="font-medium">{announcement.title}</h3>
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                      <span className="text-lg md:text-xl flex-shrink-0">{announcement.icon}</span>
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-sm md:text-base truncate">{announcement.title}</h3>
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {announcement.time}
                         </div>
                       </div>
                     </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400" />
+                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
                   </div>
                 </motion.div>
               );
@@ -187,16 +187,23 @@ export default function AnnouncementsPage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
           onClick={() => setSelectedAnnouncement(null)}
         >
           <motion.div 
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="bg-gray-900 rounded-2xl max-w-lg w-full border border-white/20"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25 }}
+            className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg max-h-[90vh] overflow-y-auto border-t md:border border-gray-700 md:border-white/20"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6">
+            {/* 移动端顶部装饰条 */}
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+              <div className="w-12 h-1 bg-gray-600 rounded-full" />
+            </div>
+            
+            <div className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{selectedAnnouncement.icon}</span>
@@ -204,18 +211,18 @@ export default function AnnouncementsPage() {
                     {selectedAnnouncement.typeText}
                   </span>
                 </div>
-                <button onClick={() => setSelectedAnnouncement(null)} className="text-gray-400 hover:text-white">
+                <button onClick={() => setSelectedAnnouncement(null)} className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-white bg-white/10 rounded-full md:bg-transparent md:rounded-none min-w-[44px]">
                   ✕
                 </button>
               </div>
               
-              <h2 className="text-xl font-bold mb-2">{selectedAnnouncement.title}</h2>
+              <h2 className="text-lg md:text-xl font-bold mb-2">{selectedAnnouncement.title}</h2>
               <div className="text-sm text-gray-500 mb-4 flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 {selectedAnnouncement.time}
               </div>
               
-              <div className="bg-black/30 rounded-xl p-4 text-gray-300 whitespace-pre-wrap">
+              <div className="bg-black/30 rounded-xl p-3 md:p-4 text-gray-300 whitespace-pre-wrap text-sm md:text-base">
                 {selectedAnnouncement.content}
               </div>
             </div>

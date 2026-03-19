@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Heart, ShoppingCart, DollarSign, MessageCircle, Share2, Flag, ChevronLeft, CheckCircle, Eye, Flame, Clock, TrendingUp, Send, Copy, Twitter, Telegram } from 'lucide-react';
@@ -24,6 +24,8 @@ interface Offer {
 }
 
 export default function NFTDetailPage({ params }: { params: { id: string } }) {
+  // 解包params (Next.js 16+)
+  const resolvedParams = use(params);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(123);
   const [comment, setComment] = useState('');
@@ -35,7 +37,7 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
   ]);
 
   const nft = {
-    id: params.id,
+    id: resolvedParams.id,
     name: '星辰大海 #88',
     artist: 'CryptoArtist',
     verified: true,

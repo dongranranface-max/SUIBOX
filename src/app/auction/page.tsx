@@ -47,6 +47,21 @@ export default function AuctionPage() {
   // 支付方式固定为BOX
                 const payToken = 'BOX' as const;
   const [bidPrice, setBidPrice] = useState('');
+  const [bidError, setBidError] = useState('');
+
+  const validateBid = (price: string) => {
+    const num = parseFloat(price);
+    if (isNaN(num) || num <= 0) return '请输入有效金额';
+    if (selectedAuction && num < selectedAuction.currentPrice + 10) return `最低出价 ${selectedAuction.currentPrice + 10} BOX`;
+    return '';
+  };
+
+  const handleSubmitBid = () => {
+    const error = validateBid(bidPrice);
+    if (error) { setBidError(error); return; }
+    alert(`出价成功！\n金额: ${bidPrice} ${payToken}`);
+    setSelectedAuction(null);
+  };
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -92,11 +107,6 @@ export default function AuctionPage() {
     setBidPrice((auction.currentPrice + 10).toString());
   };
 
-  const handleSubmitBid = () => {
-    alert(`出价成功！\n金额: ${bidPrice} ${payToken}`);
-    setSelectedAuction(null);
-  };
-
   const handleBuyNow = () => {
     if (!selectedAuction) return;
     alert(`一口价购买成功！\n金额: ${selectedAuction.buyNowPrice} ${payToken}`);
@@ -114,8 +124,8 @@ export default function AuctionPage() {
       </div>
 
       {/* 标签页 */}
-      <div className="max-w-7xl mx-auto px-4 mb-6">
-        <div className="flex gap-2 overflow-x-auto">
+      <div className="max-w-7xl mx-auto px-4 mb-4 md:mb-6">
+        <div className="flex gap-1.5 md:gap-2 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
           {[
             { key: 'hot', label: '热门拍卖', icon: '🔥' },
             { key: 'ending', label: '即将结束', icon: '⏰' },
@@ -124,40 +134,42 @@ export default function AuctionPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2.5 rounded-xl flex items-center gap-2 whitespace-nowrap transition-all ${
+              className={`px-3 md:px-4 py-2.5 rounded-xl flex items-center gap-1.5 md:gap-2 whitespace-nowrap transition-all min-h-[44px] min-w-[44px] ${
                 activeTab === tab.key
                   ? 'bg-violet-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span className="text-sm md:text-base">{tab.icon}</span>
+              <span className="text-sm md:text-base">{tab.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* 拍卖列表 - 2x4网格 */}
-      <div className="max-w-7xl mx-auto px-4 pb-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="max-w-7xl mx-auto px-4 pb-8 md:pb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
           {filteredAuctions.slice(0, 8).map((auction) => (
             <motion.div 
               key={auction.id}
               whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="bg-gray-900 rounded-xl overflow-hidden cursor-pointer"
               onClick={() => handleBid(auction)}
             >
               <div className="aspect-square relative bg-gray-800">
                 <Image src={auction.image} alt={auction.name} fill className="object-cover" />
-                <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold flex items-center gap-0.5 ${
+                <div className={`absolute top-1.5 left-1.5 md:top-2 md:left-2 px-1.5 md:px-2 py-1 rounded text-[10px] md:text-xs font-bold flex items-center gap-0.5 ${
                   countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1 
                     ? 'bg-red-600 animate-pulse' 
                     : 'bg-orange-600/80 backdrop-blur-sm'
                 }`}>
-                  <Clock className="w-3 h-3" />
-                  <span>{formatCountdown(auction.id)}</span>
+                  <Clock className="w-2.5 md:w-3 h-2.5 md:h-3" />
+                  <span className="hidden sm:inline">{formatCountdown(auction.id)}</span>
+                  <span className="sm:hidden">{countdown[auction.id]?.days > 0 ? `${countdown[auction.id].days}天` : countdown[auction.id]?.hours > 0 ? `${countdown[auction.id].hours}时` : `${countdown[auction.id]?.minutes}分`}</span>
                 </div>
-                <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                <div className={`absolute top-1.5 right-1.5 md:top-2 md:right-2 px-1 md:px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold ${
                   auction.rarity === 'Epic' ? 'bg-purple-500' : 'bg-blue-500'
                 }`}>
                   {auction.rarity === 'Epic' ? 'SSR' : 'SR'}
@@ -165,17 +177,17 @@ export default function AuctionPage() {
               </div>
               
               <div className="p-2 md:p-3">
-                <h3 className="font-bold text-sm md:text-base truncate">{auction.name}</h3>
+                <h3 className="font-bold text-xs md:text-base truncate">{auction.name}</h3>
                 <div className="flex items-center justify-between mt-1 md:mt-2">
                   <div>
-                    <p className="text-[10px] md:text-xs text-gray-500">当前价</p>
-                    <p className="text-orange-400 font-bold text-sm md:text-lg">{auction.currentPrice} BOX</p>
+                    <p className="text-[9px] md:text-xs text-gray-500">当前价</p>
+                    <p className="text-orange-400 font-bold text-xs md:text-lg">{auction.currentPrice}</p>
                   </div>
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleBid(auction); }}
-                    className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-xs font-bold"
+                    className="px-2 md:px-3 py-1.5 md:py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-[10px] md:text-xs font-bold min-h-[36px]"
                   >
-                    参与竞拍
+                    参与
                   </button>
                 </div>
               </div>
@@ -267,17 +279,21 @@ export default function AuctionPage() {
                     <input 
                       type="number" 
                       value={bidPrice}
-                      onChange={(e) => setBidPrice(e.target.value)}
-                      className="w-full bg-gray-800/80 border border-gray-600 rounded-xl py-4 px-4 pr-20 text-white text-xl font-bold text-center"
+                      onChange={(e) => { setBidPrice(e.target.value); setBidError(''); }}
+                      className={`w-full bg-gray-800/80 border rounded-xl py-4 px-4 pr-20 text-white text-xl font-bold text-center ${bidError ? 'border-red-500' : 'border-gray-600'}`}
                       placeholder={`最低 ${selectedAuction.currentPrice + 10}`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">
                       BOX
                     </span>
                   </div>
-                  <p className="text-gray-500 text-xs text-center mt-2">
-                    最低出价: {selectedAuction.currentPrice + 10} BOX
-                  </p>
+                  {bidError ? (
+                    <p className="text-red-400 text-xs text-center mt-2">{bidError}</p>
+                  ) : (
+                    <p className="text-gray-500 text-xs text-center mt-2">
+                      最低出价: {selectedAuction.currentPrice + 10} BOX
+                    </p>
+                  )}
                 </div>
 
                 {/* 按钮 */}
