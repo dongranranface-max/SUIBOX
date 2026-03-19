@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, Megaphone, Globe } from 'lucide-react';
@@ -39,6 +40,8 @@ const languages = [
 ];
 
 export default function Header() {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
@@ -170,10 +173,17 @@ export default function Header() {
               )}
             </div>
 
-            {/* Wallet */}
-            <div className="hidden sm:block">
-              <SuiWalletButton />
-            </div>
+
+
+            {/* Login Button - Desktop only */}
+            {!isLoginPage && (
+              <a 
+                href="/login" 
+                className="hidden sm:block px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                登录
+              </a>
+            )}
 
             {/* Mobile Menu Button */}
             <button 
@@ -186,10 +196,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Wallet - Show on mobile */}
-        <div className="md:hidden pb-3">
-          <SuiWalletButton />
-        </div>
+
 
         {/* Mobile Menu */}
         <AnimatePresence>
@@ -198,36 +205,36 @@ export default function Header() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden overflow-hidden border-t border-white/5"
+              className="md:hidden overflow-hidden border-t border-white/5 bg-black"
             >
-              <nav className="py-3 space-y-1 max-h-[70vh] overflow-y-auto">
+              <nav className="py-2 space-y-0.5 max-h-[70vh] overflow-y-auto">
                 {navItems.map((item) => (
                   <div key={item.name}>
                     {item.hasDropdown ? (
                       <>
                         <button 
                           onClick={() => setDropdownOpen(dropdownOpen === item.menu ? null : item.menu)}
-                          className={`w-full px-4 py-3.5 text-base flex items-center justify-between rounded-lg ${
+                          className={`w-full px-3 py-2.5 text-sm flex items-center justify-between rounded-lg ${
                             item.highlight ? 'text-amber-400 font-medium' : 'text-gray-300'
                           }`}
                         >
-                          <span className="flex items-center gap-3">
-                            {item.icon && <item.icon className="w-5 h-5" />}
+                          <span className="flex items-center gap-2">
+                            {item.icon && <item.icon className="w-4 h-4" />}
                             {item.name}
-                            {item.badge && <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                            {item.badge && <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
                               item.badge === 'HOT' ? 'bg-red-500 text-white' :
                               item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
                             }`}>{item.badge}</span>}
                           </span>
-                          <ChevronDown className={`w-5 h-5 transition-transform ${dropdownOpen === item.menu ? 'rotate-180' : ''}`} />
+                          <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen === item.menu ? 'rotate-180' : ''}`} />
                         </button>
                         {dropdownOpen === item.menu && (
-                          <div className="ml-4 pl-4 border-l-2 border-gray-800 space-y-1">
+                          <div className="ml-3 pl-3 border-l-2 border-gray-800 space-y-0.5">
                             {dropdowns[item.menu || '']?.map((sub) => (
                               <Link 
                                 key={sub.href} 
                                 href={sub.href} 
-                                className="block px-4 py-3 text-sm text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                className="block px-3 py-2 text-xs text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
                                 onClick={closeMenu}
                               >
                                 {sub.name}
@@ -239,15 +246,15 @@ export default function Header() {
                     ) : (
                       <Link 
                         href={item.href || '/'} 
-                        className="flex items-center gap-3 px-4 py-3.5 text-base rounded-lg hover:bg-white/5 transition-all"
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg hover:bg-white/5 transition-all"
                         onClick={closeMenu}
                       >
-                        {item.icon && <item.icon className="w-5 h-5" />}
+                        {item.icon && <item.icon className="w-4 h-4" />}
                         <span className={item.highlight ? 'text-amber-400 font-medium' : 'text-gray-300'}>
                           {item.name}
                         </span>
                         {item.badge && (
-                          <span className={`ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                          <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
                             item.badge === 'HOT' ? 'bg-red-500 text-white' :
                             item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
                           }`}>{item.badge}</span>
@@ -257,14 +264,13 @@ export default function Header() {
                   </div>
                 ))}
                 
-                {/* Mobile Language */}
-                <div className="pt-4 pb-2 border-t border-white/5">
-                  <p className="px-4 text-xs text-gray-500 mb-2">选择语言</p>
-                  <div className="flex gap-2 px-4">
+                {/* Mobile Language - Compact */}
+                <div className="pt-2 pb-1 border-t border-white/5">
+                  <div className="flex gap-1 px-3">
                     {languages.map((lang) => (
                       <button 
                         key={lang.code} 
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                        className="flex-1 flex items-center justify-center gap-1 py-2 bg-white/5 rounded-lg text-xs text-gray-400 hover:text-white"
                       >
                         <span>{lang.flag}</span>
                         <span>{lang.name}</span>

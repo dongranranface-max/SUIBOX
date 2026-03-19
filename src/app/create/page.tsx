@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Upload, X, Image, Video, Box, Sparkles, Trash2, Plus, Wallet, Check, AlertTriangle, Loader2, Settings, Tag, Layers, Hash, Crown, Flame, Shield, Star } from 'lucide-react';
 // Wallet connection handled by global provider
 
@@ -36,6 +37,8 @@ const PROPERTY_TEMPLATES = [
 ];
 
 export default function CreatePage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [is3DMode, setIs3DMode] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
@@ -46,6 +49,30 @@ export default function CreatePage() {
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // 检查登录状态
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push('/login?redirect=/create');
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        router.push('/login?redirect=/create');
+      });
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
   const model3DInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({

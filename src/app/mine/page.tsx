@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Coins, Lock, TrendingUp, Users, Clock, Award, Wallet, ChevronRight, Sparkles, Diamond, Gem, Star } from 'lucide-react';
+import { Coins, Lock, TrendingUp, Users, Clock, Award, Wallet, ChevronRight, Sparkles, Diamond, Gem, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 // ============= 质押池配置 =============
@@ -147,7 +148,33 @@ function PoolCard({ pool, isSelected, onClick }: { pool: any; isSelected: boolea
 }
 
 export default function MiningPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string>('single');
+
+  // 检查登录状态
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push('/login?redirect=/mine');
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        router.push('/login?redirect=/mine');
+      });
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
   const [selectedPool, setSelectedPool] = useState<any>(null);
   
   const sections = [

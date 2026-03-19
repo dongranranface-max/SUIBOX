@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Palette, BarChart3, Wallet, Settings, Users, FileText, TrendingUp, Shield, Gift, CreditCard, ChevronRight, Edit, Trash2, Eye, Plus, Download, CheckCircle, Clock, AlertCircle, Star, Crown, Gem, Heart, Vote, Copy, Check, MessageCircle, Send, Sparkles, Bot, X, Minimize2, Maximize2, Headphones, Phone, Video } from 'lucide-react';
+import { Building2, Palette, BarChart3, Wallet, Settings, Users, FileText, TrendingUp, Shield, Gift, CreditCard, ChevronRight, Edit, Trash2, Eye, Plus, Download, CheckCircle, Clock, AlertCircle, Star, Crown, Gem, Heart, Vote, Copy, Check, MessageCircle, Send, Sparkles, Bot, X, Minimize2, Maximize2, Headphones, Phone, Video, Loader2 } from 'lucide-react';
 
 const institutionData = {
   name: '星辰艺术馆',
@@ -55,7 +56,33 @@ interface Message {
 }
 
 export default function InstitutionPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // 检查登录状态
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push('/login?redirect=/institution');
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        router.push('/login?redirect=/institution');
+      });
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
   const [copied, setCopied] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [csChatOpen, setCsChatOpen] = useState(false);
