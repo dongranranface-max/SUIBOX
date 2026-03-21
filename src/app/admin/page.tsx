@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, 
   Coins, Settings, LogOut, AlertTriangle, 
   TrendingUp, DollarSign, Activity, Shield,
-  Loader2, Search, Filter, MoreVertical
+  Loader2, Search, Filter, MoreVertical, Bell, Send, Trash2
 } from 'lucide-react';
 
 interface Stats {
@@ -21,6 +21,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishForm, setPublishForm] = useState({ title: '', message: '', type: 'system' });
 
   useEffect(() => {
     checkAuth();
@@ -71,6 +75,7 @@ export default function AdminDashboard() {
 
   const menuItems = [
     { id: 'overview', label: '概览', icon: LayoutDashboard },
+    { id: 'notifications', label: '消息通知', icon: Bell },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'transactions', label: '交易管理', icon: ShoppingCart },
     { id: 'nfts', label: 'NFT管理', icon: Package },
@@ -78,6 +83,58 @@ export default function AdminDashboard() {
     { id: 'security', label: '安全中心', icon: Shield },
     { id: 'settings', label: '系统设置', icon: Settings },
   ];
+
+  // 获取通知列表
+  const fetchNotifications = async () => {
+    setNotificationLoading(true);
+    try {
+      const res = await fetch('/api/admin/notifications');
+      const data = await res.json();
+      if (data.success) {
+        setNotifications(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      fetchNotifications();
+    }
+  }, [activeTab]);
+
+  // 发布通知
+  const handlePublish = async () => {
+    if (!publishForm.title || !publishForm.message) return;
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(publishForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowPublishModal(false);
+        setPublishForm({ title: '', message: '', type: 'system' });
+        fetchNotifications();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 删除通知
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`/api/admin/notifications?id=${id}`, { method: 'DELETE' });
+      fetchNotifications();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const statCards = [
     { label: '总用户', value: stats?.totalUsers || 0, icon: Users, color: 'from-blue-500 to-cyan-500' },
@@ -196,6 +253,73 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            {/* 发布通知按钮 */}
+            <div className="flex justify-end">
+              <button 
+                onClick={() => setShowPublishModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-xl text-sm font-medium"
+              >
+                <Send className="w-4 h-4" />
+                发布通知
+              </button>
+            </div>
+
+            {/* 通知列表 */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-2xl overflow-hidden">
+              {notificationLoading ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-violet-500" />
+                </div>
+              ) : notifications.length > 0 ? (
+                <div className="divide-y divide-gray-700">
+                  {notifications.map((notif) => (
+                    <div key={notif.id} className="p-4 flex items-start gap-4 hover:bg-white/5">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        notif.type === 'system' ? 'bg-blue-500/20 text-blue-400' :
+                        notif.type === 'promotion' ? 'bg-amber-500/20 text-amber-400' :
+                        notif.type === 'activity' ? 'bg-green-500/20 text-green-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        <Bell className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{notif.title}</h4>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            notif.type === 'system' ? 'bg-blue-500/20 text-blue-400' :
+                            notif.type === 'promotion' ? 'bg-amber-500/20 text-amber-400' :
+                            notif.type === 'activity' ? 'bg-green-500/20 text-green-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {notif.type === 'system' ? '系统' : notif.type === 'promotion' ? '促销' : notif.type === 'activity' ? '活动' : '公告'}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-1">{notif.message}</p>
+                        <p className="text-gray-500 text-xs mt-2">
+                          {new Date(notif.createdAt).toLocaleString('zh-CN')}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => handleDelete(notif.id)}
+                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  暂无通知
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="bg-gray-800/50 border border-gray-700 rounded-2xl overflow-hidden">
@@ -286,6 +410,64 @@ export default function AdminDashboard() {
                     查看
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 发布通知弹窗 */}
+        {showPublishModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">发布通知</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">类型</label>
+                  <select 
+                    value={publishForm.type}
+                    onChange={(e) => setPublishForm({ ...publishForm, type: e.target.value })}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-violet-500"
+                  >
+                    <option value="system">系统通知</option>
+                    <option value="announcement">公告</option>
+                    <option value="promotion">促销活动</option>
+                    <option value="activity">活动通知</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">标题</label>
+                  <input 
+                    type="text"
+                    value={publishForm.title}
+                    onChange={(e) => setPublishForm({ ...publishForm, title: e.target.value })}
+                    placeholder="请输入通知标题"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">内容</label>
+                  <textarea 
+                    value={publishForm.message}
+                    onChange={(e) => setPublishForm({ ...publishForm, message: e.target.value })}
+                    placeholder="请输入通知内容"
+                    rows={4}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-violet-500 resize-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => setShowPublishModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={handlePublish}
+                  className="flex-1 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-xl text-sm font-medium"
+                >
+                  发布
+                </button>
               </div>
             </div>
           </div>

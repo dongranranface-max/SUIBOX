@@ -4,6 +4,7 @@ import { useState, use } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Heart, ShoppingCart, DollarSign, MessageCircle, Share2, Flag, ChevronLeft, CheckCircle, Eye, Flame, Clock, TrendingUp, Send, Copy, Twitter, Telegram } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface Comment {
   id: number;
@@ -26,6 +27,7 @@ interface Offer {
 export default function NFTDetailPage({ params }: { params: { id: string } }) {
   // 解包params (Next.js 16+)
   const resolvedParams = use(params);
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(123);
   const [comment, setComment] = useState('');

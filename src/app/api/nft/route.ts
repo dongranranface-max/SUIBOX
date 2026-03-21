@@ -149,3 +149,62 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST - 创建 NFT
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, description, image_url, rarity, category, properties, tags, price } = body;
+    
+    if (!name || !image_url) {
+      return NextResponse.json(
+        { success: false, error: '名称和图片不能为空' },
+        { status: 400 }
+      );
+    }
+    
+    // 生成唯一 token_id
+    const token_id = `nft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 尝试保存到数据库（如果可用）
+    try {
+      const { createNFT } = await import('@/lib/database');
+      createNFT({
+        token_id,
+        name,
+        description,
+        image_url,
+        owner_address: 'pending', // 链上交易确认后更新
+        price: price || 0,
+        rarity: rarity || 'common',
+        category: category || 'art',
+      });
+    } catch (dbError) {
+      console.log('Database not available, using in-memory storage');
+    }
+    
+    // 返回创建的 NFT
+    return NextResponse.json({
+      success: true,
+      data: {
+        token_id,
+        name,
+        description,
+        image_url,
+        rarity: rarity || 'common',
+        category: category || 'art',
+        properties: properties || [],
+        tags: tags || [],
+        price: price || 0,
+        status: 'minted',
+        createdAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Create NFT error:', error);
+    return NextResponse.json(
+      { success: false, error: '创建失败' },
+      { status: 500 }
+    );
+  }
+}

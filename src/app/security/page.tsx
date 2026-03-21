@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Shield, AlertTriangle, CheckCircle, Clock, FileText, Wallet, Lock, RefreshCw, ChevronRight, Info } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function SecurityPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState('overview');
 
   // 保险基金数据

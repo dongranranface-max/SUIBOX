@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, X, Image, Video, Box, Sparkles, Trash2, Plus, Wallet, Check, AlertTriangle, Loader2, Settings, Tag, Layers, Hash, Crown, Flame, Shield, Star } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 // Wallet connection handled by global provider
 
 interface MediaFile {
@@ -38,6 +39,7 @@ const PROPERTY_TEMPLATES = [
 
 export default function CreatePage() {
   const router = useRouter();
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [loading, setLoading] = useState(true);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [is3DMode, setIs3DMode] = useState(false);
@@ -66,13 +68,6 @@ export default function CreatePage() {
       });
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-      </div>
-    );
-  }
   const model3DInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -93,6 +88,14 @@ export default function CreatePage() {
   const [properties, setProperties] = useState<NFTProperty[]>([]);
   const [newProperty, setNewProperty] = useState({ trait_type: '', value: '' });
   const [tagInput, setTagInput] = useState('');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -168,13 +171,52 @@ export default function CreatePage() {
     setIsMinting(true);
     setMintStep(1);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Step 1: 上传图片到 Cloudinary
+      const file = mediaFiles[0].file;
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const uploadData = await uploadRes.json();
+      
+      if (!uploadData.url) {
+        throw new Error(uploadData.error || '图片上传失败');
+      }
+      
       setMintStep(2);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Step 2: 调用 NFT API 创建 NFT
+      const createRes = await fetch('/api/nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          image_url: uploadData.url,
+          rarity: form.rarity,
+          category: form.category,
+          properties: properties.map(p => ({ trait_type: p.trait_type, value: p.value })),
+          tags: form.tags,
+        }),
+      });
+      
+      const nftData = await createRes.json();
+      
+      if (!nftData.success) {
+        throw new Error(nftData.error || 'NFT创建失败');
+      }
+      
       setMintStep(3);
       setSuccess(true);
       setIsMinting(false);
-    } catch (e) { setError(e instanceof Error ? e.message : '铸造失败'); setIsMinting(false); }
+    } catch (e) { 
+      setError(e instanceof Error ? e.message : '铸造失败'); 
+      setIsMinting(false); 
+    }
   };
 
   const getMetadataJSON = () => JSON.stringify({ name: form.name, description: form.description, properties, rarity: form.rarity }, null, 2);

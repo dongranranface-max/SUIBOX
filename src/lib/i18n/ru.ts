@@ -42,6 +42,14 @@ export const ru = {
     logout: 'Выход',
     settings: 'Настройки',
     language: 'Язык',
+    trade: 'Торговля',
+    dao: 'DAO',
+    invite: 'Пригласить',
+    join: 'Присоединиться',
+    governance: 'Управление',
+    stake: 'Стейкинг',
+    apply: 'Заявка',
+    institution: 'Институт',
   },
 
   home: {

@@ -95,8 +95,17 @@ async function getUserInfo(provider: string, accessToken: string): Promise<any> 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
-  const state = searchParams.get('state'); // provider name
+  const state = searchParams.get('state'); // provider_name 或 provider_name_inviteCode
   const error = searchParams.get('error');
+
+  // 解析 state (格式: provider 或 provider_inviteCode)
+  let provider = state;
+  let inviteCode = '';
+  if (state && state.includes('_')) {
+    const parts = state.split('_');
+    provider = parts[0];
+    inviteCode = parts[1];
+  }
 
   // Handle OAuth error
   if (error) {
@@ -110,18 +119,18 @@ export async function GET(request: NextRequest) {
 
   try {
     // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(state, code);
+    const tokens = await exchangeCodeForTokens(provider, code);
     
     // Get user info
-    const userInfo = await getUserInfo(state, tokens.access_token);
+    const userInfo = await getUserInfo(provider, tokens.access_token);
     
     // Generate Sui address from OAuth ID
     const oauthId = userInfo.id || userInfo.sub;
-    const suiAddress = generateZkLoginAddress(state, oauthId);
+    const suiAddress = generateZkLoginAddress(provider, oauthId);
     
     // Create session data
     const sessionData = {
-      provider: state,
+      provider: provider,
       oauthId,
       email: userInfo.email || '',
       name: userInfo.name || userInfo.username || 'SUI User',
@@ -139,6 +148,25 @@ export async function GET(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: '/',
     });
+
+    // 检查邀请码 - 自动绑定上下级关系
+    if (inviteCode) {
+      try {
+        // 调用邀请绑定 API
+        await fetch(new URL('/api/invite', request.url).href, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'bind',
+            invite_code: inviteCode,
+            invitee_address: suiAddress
+          })
+        });
+        console.log('Invite relationship bound:', inviteCode, suiAddress);
+      } catch (e) {
+        console.error('Bind invite error:', e);
+      }
+    }
 
     // Redirect to profile or home
     return NextResponse.redirect(new URL('/profile', request.url));

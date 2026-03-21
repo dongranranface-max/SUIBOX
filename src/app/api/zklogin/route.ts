@@ -25,6 +25,7 @@ const ZKLOGIN_CONFIG = {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const provider = searchParams.get('provider');
+  const invite_code = searchParams.get('invite_code');
   
   if (!provider || !['google', 'apple', 'discord', 'twitter'].includes(provider)) {
     return NextResponse.json({ error: 'Invalid provider' }, { status: 400 });
@@ -32,12 +33,15 @@ export async function GET(request: NextRequest) {
 
   const config = ZKLOGIN_CONFIG[provider as keyof typeof ZKLOGIN_CONFIG];
   
+  // 邀请码附加到 state 中传递给回调
+  const state = invite_code ? `${provider}_${invite_code}` : provider;
+  
   // In production, generate proper OAuth URL
   // This is a simplified version for demonstration
   const oauthUrls: Record<string, string> = {
-    google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=openid email profile&state=${provider}`,
-    apple: `https://appleid.apple.com/auth/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_mode=form_post&scope=name email&state=${provider}`,
-    discord: `https://discord.com/api/oauth2/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=identify email&state=${provider}`,
+    google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=openid email profile&state=${state}`,
+    apple: `https://appleid.apple.com/auth/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_mode=form_post&scope=name email&state=${state}`,
+    discord: `https://discord.com/api/oauth2/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=identify email&state=${state}`,
     twitter: `https://twitter.com/i/oauth2/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=tweet.read users.read&state=${provider}`,
   };
 

@@ -10,15 +10,27 @@ import { ru } from './ru';
 // 翻译映射
 const translations: Record<LanguageCode, Translations> = { zh, en, ja, ru };
 
+// 简化翻译函数
+function getNestedValue(obj: any, path: string): string {
+  return path.split('.').reduce((acc, part) => acc && acc[part], obj) || path;
+}
+
 // I18n Context
 interface I18nContextType {
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
   t: Translations;
   languages: typeof languages;
+  tt: (key: string, fallback?: string) => string;
 }
 
 const I18nContext = createContext<I18nContextType | null>(null);
+
+// 简化翻译函数 - 可以直接用 tt('nav.home') 获取翻译
+const createTranslateFn = (t: Translations) => (key: string, fallback?: string): string => {
+  const result = getNestedValue(t, key);
+  return result || fallback || key;
+};
 
 // Provider 组件
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -49,23 +61,39 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  const t = translations[language];
+  const tt = createTranslateFn(t);
+
   return (
     <I18nContext.Provider value={{ 
       language, 
       setLanguage, 
-      t: translations[language],
-      languages 
+      t,
+      languages,
+      tt
     }}>
       {children}
     </I18nContext.Provider>
   );
 }
 
-// 使用翻译的 Hook
+// 使用翻译的 Hook - SSR safe
 export function useI18n() {
   const context = useContext(I18nContext);
   if (!context) {
-    throw new Error('useI18n must be used within I18nProvider');
+    // SSR fallback - return default values
+    const t = translations[defaultLanguage];
+    return {
+      language: defaultLanguage as LanguageCode,
+      setLanguage: ((lang: LanguageCode) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(LANGUAGE_KEY, lang);
+        }
+      }) as any,
+      t,
+      languages,
+      tt: createTranslateFn(t),
+    };
   }
   return context;
 }

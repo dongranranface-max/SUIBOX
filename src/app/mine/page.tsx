@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Coins, Lock, TrendingUp, Users, Clock, Award, Wallet, ChevronRight, Sparkles, Diamond, Gem, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useI18n } from '@/lib/i18n';
 
 // ============= 质押池配置 =============
 const STAKING_POOLS = {
@@ -149,8 +150,10 @@ function PoolCard({ pool, isSelected, onClick }: { pool: any; isSelected: boolea
 
 export default function MiningPage() {
   const router = useRouter();
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string>('single');
+  const [selectedPool, setSelectedPool] = useState<any>(null);
 
   // 检查登录状态
   useEffect(() => {
@@ -175,7 +178,6 @@ export default function MiningPage() {
       </div>
     );
   }
-  const [selectedPool, setSelectedPool] = useState<any>(null);
   
   const sections = [
     { id: 'single', label: '💰 单一资产', pools: STAKING_POOLS.single },

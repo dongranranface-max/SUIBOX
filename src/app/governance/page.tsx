@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Vote, TrendingUp, Users, Shield, Zap, Clock, CheckCircle, XCircle, ArrowRight, Gift, Star, Flame, ChevronRight, ThumbsUp, ThumbsDown, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 // 倒计时组件
 function CountdownTimer({ endTime }: { endTime: string }) {
@@ -144,6 +145,7 @@ const typeFilters = [
 ];
 
 export default function GovernancePage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [filterType, setFilterType] = useState('all');
   const [userBox] = useState(12500);
   const [delegated] = useState(5000);

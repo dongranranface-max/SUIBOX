@@ -1,5 +1,42 @@
 // 中文翻译
 export const zh = {
+  // 首页
+  home: {
+    title: 'SUIBOX',
+    subtitle: 'NFT + DeFi 一站式平台',
+    hotAuctions: '热门拍卖',
+    newListings: '最新上架',
+    endingSoon: '即将结束',
+    viewAll: '查看全部',
+    featured: '精选',
+    trending: '热门',
+    recentlyAdded: '最近添加',
+    search: '搜索NFT、艺术家、系列...',
+    connectWallet: '连接钱包',
+    login: '登录',
+    welcome: '开启 Web3 之旅',
+    stats: {
+      totalNFT: 'NFT总量',
+      totalVolume: '总交易额',
+      activeUsers: '活跃用户',
+    },
+    hero: {
+      title: 'SUI 链上首个 NFT 盲盒平台',
+      desc: '开盲盒 · 碎片合成 · DeFi 质押 · DAO 治理',
+      start: '立即开始',
+    },
+    features: {
+      box: '盲盒开启',
+      boxDesc: '稀有 NFT 盲盒，开出惊喜',
+      craft: '碎片合成',
+      craftDesc: '收集碎片，合成稀有 NFT',
+      stake: 'DeFi 质押',
+      stakeDesc: '持有 BOX，参与质押分红',
+      dao: 'DAO 治理',
+      daoDesc: '持币投票，决定平台未来',
+    },
+  },
+
   // 通用
   common: {
     loading: '加载中...',
@@ -27,6 +64,19 @@ export const zh = {
     no: '否',
     online: '在线',
     offline: '离线',
+    price: '价格',
+    total: '总计',
+    balance: '余额',
+    claim: '领取',
+    stake: '质押',
+    unstake: '解除质押',
+    connect: '连接',
+    disconnect: '断开',
+    pending: '处理中',
+    completed: '已完成',
+    failed: '失败',
+    or: '或',
+    and: '和',
   },
 
   // 导航
@@ -44,19 +94,14 @@ export const zh = {
     logout: '退出',
     settings: '设置',
     language: '语言',
-  },
-
-  // 首页
-  home: {
-    title: 'SUIBOX',
-    subtitle: 'NFT + DeFi 一站式平台',
-    hotAuctions: '热门拍卖',
-    newListings: '最新上架',
-    endingSoon: '即将结束',
-    viewAll: '查看全部',
-    featured: '精选',
-    trending: '热门',
-    recentlyAdded: '最近添加',
+    trade: '交易',
+    dao: 'DAO',
+    invite: '邀请',
+    join: '入驻',
+    governance: '社区治理',
+    staking: 'Staking',
+    apply: '申请入驻',
+    institution: '机构管理',
   },
 
   // 市场
@@ -98,6 +143,16 @@ export const zh = {
     chance: '概率',
     opened: '已开启',
     openAgain: '再次开启',
+    price: '价格',
+    myBoxes: '我的盲盒',
+    history: '开盒记录',
+    rarity: {
+      common: '普通',
+      uncommon: '稀有',
+      rare: '稀有',
+      epic: '史诗',
+      legendary: '传奇',
+    },
   },
 
   // 拍卖
@@ -112,6 +167,8 @@ export const zh = {
     ended: '已结束',
     bids: '出价次数',
     highestBidder: '最高出价者',
+    history: '拍卖历史',
+    myAuctions: '我的拍卖',
   },
 
   // 质押
@@ -126,6 +183,9 @@ export const zh = {
     claim: '领取',
     lockPeriod: '锁定期',
     minStake: '最低质押',
+    myStakes: '我的质押',
+    claimable: '可领取',
+    totalStaked: '总质押量',
   },
 
   // 铸造
@@ -152,6 +212,9 @@ export const zh = {
     settings: '账户设置',
     bindWallet: '绑定钱包',
     security: '安全设置',
+    editProfile: '编辑资料',
+    address: '钱包地址',
+    joined: '加入时间',
   },
 
   // 登录
@@ -167,6 +230,47 @@ export const zh = {
     terms: '登录即表示同意',
     termsOfService: '服务条款',
     privacyPolicy: '隐私政策',
+    security: '安全可靠',
+    fast: '快速便捷',
+    privacy: '隐私保护',
+  },
+
+  // 邀请
+  invite: {
+    title: '邀请好友',
+    subtitle: '邀请好友参与盲盒，双方获得 BOX 空投！',
+    yourLink: '你的推荐链接',
+    copy: '复制',
+    copied: '已复制',
+    share: '分享到',
+    rewards: '邀请奖励',
+    condition: '邀请条件',
+    totalInvites: '累计邀请',
+    todayOpened: '今日开盒',
+    totalEarned: '已获得',
+    pending: '待领取',
+  },
+
+  // 合成
+  craft: {
+    title: '碎片合成',
+    subtitle: '收集碎片，合成稀有 NFT',
+    fragments: '碎片',
+    compose: '合成',
+    myFragments: '我的碎片',
+    required: '所需碎片',
+    result: '合成结果',
+  },
+
+  // DAO治理
+  governance: {
+    title: 'DAO 治理',
+    subtitle: '持币投票，决定平台未来',
+    proposals: '提案',
+    myVotes: '我的投票',
+    votingPower: '投票权',
+    delegate: '委托',
+    createProposal: '创建提案',
   },
 
   // 错误信息

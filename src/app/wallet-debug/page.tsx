@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { WalletProvider, useWallet, ConnectButton } from '@suiet/wallet-kit';
 import '@suiet/wallet-kit/style.css';
+import { useI18n } from '@/lib/i18n';
 
 function WalletContent() {
   const wallet = useWallet();
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">

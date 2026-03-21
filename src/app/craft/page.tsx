@@ -3,8 +3,10 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lock, Zap, Crown, Wallet, ArrowRight, RefreshCw, Layers, Rocket, Atom, ChevronRight } from 'lucide-react';
-import { useWallet, ConnectButton } from '@suiet/wallet-kit';
+import { useWallet } from '@suiet/wallet-kit';
+import { useAuth } from '@/hooks/useAuth';
 import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
+import { useI18n } from '@/lib/i18n';
 
 // NFT视频配置
 const NFT_VIDEOS = { common: '/nft-common.mp4', rare: '/nft-rare.mp4', epic: '/nft-epic.mp4' };
@@ -53,6 +55,8 @@ function TierBadge({ tier }: { tier: number }) {
 export default function CraftPage() {
   const wallet = useWallet();
   const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
+  // 统一认证
+  const { userAddress, isLoggedIn, login } = useAuth();
   const [activeTab, setActiveTab] = useState<'fragment' | 'nft'>('fragment');
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
   const [synthesizing, setSynthesizing] = useState(false);
@@ -118,7 +122,7 @@ export default function CraftPage() {
           <p className="text-gray-400 mt-1 text-sm">Transform fragments into NFTs and earn rewards</p>
         </motion.div>
 
-        {wallet.connected && (
+        {isLoggedIn && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="bg-gray-900/80 backdrop-blur rounded-2xl p-4 border border-violet-500/30">
               <div className="flex items-center justify-between mb-4">
@@ -233,7 +237,7 @@ export default function CraftPage() {
           })}
         </motion.div>
 
-        {wallet.connected && selectedRecipe !== null && (
+        {isLoggedIn && selectedRecipe !== null && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSynth} disabled={synthesizing} className="w-full py-4 bg-gradient-to-r from-violet-600 via-pink-600 to-purple-600 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-violet-500/30">
               {synthesizing ? <><RefreshCw className="w-6 h-6 animate-spin" /><span>Synthesizing...</span></> : <><Sparkles className="w-6 h-6" /><span>Start Synthesis</span></>}
@@ -241,11 +245,13 @@ export default function CraftPage() {
           </motion.div>
         )}
 
-        {!wallet.connected && (
+        {!isLoggedIn && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 bg-gray-900/80 rounded-2xl p-8 text-center border border-gray-700">
             <Wallet className="w-14 h-14 mx-auto mb-4 text-gray-500" />
-            <p className="text-gray-400 mb-4">Connect wallet to enter Laboratory</p>
-            <ConnectButton />
+            <p className="text-gray-400 mb-4">登录后进入合成实验室</p>
+            <button onClick={login} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold">
+              立即登录
+            </button>
           </motion.div>
         )}
       </div>

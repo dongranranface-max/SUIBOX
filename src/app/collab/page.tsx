@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { FileText, Sparkles, ArrowRight, Star, Heart, Eye, Zap, Clock, CheckCircle, ExternalLink, Crown, Gem, Shield, Gift } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function CollabPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState<'upcoming' | 'ongoing' | 'past'>('ongoing');
 
   // IP联名系列

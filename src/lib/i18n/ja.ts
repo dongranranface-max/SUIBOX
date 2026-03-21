@@ -42,6 +42,14 @@ export const ja = {
     logout: 'ログアウト',
     settings: '設定',
     language: '言語',
+    trade: '取引',
+    dao: 'DAO',
+    invite: '招待',
+    join: '入驻',
+    governance: 'ガバナンス',
+    stake: 'ステーキング',
+    apply: '申請',
+    institution: ' 기관',
   },
 
   home: {

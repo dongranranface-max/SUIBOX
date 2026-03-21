@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Building2, FileText, Shield, Coins, CheckCircle, AlertCircle, Upload, DollarSign, Lock, TrendingUp, Users, Eye, Star, Award, Crown, Gem, Wallet, Palette, Store, User, Briefcase, ChevronRight, BarChart3, ShoppingCart, Heart, Clock } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 // 入驻类型
 const joinTypes = [
@@ -146,6 +147,7 @@ const pendingNFTs = [
 ];
 
 export default function JoinPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [view, setView] = useState<'apply' | 'dashboard'>('apply');
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({

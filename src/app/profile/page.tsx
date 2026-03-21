@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Package, Heart, Gavel, ArrowUp, FileText, MessageCircle, History, Wallet, Layers, Box, Copy, Check, Settings, LogOut, UserPlus, Loader2, Coins, TrendingUp, Link2, Unlink, Shield, Smartphone } from 'lucide-react';
 import BindWalletModal from '@/components/BindWalletModal';
+import { useI18n } from '@/lib/i18n';
 
 interface ZkLoginUser {
   provider: string;
@@ -26,6 +27,7 @@ interface UserStats {
 }
 
 export default function ProfilePage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState('overview');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);

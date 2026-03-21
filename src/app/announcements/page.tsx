@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, TrendingUp, Calendar, ExternalLink, X, Pin, AlertTriangle, Gift, Zap, Shield } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 // 模拟公告数据
 const announcements = [
@@ -67,6 +68,7 @@ const typeConfig: Record<string, { bg: string; text: string; icon: any }> = {
 };
 
 export default function AnnouncementsPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<typeof announcements[0] | null>(null);
   
   const pinnedAnnouncements = announcements.filter(a => a.pinned);

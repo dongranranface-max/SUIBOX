@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useI18n } from '@/lib/i18n';
 
 export default function PrivacyPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   return (
     <div className="min-h-screen bg-black text-white">
       <main className="max-w-4xl mx-auto px-6 py-12">

@@ -14,7 +14,8 @@ const networks = {
 export function AppWalletProvider({ children }: { children: ReactNode }) {
   return (
     <SuiClientProvider networks={networks} defaultNetwork="devnet">
-      <SuietWalletProvider>
+      {/* autoConnect={false} - 禁用自动连接 */}
+      <SuietWalletProvider autoConnect={false}>
         {children}
       </SuietWalletProvider>
     </SuiClientProvider>

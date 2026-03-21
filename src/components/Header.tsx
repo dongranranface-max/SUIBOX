@@ -9,34 +9,29 @@ import { SuiWalletButton } from './SuiWallet';
 
 const navItems = [
   { name: '首页', href: '/', icon: Home },
-  { name: 'BOX', href: '/box', icon: Coins, highlight: true, badge: 'HOT' },
+  { name: '开盲盒', href: '/box', icon: Coins, highlight: true, badge: 'HOT' },
   { name: '合成', href: '/craft', icon: FlaskConical, badge: 'NEW' },
-  { name: '交易', hasDropdown: true, menu: 'trade', icon: ShoppingCart },
-  { name: 'DAO', hasDropdown: true, menu: 'dao', icon: Landmark, highlight: true },
+  { name: '市场', hasDropdown: true, menu: 'market', icon: ShoppingCart },
+  { name: '收益', hasDropdown: true, menu: 'earn', icon: Landmark, highlight: true },
   { name: '邀请', href: '/invite', icon: User, badge: 'FREE' },
-  { name: '入驻', hasDropdown: true, menu: 'join', icon: UserPlus },
 ];
 
 const dropdowns: Record<string, { name: string; href: string; icon?: any }[]> = {
-  trade: [
+  market: [
     { name: 'NFT市场', href: '/market', icon: ShoppingCart },
     { name: '拍卖行', href: '/auction', icon: Ticket },
   ],
-  dao: [
-    { name: '社区治理', href: '/governance', icon: Megaphone },
-    { name: '质押Staking', href: '/mine', icon: Landmark },
-  ],
-  join: [
-    { name: '申请入驻', href: '/join' },
-    { name: '创作', href: '/create' },
-    { name: '个人主页', href: '/profile' },
-    { name: '机构管理', href: '/institution' },
+  earn: [
+    { name: 'Staking', href: '/mine', icon: Landmark },
+    { name: 'DAO', href: '/governance', icon: Megaphone },
   ],
 };
 
 const languages = [
   { code: 'zh', name: '中文', flag: '🇨🇳' },
   { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'ar', name: 'العربية', flag: '🇸🇦' },
 ];
 
 export default function Header() {
@@ -60,8 +55,8 @@ export default function Header() {
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-all duration-200 ${
-      scrolled ? 'bg-black/95 backdrop-blur-xl border-b border-white/5 shadow-lg' : 'bg-black/90 backdrop-blur-lg'
+    <header className={`sticky top-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-black/95 backdrop-blur-2xl border-b border-white/5 shadow-2xl shadow-purple-500/5' : 'bg-black/90 backdrop-blur-xl'
     }`}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
@@ -88,24 +83,24 @@ export default function Header() {
                   <button
                     onMouseEnter={() => setDropdownOpen(item.menu || null)}
                     onMouseLeave={() => setDropdownOpen(null)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-1 ${
-                      item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 ${
+                      item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
                     {item.name}
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                   </button>
                 ) : (
                   <Link 
                     href={item.href || '/'}
-                    className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-1 ${
-                      item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    className={`relative px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-2 ${
+                      item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
                     {item.icon && <item.icon className="w-4 h-4" />}
                     {item.name}
                     {item.badge && (
-                      <span className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-[8px] font-bold rounded-full ${
+                      <span className={`ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
                         item.badge === 'HOT' ? 'bg-red-500 text-white' :
                         item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
                       }`}>{item.badge}</span>
@@ -119,13 +114,16 @@ export default function Header() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
-                      className="absolute top-full left-0 mt-2 min-w-[160px] bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 overflow-hidden"
+                      className="absolute top-full left-0 mt-2 min-w-[180px] bg-gray-900/98 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
                       onMouseEnter={() => setDropdownOpen(item.menu || null)}
                       onMouseLeave={() => setDropdownOpen(null)}
                     >
+                      <div className="px-3 py-2 border-b border-white/5">
+                        <span className="text-xs text-gray-500">{item.name}</span>
+                      </div>
                       {dropdowns[item.menu || '']?.map((sub) => (
-                        <Link key={sub.href} href={sub.href} className="flex items-center gap-2 px-4 py-3 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-                          {sub.icon && <sub.icon className="w-4 h-4" />}
+                        <Link key={sub.href} href={sub.href} className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all">
+                          {sub.icon && <sub.icon className="w-4 h-4 text-violet-400" />}
                           {sub.name}
                         </Link>
                       ))}
@@ -137,35 +135,45 @@ export default function Header() {
           </nav>
 
           {/* Right Side */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Notifications */}
-            <Link href="/announcements" className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+            <Link href="/announcements" className="relative p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                 3
               </span>
             </Link>
 
             {/* Language - Desktop */}
-            <div className="hidden sm:block relative">
+            <div 
+              className="hidden sm:block relative"
+              onMouseEnter={() => setLangMenuOpen(true)}
+              onMouseLeave={() => setLangMenuOpen(false)}
+            >
               <button 
-                onClick={() => setLangMenuOpen(!langMenuOpen)}
-                className="flex items-center gap-1.5 px-2 py-2 hover:bg-white/5 rounded-lg text-sm text-gray-400 transition-all"
+                className="flex items-center gap-2 px-3 py-2.5 hover:bg-white/10 rounded-xl text-sm text-gray-300 hover:text-white transition-all duration-200"
               >
-                <Globe className="w-4 h-4" />
+                <Globe className="w-4 h-4 text-violet-400" />
                 <span className="hidden lg:inline">语言</span>
-                <ChevronDown className={`w-3 h-3 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 opacity-60 ${langMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {langMenuOpen && (
                 <motion.div 
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-36 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 overflow-hidden z-50"
+                  className="absolute right-0 mt-2 w-40 bg-gray-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50"
                 >
+                  <div className="px-3 py-2 border-b border-white/10">
+                    <span className="text-xs text-gray-500">选择语言</span>
+                  </div>
                   {languages.map((lang) => (
-                    <button key={lang.code} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-                      <span>{lang.flag}</span>
+                    <button 
+                      key={lang.code} 
+                      onClick={() => setLangMenuOpen(false)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all"
+                    >
+                      <span className="text-lg">{lang.flag}</span>
                       <span>{lang.name}</span>
                     </button>
                   ))}
@@ -175,14 +183,9 @@ export default function Header() {
 
 
 
-            {/* Login Button - Desktop only */}
+            {/* Login Button */}
             {!isLoginPage && (
-              <a 
-                href="/login" 
-                className="hidden sm:block px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                登录
-              </a>
+              <SuiWalletButton key={pathname} />
             )}
 
             {/* Mobile Menu Button */}
@@ -270,9 +273,9 @@ export default function Header() {
                     {languages.map((lang) => (
                       <button 
                         key={lang.code} 
-                        className="flex-1 flex items-center justify-center gap-1 py-2 bg-white/5 rounded-lg text-xs text-gray-400 hover:text-white"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white/5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/10"
                       >
-                        <span>{lang.flag}</span>
+                        <span className="text-lg">{lang.flag}</span>
                         <span>{lang.name}</span>
                       </button>
                     ))}

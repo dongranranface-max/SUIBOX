@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, TrendingUp, Flame, ArrowUp, ArrowDown } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 // 综合排行榜数据（模拟真实数据）
 const allNFTs = [
@@ -73,6 +74,7 @@ const typeLabels: Record<string, { label: string, color: string }> = {
 };
 
 export default function RankingPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [sortBy, setSortBy] = useState<'volume' | 'change'>('volume');
   const [filterType, setFilterType] = useState<'all' | 'market' | 'auction'>('all');
 

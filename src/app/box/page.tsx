@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus, Star, Heart, Sparkle } from 'lucide-react';
-import { useWallet, ConnectButton } from '@suiet/wallet-kit';
+import { useWallet } from '@suiet/wallet-kit';
 import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
+import { useAuth } from '@/hooks/useAuth';
 
 const GUARANTEE = { common: 3, rare: 7, epic: 25 };
 
@@ -278,6 +279,9 @@ function OpeningAnimation() {
 export default function BoxPage() {
   const wallet = useWallet();
   const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
+  // 统一认证：支持钱包 + zkLogin
+  const { userAddress, isLoggedIn, loading: authLoading, login } = useAuth();
+  
   const [isOpening, setIsOpening] = useState(false);
   const [showOpening, setShowOpening] = useState(false);
   const [result, setResult] = useState<{ type: string } | null>(null);
@@ -295,7 +299,8 @@ export default function BoxPage() {
   });
 
   const totalDailyCount = userData.dailyFreeCount + userData.inviteBonus;
-  const canOpen = totalDailyCount > 0 && wallet.connected;
+  // 统一判断：钱包连接 或 zkLogin 登录
+  const canOpen = totalDailyCount > 0 && isLoggedIn;
   const isEpic = userData.noneCount >= 35;
 
   const calculateBonus = (friends: number) => {
@@ -306,19 +311,19 @@ export default function BoxPage() {
   };
 
   const fetchUserData = useCallback(async () => {
-    if (!wallet.account?.address) return;
+    if (!userAddress) return;
     try {
-      const res = await fetch(`/api/box?address=${wallet.account.address}`);
+      const res = await fetch(`/api/box?address=${userAddress}`);
       const data = await res.json();
       setUserData(prev => ({ ...prev, ...data }));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [wallet.account?.address]);
+  }, [userAddress]);
 
-  useEffect(() => { if (wallet.connected) fetchUserData(); }, [wallet.connected, fetchUserData]);
+  useEffect(() => { if (isLoggedIn) fetchUserData(); }, [isLoggedIn, fetchUserData]);
 
   const handleOpen = useCallback(async () => {
-    if (!wallet.connected) { setError('请先连接钱包！'); return; }
+    if (!isLoggedIn) { setError('请先登录！'); return; }
     if (totalDailyCount <= 0) { setError('今日次数已用完！'); return; }
     setError(null); setIsOpening(true); setShowOpening(true); setCombo(c => c + 1);
     
@@ -337,7 +342,7 @@ export default function BoxPage() {
       fetchUserData();
     } catch (e: unknown) { setError(e instanceof Error ? e.message : '开盒失败'); setCombo(0); }
     setIsOpening(false);
-  }, [wallet.connected, wallet.account?.address, totalDailyCount, userData.noneCount, fetchUserData]);
+  }, [isLoggedIn, userAddress, totalDailyCount, userData.noneCount, fetchUserData]);
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
@@ -367,8 +372,10 @@ export default function BoxPage() {
               <div className="py-2"><LootBox isEpic={isEpic} isOpening={isOpening} /></div>
 
               <div className="mt-6">
-                {!wallet.connected ? (
-                  <ConnectButton />
+                {!isLoggedIn ? (
+                  <button onClick={login} className="px-10 py-3.5 rounded-full font-bold text-lg flex items-center gap-2 mx-auto shadow-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white">
+                    登录后开始抽奖
+                  </button>
                 ) : (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleOpen} disabled={!canOpen || isOpening} className={`px-10 py-3.5 rounded-full font-bold text-lg flex items-center gap-2 mx-auto shadow-xl ${canOpen && !isOpening ? 'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-white hover:shadow-orange-500/40' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}>
                     {isOpening ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6" />}
@@ -377,7 +384,7 @@ export default function BoxPage() {
                 )}
               </div>
 
-              {wallet.connected && <p className="mt-3 text-gray-400 text-sm">剩余 <span className="text-orange-400 font-bold text-xl">{totalDailyCount}</span> 次</p>}
+              {isLoggedIn && <p className="mt-3 text-gray-400 text-sm">剩余 <span className="text-orange-400 font-bold text-xl">{totalDailyCount}</span> 次</p>}
               
               {/* 网络错误提示 */}
               {(isWrongNetwork || isSwitching) && (
@@ -412,7 +419,7 @@ export default function BoxPage() {
 
           {/* 右侧 */}
           <div className="space-y-3">
-            {wallet.connected && !loading && (
+            {isLoggedIn && !loading && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
                 {/* 战利品 */}
                 <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700">
@@ -489,11 +496,13 @@ export default function BoxPage() {
               </motion.div>
             )}
 
-            {!wallet.connected && (
+            {!isLoggedIn && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gray-900/95 rounded-2xl p-8 text-center border border-gray-700">
                 <Wallet className="w-12 h-12 mx-auto mb-3 text-gray-500" />
-                <p className="text-gray-400 mb-4">连接钱包开始抽奖</p>
-                <ConnectButton />
+                <p className="text-gray-400 mb-4">登录后开始抽奖</p>
+                <button onClick={login} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold">
+                  立即登录
+                </button>
               </motion.div>
             )}
           </div>

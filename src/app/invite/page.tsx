@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Users, Gift, Zap, Star, Wallet, Copy, Check, Lock, Award, TrendingUp, Link, Share2, Twitter, MessageCircle, QrCode, Download, ExternalLink } from 'lucide-react';
 import { useWallet, ConnectButton } from '@suiet/wallet-kit';
 import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
+import { useI18n } from '@/lib/i18n';
 
 // 邀请任务配置
 const INVITE_TASKS = [
@@ -21,6 +22,7 @@ const TIER_CONFIG = {
 
 export default function InvitePage() {
   const wallet = useWallet();
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
   const [copied, setCopied] = useState(false);
   const [hasEnough, setHasEnough] = useState(false);
@@ -28,6 +30,13 @@ export default function InvitePage() {
   const [showPoster, setShowPoster] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
   
+  // 用户信息 - 支持 zkLogin + 钱包登录
+  const [userInfo, setUserInfo] = useState<{
+    address: string;
+    name?: string;
+    provider?: string;
+  } | null>(null);
+
   const [userData, setUserData] = useState({
     inviteCode: '',
     totalInvites: 0,
@@ -36,14 +45,33 @@ export default function InvitePage() {
     pendingBox: 0,
   });
 
+  // 获取用户信息（zkLogin 或钱包）
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user?.suiAddress) {
+          setUserInfo({
+            address: data.user.suiAddress,
+            name: data.user.name,
+            provider: data.user.provider
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const canInvite = hasEnough;
   
+  // 生成邀请码 - 支持任意地址
   const generateInviteCode = (address: string) => {
     if (!address) return '';
     return 'SUIBOX' + address.slice(2, 8).toUpperCase();
   };
 
-  const inviteCode = wallet.account?.address ? generateInviteCode(wallet.account.address) : '';
+  // 优先使用钱包地址，其次使用 zkLogin 地址
+  const userAddress = wallet.account?.address || userInfo?.address || '';
+  const inviteCode = userAddress ? generateInviteCode(userAddress) : '';
   const inviteLink = inviteCode ? `https://suibox.io/r/${inviteCode}` : '';
 
   const copyLink = () => {
@@ -74,9 +102,9 @@ export default function InvitePage() {
   };
 
   const fetchUserData = useCallback(async () => {
-    if (!wallet.account?.address) return;
+    if (!userAddress) return;
     try {
-      const res = await fetch(`/api/invite?address=${wallet.account.address}`);
+      const res = await fetch(`/api/invite?address=${userAddress}`);
       const data = await res.json();
       setUserData({
         inviteCode: data.inviteCode || inviteCode,
@@ -91,15 +119,17 @@ export default function InvitePage() {
     } finally {
       setLoading(false);
     }
-  }, [wallet.account?.address, inviteCode]);
+  }, [userAddress, inviteCode]);
 
+  // 支持钱包登录 + zkLogin 用户
   useEffect(() => {
-    if (wallet.connected) {
+    // 钱包连接 或 有 zkLogin 用户信息时获取数据
+    if (wallet.connected || userInfo?.address) {
       fetchUserData();
     } else {
       setLoading(false);
     }
-  }, [wallet.connected, fetchUserData]);
+  }, [wallet.connected, userInfo?.address, fetchUserData]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -119,8 +149,8 @@ export default function InvitePage() {
           <p className="text-gray-400 text-sm md:text-base">邀请好友参与盲盒，双方获得 BOX 空投！</p>
         </motion.div>
 
-        {/* 推荐链接 */}
-        {wallet.connected && (
+        {/* 推荐链接 - 支持钱包 + zkLogin */}
+        {(wallet.connected || userInfo?.address) && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h2 className="font-bold text-base md:text-lg flex items-center gap-2">
@@ -376,7 +406,7 @@ export default function InvitePage() {
               <motion.a
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                href={`https://suiscan.xyz/devnet/address/${wallet.account?.address}`}
+                href={`https://suiscan.xyz/devnet/address/${userAddress}`}
                 target="_blank"
                 className="bg-gray-800/50 rounded-xl p-4 text-center cursor-pointer block"
               >
@@ -387,12 +417,14 @@ export default function InvitePage() {
           </motion.div>
         )}
 
-        {/* 未连接钱包 */}
-        {!wallet.connected && (
+        {/* 未登录提示 - 支持钱包 + zkLogin */}
+        {!wallet.connected && !userInfo?.address && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 bg-gray-900/80 rounded-2xl p-8 text-center border border-gray-700">
             <Wallet className="w-16 h-16 mx-auto mb-4 text-gray-500" />
-            <p className="text-gray-400 mb-4">连接钱包获取专属推荐链接</p>
-            <ConnectButton />
+            <p className="text-gray-400 mb-4">登录后获取专属推荐链接</p>
+            <a href="/login" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold">
+              立即登录
+            </a>
           </motion.div>
         )}
       </div>

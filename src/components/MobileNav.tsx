@@ -26,45 +26,50 @@ export default function MobileNav() {
   }, [isOpen]);
 
   const navItems = [
-    { label: '🏠 首页', href: '/' },
-    { label: '🎁 盲盒', href: '/box', highlight: true },
-    { label: '⚗️ 合成', href: '/craft' },
-    { label: '💎 交易', href: '/market' },
-    { label: '🏛️ DAO', href: '/governance', highlight: true },
-    { label: '🤝 邀请', href: '/invite' },
-    { label: '🏢 入驻', href: '/join' },
-    { label: '👤 我的主页', href: '/profile' },
-    { label: '🎫 客服工单', href: '/support' },
-  ];
-
-  const quickLinks = [
-    { label: '🏆 排行榜', href: '/ranking' },
-    { label: '⛏️ 挖矿', href: '/mine' },
-    { label: '📦 质押', href: '/stake' },
-    { label: '🛡️ 安全中心', href: '/security' },
+    { label: '开盲盒', href: '/box', highlight: true },
+    { label: '合成', href: '/craft' },
+    { label: '市场', href: '/market' },
+    { label: 'Staking', href: '/mine' },
+    { label: 'DAO', href: '/governance' },
+    { label: '邀请', href: '/invite' },
+    { label: '个人主页', href: '/profile' },
   ];
 
   return (
     <>
       {/* 移动端导航栏 */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-black border-b border-white/10">
-        <div className="flex items-center justify-between px-4 h-12">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl">🎁</span>
-            <span className="font-bold">SUIBOX</span>
+        <div className="flex items-center justify-between px-2 h-12">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-lg">🎁</span>
+            <span className="font-bold text-sm">SUIBOX</span>
           </Link>
           
-          <div className="flex items-center gap-2">
-            <Link href="/wallet" className="p-2">
-              <span className="text-lg">👛</span>
+          {/* Nav Items */}
+          <nav className="flex items-center gap-0.5 flex-1 justify-center">
+            <Link href="/box" className="px-2 py-1 text-xs text-amber-400 font-medium">盲盒</Link>
+            <Link href="/craft" className="px-2 py-1 text-xs text-amber-400 font-medium">合成</Link>
+            <Link href="/market" className="px-2 py-1 text-xs text-gray-300 flex items-center gap-0.5">市场</Link>
+          </nav>
+
+          {/* Right Side */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <Link href="/announcements" className="p-1.5 relative">
+              <span className="text-base">🔔</span>
+              <span className="absolute top-0.5 right-0 w-2.5 h-2.5 bg-red-500 rounded-full text-[8px] font-bold text-white flex items-center justify-center">3</span>
             </Link>
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2"
-            >
-              <span className="text-2xl">{isOpen ? '✕' : '☰'}</span>
-            </button>
+            <Link href="/profile" className="p-1.5">
+              <span className="text-base">👤</span>
+            </Link>
+            <Link href="/wallet" className="p-1.5">
+              <span className="text-base">👛</span>
+            </Link>
           </div>
+
+          <button onClick={() => setIsOpen(!isOpen)} className="p-1.5">
+            <span className="text-xl">{isOpen ? '✕' : '☰'}</span>
+          </button>
         </div>
       </div>
 
@@ -98,24 +103,22 @@ export default function MobileNav() {
             ))}
           </nav>
 
-          {/* 快捷链接 */}
-          <div className="border-t border-white/10 p-4">
-            <div className="text-xs text-gray-500 mb-2">快捷入口</div>
-            {quickLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block py-2 text-gray-400 hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* Bottom Menu */}
+          <div className="border-t border-white/10">
+            <Link href="/support" className="flex items-center gap-2 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white">
+              <span>🎫</span>
+              <span>客服支持</span>
+            </Link>
+            <Link href="/security" className="flex items-center gap-2 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white">
+              <span>🛡️</span>
+              <span>安全中心</span>
+            </Link>
           </div>
 
-          {/* 底部 */}
-          <div className="p-4 border-t border-white/10 text-xs text-gray-500">
-            <p>SUIBOX v1.0.0</p>
-            <p>SUI区块链NFT盲盒</p>
+          {/* Footer */}
+          <div className="mt-auto p-4 border-t border-white/10 text-xs text-gray-500">
+            <p>SUIBOX v1.0</p>
+            <p>SUI区块链NFT平台</p>
           </div>
         </div>
       </div>

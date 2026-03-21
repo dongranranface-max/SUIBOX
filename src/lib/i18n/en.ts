@@ -1,5 +1,43 @@
 // English translations
 export const en = {
+  // Home
+  home: {
+    title: 'SUIBOX',
+    subtitle: 'NFT + DeFi Platform',
+    hotAuctions: 'Hot Auctions',
+    newListings: 'New Listings',
+    endingSoon: 'Ending Soon',
+    viewAll: 'View All',
+    featured: 'Featured',
+    trending: 'Trending',
+    recentlyAdded: 'Recently Added',
+    search: 'Search NFT, Artist, Collection...',
+    connectWallet: 'Connect Wallet',
+    login: 'Login',
+    welcome: 'Start Your Web3 Journey',
+    stats: {
+      totalNFT: 'Total NFT',
+      totalVolume: 'Total Volume',
+      activeUsers: 'Active Users',
+    },
+    hero: {
+      title: 'First NFT Mystery Box Platform on SUI Chain',
+      desc: 'Open Boxes · Craft Fragments · DeFi Staking · DAO Governance',
+      start: 'Get Started',
+    },
+    features: {
+      box: 'Mystery Box',
+      boxDesc: 'Rare NFT mystery boxes, unwrap surprises',
+      craft: 'Craft',
+      craftDesc: 'Collect fragments to craft rare NFTs',
+      stake: 'DeFi Staking',
+      stakeDesc: 'Hold BOX and earn staking rewards',
+      dao: 'DAO Governance',
+      daoDesc: 'Vote with tokens to shape the platform future',
+    },
+  },
+
+  // Common
   common: {
     loading: 'Loading...',
     error: 'Error',
@@ -26,8 +64,22 @@ export const en = {
     no: 'No',
     online: 'Online',
     offline: 'Offline',
+    price: 'Price',
+    total: 'Total',
+    balance: 'Balance',
+    claim: 'Claim',
+    stake: 'Stake',
+    unstake: 'Unstake',
+    connect: 'Connect',
+    disconnect: 'Disconnect',
+    pending: 'Pending',
+    completed: 'Completed',
+    failed: 'Failed',
+    or: 'or',
+    and: 'and',
   },
 
+  // Navigation
   nav: {
     home: 'Home',
     market: 'Market',
@@ -42,20 +94,17 @@ export const en = {
     logout: 'Logout',
     settings: 'Settings',
     language: 'Language',
+    trade: 'Trade',
+    dao: 'DAO',
+    invite: 'Invite',
+    join: 'Join',
+    governance: 'Governance',
+    staking: 'Staking',
+    apply: 'Apply',
+    institution: 'Institution',
   },
 
-  home: {
-    title: 'SUIBOX',
-    subtitle: 'NFT + DeFi Platform',
-    hotAuctions: 'Hot Auctions',
-    newListings: 'New Listings',
-    endingSoon: 'Ending Soon',
-    viewAll: 'View All',
-    featured: 'Featured',
-    trending: 'Trending',
-    recentlyAdded: 'Recently Added',
-  },
-
+  // Market
   market: {
     title: 'NFT Market',
     searchPlaceholder: 'Search NFT...',
@@ -85,6 +134,7 @@ export const en = {
     makeOffer: 'Make Offer',
   },
 
+  // Box
   box: {
     title: 'Mystery Box',
     open: 'Open Box',
@@ -93,8 +143,19 @@ export const en = {
     chance: 'Chance',
     opened: 'Opened',
     openAgain: 'Open Again',
+    price: 'Price',
+    myBoxes: 'My Boxes',
+    history: 'History',
+    rarity: {
+      common: 'Common',
+      uncommon: 'Uncommon',
+      rare: 'Rare',
+      epic: 'Epic',
+      legendary: 'Legendary',
+    },
   },
 
+  // Auction
   auction: {
     title: 'Auction',
     bid: 'Bid',
@@ -106,11 +167,14 @@ export const en = {
     ended: 'Ended',
     bids: 'Bids',
     highestBidder: 'Highest Bidder',
+    history: 'Auction History',
+    myAuctions: 'My Auctions',
   },
 
+  // Stake
   stake: {
     title: 'Staking',
-    pool: 'Pool',
+    pool: 'Staking Pool',
     apy: 'APY',
     staked: 'Staked',
     rewards: 'Rewards',
@@ -119,20 +183,25 @@ export const en = {
     claim: 'Claim',
     lockPeriod: 'Lock Period',
     minStake: 'Min Stake',
+    myStakes: 'My Stakes',
+    claimable: 'Claimable',
+    totalStaked: 'Total Staked',
   },
 
+  // Create
   create: {
-    title: 'Create NFT',
+    title: 'Mint NFT',
     name: 'Name',
     description: 'Description',
     category: 'Category',
     royalty: 'Royalty',
-    upload: 'Upload',
+    upload: 'Upload File',
     preview: 'Preview',
     mint: 'Mint',
     uploading: 'Uploading...',
   },
 
+  // Profile
   profile: {
     title: 'Profile',
     myNFTs: 'My NFTs',
@@ -140,25 +209,71 @@ export const en = {
     myFragments: 'My Fragments',
     myAuctions: 'My Auctions',
     myStakes: 'My Stakes',
-    settings: 'Account Settings',
+    settings: 'Settings',
     bindWallet: 'Bind Wallet',
     security: 'Security',
+    editProfile: 'Edit Profile',
+    address: 'Wallet Address',
+    joined: 'Joined',
   },
 
+  // Login
   login: {
     title: 'Welcome',
     subtitle: 'Choose login method',
     oauth: 'Social Login',
     wallet: 'Wallet Login',
     connectWallet: 'Connect Wallet',
-    google: 'Google',
-    discord: 'Discord',
+    google: 'Login with Google',
+    discord: 'Login with Discord',
     walletSupported: 'Supported Wallets',
     terms: 'By logging in, you agree to',
     termsOfService: 'Terms of Service',
     privacyPolicy: 'Privacy Policy',
+    security: 'Secure',
+    fast: 'Fast',
+    privacy: 'Private',
   },
 
+  // Invite
+  invite: {
+    title: 'Invite Friends',
+    subtitle: 'Invite friends to join, both get BOX airdrop!',
+    yourLink: 'Your Invite Link',
+    copy: 'Copy',
+    copied: 'Copied!',
+    share: 'Share to',
+    rewards: 'Invite Rewards',
+    condition: 'Invite Condition',
+    totalInvites: 'Total Invites',
+    todayOpened: 'Today Opened',
+    totalEarned: 'Total Earned',
+    pending: 'Pending',
+  },
+
+  // Craft
+  craft: {
+    title: 'Craft',
+    subtitle: 'Collect fragments to craft rare NFTs',
+    fragments: 'Fragments',
+    compose: 'Compose',
+    myFragments: 'My Fragments',
+    required: 'Required',
+    result: 'Result',
+  },
+
+  // Governance
+  governance: {
+    title: 'DAO Governance',
+    subtitle: 'Vote with tokens to shape the platform future',
+    proposals: 'Proposals',
+    myVotes: 'My Votes',
+    votingPower: 'Voting Power',
+    delegate: 'Delegate',
+    createProposal: 'Create Proposal',
+  },
+
+  // Errors
   errors: {
     networkError: 'Network error, please check your connection',
     serverError: 'Server error, please try again later',
@@ -169,6 +284,7 @@ export const en = {
     required: 'This field is required',
   },
 
+  // Time
   time: {
     justNow: 'Just now',
     minutesAgo: '{n} minutes ago',

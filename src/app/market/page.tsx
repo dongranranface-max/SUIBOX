@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Grid, List, Heart, ShoppingCart, X, Flame, Zap, DollarSign, MessageCircle, Send, TrendingUp, Users, Layers, Sparkles, Loader2, Filter } from 'lucide-react';
 import { useWallet } from '@suiet/wallet-kit';
+import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/lib/i18n';
 
 interface NFT {
   id: string;
@@ -52,7 +54,9 @@ const rarityBorders: Record<string, string> = {
 };
 
 export default function MarketPage() {
-  const { connected } = useWallet();
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
+  // 统一认证
+  const { isLoggedIn, login } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('hot');
@@ -485,7 +489,7 @@ export default function MarketPage() {
                 {/* Tab内容 */}
                 {activeTab === 'buy' && (
                   <button
-                    onClick={() => connected ? alert('购买功能开发中') : alert('请先连接钱包')}
+                    onClick={() => isLoggedIn ? alert('购买功能开发中') : alert('请先登录')}
                     className="w-full py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl font-bold flex items-center justify-center gap-2"
                   >
                     <ShoppingCart className="w-5 h-5" />

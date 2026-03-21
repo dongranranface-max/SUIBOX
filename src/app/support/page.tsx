@@ -7,8 +7,10 @@ import {
   ChevronDown, Headphones, Bot, Star, ThumbsUp, ThumbsDown,
   ArrowRight, Zap, Shield, Gift
 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function CustomerServicePage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState<'chat' | 'tickets' | 'faq'>('chat');
   const [chatMessages, setChatMessages] = useState([
     { id: 1, role: 'system', content: '欢迎来到SUIBOX客服中心！请问有什么可以帮助您的？', time: '10:00' },

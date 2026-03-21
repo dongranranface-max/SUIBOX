@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Clock, Zap, Hexagon } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 // 汇率: 仅支持BOX
 const SUI_TO_BOX_RATE = 100;
@@ -41,6 +42,7 @@ const getDisplayPrice = (priceInBOX: number, token: 'BOX' | 'SUI') => {
 };
 
 export default function AuctionPage() {
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState<'hot' | 'ending' | 'new'>('hot');
   const [selectedAuction, setSelectedAuction] = useState<any>(null);
   const [countdown, setCountdown] = useState<Record<number, {days: number; hours: number; minutes: number; seconds: number}>>({});

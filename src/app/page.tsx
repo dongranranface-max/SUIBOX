@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, ArrowUp, ArrowDown, Clock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStats } from '@/hooks/useStats';
+import { useI18n } from '@/lib/i18n';
 
 // 轮播图
 const banners = [
@@ -71,6 +72,7 @@ const rarityColors: Record<string, string> = {
 };
 
 export default function Home() {
+  const { t } = useI18n?.() || { t: {} };
   const [currentBanner, setCurrentBanner] = useState(0);
   const [countdown, setCountdown] = useState<Record<number, {days: number, hours: number, minutes: number, seconds: number}>>({});
   const [bidModal, setBidModal] = useState<{show: boolean, auction?: any}>({show: false});
@@ -527,11 +529,11 @@ export default function Home() {
                   <Image src="/suibox-logo.png" alt="SUIBOX" width={64} height={64} className="relative object-contain animate-pulse" style={{ animationDuration: '3s' }} />
                 </div>
                 <div>
-                  <p className="font-bold text-2xl bg-gradient-to-r from-violet-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">发现NFT藏品</p>
+                  <p className="font-bold text-2xl bg-gradient-to-r from-violet-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">发现SUIBOX</p>
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                只需几次点击，即可发现并购买NFT和收藏品。无需托管，无需延迟，只需连接您的钱包，并通过我们的智能合约购买即可。
+                即可发现并购买NFT。无需托管，无需延迟，只需连接您的钱包，并通过我们的智能合约购买即可。
               </p>
               {/* 统计 - 4列 */}
               <div className="grid grid-cols-4 gap-3">
@@ -591,6 +593,7 @@ export default function Home() {
                   支持
                 </h4>
                 <ul className="space-y-3 text-sm text-gray-400">
+                  <li><Link href="/support" className="hover:text-white transition-colors">• 客服中心</Link></li>
                   <li><Link href="/help" className="hover:text-white transition-colors">• 帮助中心</Link></li>
                   <li><a href="https://x.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">• X</a></li>
                 </ul>
