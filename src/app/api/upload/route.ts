@@ -36,12 +36,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// 设置上传大小限制
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
