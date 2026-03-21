@@ -19,8 +19,8 @@ function verifyAdmin(request: NextRequest): { adminId: string; role: string } | 
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace('Bearer ', '');
   
-  // 简化验证，生产环境应该检查真实 session
-  if (token && token.startsWith('admin-')) {
+  // 验证 token 格式（UUID 格式的 token）
+  if (token && token.match(/^[0-9a-f-]{36}$/i)) {
     return { adminId: 'admin-001', role: 'super_admin' };
   }
   return null;

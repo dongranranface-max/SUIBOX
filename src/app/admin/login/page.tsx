@@ -68,13 +68,13 @@ export default function AdminLogin() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-2">邮箱</label>
+              <label className="block text-sm text-gray-400 mb-2">用户名 / 邮箱</label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:border-violet-500"
-                placeholder="admin@suibox.io"
+                placeholder="admin 或 admin@suibox.io"
                 required
               />
             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package, Heart, Gavel, ArrowUp, FileText, MessageCircle, History, Wallet, Layers, Box, Copy, Check, Settings, LogOut, UserPlus, Loader2, Coins, TrendingUp, Link2, Unlink, Shield, Smartphone } from 'lucide-react';
+import { Package, Heart, Gavel, ArrowUp, ArrowUpRight, FileText, MessageCircle, History, Wallet, Layers, Box, Copy, Check, Settings, LogOut, UserPlus, Loader2, Coins, TrendingUp, Link2, Unlink, Shield, Smartphone, X, Camera } from 'lucide-react';
 import BindWalletModal from '@/components/BindWalletModal';
 import { useI18n } from '@/lib/i18n';
 
@@ -35,6 +35,9 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [showBindWallet, setShowBindWallet] = useState(false);
+  const [statsError, setStatsError] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editName, setEditName] = useState('');
 
   const [connected, setConnected] = useState(false);
 
@@ -155,21 +158,25 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-violet-900/30 to-black py-4 md:py-8">
+      {/* Header - 移动端优化 */}
+      <div className="bg-gradient-to-b from-violet-900/30 to-black py-3 md:py-8">
         <div className="max-w-6xl mx-auto px-3 md:px-4">
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-xl md:text-3xl flex-shrink-0 overflow-hidden">
+          {/* 移动端：垂直布局 | 桌面端：水平布局 */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            {/* 头像 */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto sm:mx-0 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0 overflow-hidden ring-4 ring-violet-500/20">
               {user.picture ? (
                 <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
               ) : (
                 <span>👤</span>
               )}
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg md:text-2xl font-bold truncate">{user.name}</h1>
-              <p className="text-gray-400 text-sm">{user.email}</p>
-              <div className="flex items-center gap-2 mt-1">
+            
+            {/* 用户信息 */}
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <h1 className="text-xl sm:text-2xl font-bold truncate">{user.name}</h1>
+              <p className="text-gray-400 text-sm truncate">{user.email}</p>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                 <span className="text-xs px-2 py-0.5 bg-violet-600/30 text-violet-400 rounded-full capitalize">
                   {user.provider} 登录
                 </span>
@@ -193,8 +200,8 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Stats - On-chain Data */}
-          <div className="mt-4 grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
+          {/* Stats - On-chain Data - 移动端优化：2行3列 */}
+          <div className="mt-4 grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-4">
             <div className="text-center p-2 md:p-3 bg-white/5 rounded-xl">
               <div className="text-lg md:text-xl font-bold flex items-center justify-center gap-1">
                 {statsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : displayStats.suiBalance}
@@ -220,14 +227,28 @@ export default function ProfilePage() {
               <div className="text-xs text-gray-500">关注</div>
             </div>
             <div className="text-center p-2 md:p-3 bg-white/5 rounded-xl">
-              <div className="text-lg md:text-xl font-bold">{displayStats.likes}</div>
-              <div className="text-xs text-gray-500">点赞</div>
+              {statsError ? (
+                <button 
+                  onClick={() => user?.suiAddress && fetchUserStats(user.suiAddress)}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  重试
+                </button>
+              ) : (
+                <>
+                  <div className="text-lg md:text-xl font-bold">{displayStats.likes}</div>
+                  <div className="text-xs text-gray-500">点赞</div>
+                </>
+              )}
             </div>
           </div>
 
           {/* Actions */}
           <div className="mt-4 flex gap-2">
-            <button className="flex-1 py-2 md:py-3 bg-violet-600 hover:bg-violet-700 rounded-xl text-sm font-medium transition-colors">
+            <button 
+              onClick={() => { setEditName(user?.name || ''); setShowEditProfile(true); }}
+              className="flex-1 py-2 md:py-3 bg-violet-600 hover:bg-violet-700 rounded-xl text-sm font-medium transition-colors"
+            >
               编辑资料
             </button>
             <button 
@@ -293,8 +314,8 @@ export default function ProfilePage() {
                   <span className="font-bold">{displayStats.nftCount}</span>
                 </div>
               </div>
-              <a href="/wallet" className="mt-4 block text-center text-violet-400 text-sm hover:underline">
-                查看详情 →
+              <a href="/wallet" className="mt-4 flex items-center justify-center gap-1 text-violet-400 text-sm hover:text-violet-300 transition-colors">
+                查看详情 <ArrowUpRight className="w-4 h-4" />
               </a>
             </div>
 
@@ -318,8 +339,8 @@ export default function ProfilePage() {
                   <span className="text-gray-400">创建 Sui 地址</span>
                 </div>
               </div>
-              <a href="/profile/activity" className="mt-4 block text-center text-violet-400 text-sm hover:underline">
-                查看全部 →
+              <a href="/profile/activity" className="mt-4 flex items-center justify-center gap-1 text-violet-400 text-sm hover:text-violet-300 transition-colors">
+                查看全部 <ArrowUpRight className="w-4 h-4" />
               </a>
             </div>
 
@@ -348,19 +369,22 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'nfts' && (
-          <div className="text-center py-12 text-gray-400">
-            <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>暂无 NFT 资产</p>
-            <a href="/create" className="text-violet-400 hover:underline mt-2 inline-block">
-              铸造你的第一个 NFT
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <Package className="w-16 h-16 mb-4 opacity-30" />
+            <p className="text-base mb-2">暂无 NFT 资产</p>
+            <a href="/market" className="text-violet-400 hover:text-violet-300 text-sm">
+              去市场探索 →
             </a>
           </div>
         )}
 
         {activeTab === 'fragments' && (
-          <div className="text-center py-12 text-gray-400">
-            <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>暂无碎片</p>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <Layers className="w-16 h-16 mb-4 opacity-30" />
+            <p className="text-base mb-2">暂无碎片</p>
+            <a href="/craft" className="text-violet-400 hover:text-violet-300 text-sm">
+              合成碎片 →
+            </a>
           </div>
         )}
 
@@ -493,6 +517,69 @@ export default function ProfilePage() {
           onClose={() => setShowBindWallet(false)}
           onBindSuccess={handleBindSuccess}
         />
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowEditProfile(false)} />
+          <div className="relative bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">编辑资料</h2>
+              <button onClick={() => setShowEditProfile(false)} className="p-2 hover:bg-white/10 rounded-xl">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Avatar */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-4xl overflow-hidden">
+                  {user?.picture ? (
+                    <img src={user.picture} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>👤</span>
+                  )}
+                </div>
+                <button className="absolute bottom-0 right-0 p-2 bg-violet-600 rounded-full hover:bg-violet-700">
+                  <Camera className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Name Input */}
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-2">用户名</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-violet-500 focus:outline-none"
+                placeholder="输入用户名"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowEditProfile(false)}
+                className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                取消
+              </button>
+              <button 
+                onClick={() => {
+                  // Save name (in production, call API)
+                  setUser(prev => prev ? { ...prev, name: editName } : null);
+                  setShowEditProfile(false);
+                }}
+                className="flex-1 py-3 bg-violet-600 hover:bg-violet-700 rounded-xl transition-colors"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Wallet, ArrowRight, Shield, Zap, Lock, Loader2, Sparkles, Play, Mail } from 'lucide-react';
 import { useWallet, ConnectModal } from '@suiet/wallet-kit';
 import { useI18n } from '@/lib/i18n';
 
-export default function LoginPage() {
+// Login 页面内容组件
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { address, connected } = useWallet();
@@ -182,41 +183,87 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          {/* 登录进度步骤条 */}
+          {/* 登录进度步骤条 - 详细 */}
           {loading && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-gray-900/80 border border-white/10 rounded-2xl"
+              className="mb-6 p-5 bg-gray-900/90 border border-white/10 rounded-2xl"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-400">登录进度</span>
-                <span className="text-xs text-gray-500">
-                  {loading === 'connecting' ? '连接中...' : 
-                   loading === 'verifying' ? '验证中...' : 
-                   loading === 'redirecting' ? '跳转中...' : '处理中...'}
+              {/* 当前状态 */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-white">登录步骤</span>
+                <span className="text-xs text-violet-400">
+                  {loading === 'connecting' && '步骤 1/3'}
+                  {loading === 'verifying' && '步骤 2/3'}
+                  {loading === 'redirecting' && '步骤 3/3'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                {/* 步骤1 - 连接 */}
-                <div className={`flex-1 h-1.5 rounded-full ${
-                  loading === 'connecting' ? 'bg-violet-500 animate-pulse' : 
-                  loading === 'verifying' || loading === 'redirecting' ? 'bg-violet-500' : 'bg-gray-700'
-                }`} />
-                {/* 步骤2 - 验证 */}
-                <div className={`flex-1 h-1.5 rounded-full ${
-                  loading === 'verifying' ? 'bg-violet-500 animate-pulse' : 
-                  loading === 'redirecting' ? 'bg-violet-500' : 'bg-gray-700'
-                }`} />
-                {/* 步骤3 - 完成 */}
-                <div className={`flex-1 h-1.5 rounded-full ${
-                  loading === 'redirecting' ? 'bg-violet-500 animate-pulse' : 'bg-gray-700'
-                }`} />
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-gray-500">
-                <span>连接</span>
-                <span>验证</span>
-                <span>完成</span>
+
+              {/* 详细步骤列表 */}
+              <div className="space-y-3">
+                {/* 步骤1 */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                  loading === 'connecting' ? 'bg-violet-500/20 border border-violet-500/30' :
+                  loading === 'verifying' || loading === 'redirecting' ? 'bg-green-500/10' : 'bg-gray-800/50'
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    loading === 'connecting' ? 'bg-violet-500 text-white animate-pulse' :
+                    loading === 'verifying' || loading === 'redirecting' ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    {loading === 'connecting' ? '1' : '✓'}
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-sm font-medium ${
+                      loading === 'connecting' ? 'text-violet-400' :
+                      loading === 'verifying' || loading === 'redirecting' ? 'text-green-400' : 'text-gray-500'
+                    }`}>
+                      {loading === 'connecting' ? '正在连接...' : '连接成功'}
+                    </div>
+                    <div className="text-xs text-gray-500">验证用户身份</div>
+                  </div>
+                </div>
+
+                {/* 步骤2 */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                  loading === 'verifying' ? 'bg-violet-500/20 border border-violet-500/30' :
+                  loading === 'redirecting' ? 'bg-green-500/10' : 'bg-gray-800/50'
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    loading === 'verifying' ? 'bg-violet-500 text-white animate-pulse' :
+                    loading === 'redirecting' ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    {loading === 'verifying' ? '2' : loading === 'redirecting' ? '✓' : '2'}
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-sm font-medium ${
+                      loading === 'verifying' ? 'text-violet-400' :
+                      loading === 'redirecting' ? 'text-green-400' : 'text-gray-500'
+                    }`}>
+                      {loading === 'verifying' ? '验证中...' : loading === 'redirecting' ? '验证通过' : '等待验证'}
+                    </div>
+                    <div className="text-xs text-gray-500">获取账户信息</div>
+                  </div>
+                </div>
+
+                {/* 步骤3 */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                  loading === 'redirecting' ? 'bg-violet-500/20 border border-violet-500/30' : 'bg-gray-800/50'
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    loading === 'redirecting' ? 'bg-violet-500 text-white animate-pulse' : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-sm font-medium ${
+                      loading === 'redirecting' ? 'text-violet-400' : 'text-gray-500'
+                    }`}>
+                      {loading === 'redirecting' ? '正在跳转...' : '等待完成'}
+                    </div>
+                    <div className="text-xs text-gray-500">进入首页</div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -243,7 +290,7 @@ export default function LoginPage() {
                 <div className="font-bold">Google 登录</div>
                 <div className="text-gray-500 text-sm">一键登录</div>
               </div>
-              {loading === 'google' ? (
+              {loading && loading !== 'connecting' ? (
                 <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
               ) : (
                 <ArrowRight className="w-5 h-5 text-gray-500" />
@@ -263,7 +310,7 @@ export default function LoginPage() {
                 <div className="font-bold">Discord 登录</div>
                 <div className="text-gray-500 text-sm">社区账号</div>
               </div>
-              {loading === 'discord' ? (
+              {loading && loading !== 'connecting' ? (
                 <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
               ) : (
                 <ArrowRight className="w-5 h-5 text-gray-500" />
@@ -280,16 +327,25 @@ export default function LoginPage() {
             {/* Wallet */}
             <button
               onClick={handleWalletLogin}
-              className="w-full p-4 rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-600/20 to-pink-600/20 hover:from-violet-600/30 hover:to-pink-600/30 transition-all flex items-center gap-4"
+              disabled={loading !== null}
+              className="w-full p-4 rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-600/20 to-pink-600/20 hover:from-violet-600/30 hover:to-pink-600/30 transition-all flex items-center gap-4 disabled:opacity-50"
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
-                <img src="/sui-logo.png" alt="SUI" className="w-8 h-8" />
+                {loading === 'connecting' ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-white" />
+                ) : (
+                  <img src="/sui-logo.png" alt="SUI" className="w-8 h-8" />
+                )}
               </div>
               <div className="flex-1 text-left">
-                <div className="font-bold">连接钱包</div>
+                <div className="font-bold">{loading === 'connecting' ? '连接中...' : '连接钱包'}</div>
                 <div className="text-gray-400 text-sm">使用 Sui 钱包</div>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+              {loading === 'connecting' ? (
+                <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+              ) : (
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              )}
             </button>
           </div>
 
@@ -320,5 +376,18 @@ export default function LoginPage() {
         onOpenChange={setShowWalletModal} 
       />
     </div>
+  );
+}
+
+// 导出带 Suspense 的登录页面
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -19,6 +19,7 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'assets' | 'nft' | 'history'>('assets');
   const [chainLoading, setChainLoading] = useState(true);
+  const [chainError, setChainError] = useState(false);
   
   // 模拟数据 - 实际应从 API 获取
   const [balance, setBalance] = useState({
@@ -46,6 +47,7 @@ export default function WalletPage() {
     
     const fetchChainData = async () => {
       setChainLoading(true);
+      setChainError(false);
       try {
         const res = await fetch(`/api/sui/balance?address=${userAddress}`);
         const data = await res.json();
@@ -54,6 +56,7 @@ export default function WalletPage() {
         }
       } catch (e) {
         console.error(e);
+        setChainError(true);
       } finally {
         setChainLoading(false);
       }
@@ -120,46 +123,72 @@ export default function WalletPage() {
             </a>
           </div>
 
-          {/* 余额卡片 */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 余额卡片 - 移动端优化 */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {/* SUI 余额 */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 rounded-2xl p-5 border border-gray-700">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Coins className="w-5 h-5 text-blue-400" />
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 rounded-2xl p-4 sm:p-5 border border-gray-700">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                 </div>
-                <span className="text-gray-400">SUI</span>
+                <span className="text-gray-400 text-sm sm:text-base">SUI</span>
               </div>
               {chainLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-gray-500" />
+              ) : chainError ? (
+                <button 
+                  onClick={() => {
+                    if (userAddress) {
+                      const fetchData = async () => {
+                        setChainLoading(true);
+                        setChainError(false);
+                        try {
+                          const res = await fetch(`/api/sui/balance?address=${userAddress}`);
+                          const data = await res.json();
+                          if (data.balance) {
+                            setBalance(prev => ({ ...prev, sui: (data.balance / 1000000000).toFixed(2) }));
+                          }
+                        } catch (e) {
+                          setChainError(true);
+                        } finally {
+                          setChainLoading(false);
+                        }
+                      };
+                      fetchData();
+                    }
+                  }}
+                  className="text-red-400 text-sm hover:text-red-300"
+                >
+                  点击重试
+                </button>
               ) : (
-                <p className="text-2xl font-bold">{balance.sui}</p>
+                <p className="text-xl sm:text-2xl font-bold">{balance.sui}</p>
               )}
-              <p className="text-gray-500 text-sm mt-1">≈ ${(parseFloat(balance.sui) * 2).toFixed(2)} USD</p>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1">≈ ${(parseFloat(balance.sui) * 2).toFixed(2)} USD</p>
             </div>
 
             {/* BOX 余额 */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 rounded-2xl p-5 border border-gray-700">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-violet-400" />
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 rounded-2xl p-4 sm:p-5 border border-gray-700">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
+                  <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
                 </div>
-                <span className="text-gray-400">BOX</span>
+                <span className="text-gray-400 text-sm sm:text-base">BOX</span>
               </div>
               {chainLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-gray-500" />
               ) : (
-                <p className="text-2xl font-bold">{balance.box}</p>
+                <p className="text-xl sm:text-2xl font-bold">{balance.box}</p>
               )}
-              <p className="text-gray-500 text-sm mt-1">≈ $0.01 BOX</p>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1">≈ $0.01 BOX</p>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Tab 导航 */}
-      <div className="max-w-4xl mx-auto px-4 -mt-4">
-        <div className="bg-gray-900/90 backdrop-blur-lg rounded-2xl border border-gray-700 p-1 flex">
+      {/* Tab 导航 - 移动端优化 */}
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 -mt-4">
+        <div className="bg-gray-900/90 backdrop-blur-lg rounded-2xl border border-gray-700 p-1 flex overflow-x-auto scrollbar-hide">
           {[
             { key: 'assets', label: '资产', icon: Coins },
             { key: 'nft', label: 'NFT', icon: Layers },
@@ -168,14 +197,14 @@ export default function WalletPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.key 
                   ? 'bg-violet-600 text-white' 
                   : 'text-gray-400 hover:text-white'
               }`}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="text-xs sm:text-sm">{tab.label}</span>
             </button>
           ))}
         </div>

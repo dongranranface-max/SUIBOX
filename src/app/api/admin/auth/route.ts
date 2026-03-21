@@ -75,6 +75,7 @@ const admins = [
   {
     id: 'admin-001',
     email: 'admin@suibox.io',
+    username: 'admin',
     password: 'admin123',
     role: 'super_admin',
     name: '超级管理员',
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = admins.find(a => a.email === email);
+    const admin = admins.find(a => a.email === email || a.username === email);
     
     if (!admin || admin.status !== 'active') {
       return NextResponse.json(

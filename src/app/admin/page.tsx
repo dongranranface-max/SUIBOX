@@ -32,7 +32,10 @@ export default function AdminDashboard() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/admin/auth');
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch('/api/admin/auth', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (!res.ok) {
         router.push('/admin/login');
         return;
@@ -50,9 +53,14 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/admin/manage?type=stats');
-      const data = await res.json();
-      setStats(data.data);
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch('/api/admin/manage?type=stats', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.data);
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     } finally {
@@ -64,14 +72,6 @@ export default function AdminDashboard() {
     await fetch('/api/admin/auth', { method: 'DELETE' });
     router.push('/admin/login');
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-      </div>
-    );
-  }
 
   const menuItems = [
     { id: 'overview', label: '概览', icon: LayoutDashboard },
@@ -142,6 +142,15 @@ export default function AdminDashboard() {
     { label: '交易笔数', value: stats?.totalTransactions || 0, icon: TrendingUp, color: 'from-purple-500 to-pink-500' },
     { label: '24h交易额', value: `${(stats?.volume24h || 0).toLocaleString()} SUI`, icon: DollarSign, color: 'from-amber-500 to-orange-500' },
   ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
