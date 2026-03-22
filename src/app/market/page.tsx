@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Grid, List, Heart, ShoppingCart, X, Flame, Zap, DollarSign, MessageCircle, Send, TrendingUp, Users, Layers, Sparkles, Loader2, Filter, ChevronDown, Grid3X3, LayoutGrid, SlidersHorizontal, Fire, Star, Clock, ArrowUpDown } from 'lucide-react';
+import { Search, Grid, List, Heart, ShoppingCart, X, Flame, Zap, DollarSign, MessageCircle, Send, TrendingUp, Users, Layers, Sparkles, Loader2, Filter, ChevronDown, Grid3X3, LayoutGrid, SlidersHorizontal, Fire, Star, Clock, ArrowUpDown, Plus, Minus } from 'lucide-react';
 import { useWallet } from '@suiet/wallet-kit';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/lib/i18n';
@@ -543,10 +543,35 @@ export default function MarketPage() {
                       </div>
                     </div>
 
+                    {/* Price & Buy with +/- buttons */}
+                    <div className="mb-4">
+                      <label className="block text-gray-500 text-xs mb-2">Quantity</label>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {}}
+                          className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <input
+                          type="number"
+                          value="1"
+                          readOnly
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-center font-semibold"
+                        />
+                        <button 
+                          onClick={() => {}}
+                          className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Price & Buy */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-gray-500 text-xs mb-1">Current Price</p>
+                        <p className="text-gray-500 text-xs mb-1">Total Price</p>
                         <p className={`text-3xl font-bold ${selectedNFT.priceUnit === 'SUI' ? 'text-cyan-400' : 'text-violet-400'}`}>
                           {selectedNFT.price} <span className="text-lg">{selectedNFT.priceUnit}</span>
                         </p>

@@ -135,7 +135,7 @@ function AnnouncementDetail({ item, onBack }: { item: Announcement; onBack: () =
   };
   
   return (
-    <div className="max-w-[800px] mx-auto px-6 py-12">
+    <div className="max-w-[800px] mx-auto px-4 md:px-6 py-8 md:py-12">
       <button 
         onClick={onBack}
         className="group flex items-center gap-2.5 text-[#6b6b6d] hover:text-white text-[14px] mb-8 transition-all duration-200"
@@ -463,7 +463,7 @@ function AnnouncementList() {
 
   if (loading) {
     return (
-      <div className="max-w-[800px] mx-auto px-6 py-12">
+      <div className="max-w-[800px] mx-auto px-4 md:px-6 py-8 md:py-12">
         <div className="mb-10">
           <div className="w-48 h-10 bg-[#1a1a1f] rounded-lg mb-3 animate-pulse" />
           <div className="w-72 h-5 bg-[#1a1a1f] rounded-lg animate-pulse" />
@@ -483,7 +483,7 @@ function AnnouncementList() {
   }
 
   return (
-    <div className="max-w-[800px] mx-auto px-6 py-12">
+    <div className="max-w-[800px] mx-auto px-4 md:px-6 py-8 md:py-12">
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-3">

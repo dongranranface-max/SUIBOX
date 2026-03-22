@@ -193,7 +193,7 @@ export default function MiningPage() {
       {/* 头部 */}
       <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 to-black py-10">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, violet 0%, transparent 50%)' }} />
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl font-bold mb-3 flex items-center justify-center gap-3">
               <Coins className="w-8 h-8 text-amber-400" />
@@ -237,7 +237,7 @@ export default function MiningPage() {
       </div>
 
       {/* 主内容 */}
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* 分类切换 */}
         <div className="flex flex-wrap justify-center gap-2 mb-8">
           {sections.map(section => (

@@ -114,7 +114,7 @@ export default function CraftPage() {
         <motion.div animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-pink-600/20 rounded-full blur-[150px]" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-3 py-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-6">
         <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-6">
           <motion.h1 animate={{ textShadow: ['0 0 20px rgba(139,92,246,0.5)', '0 0 40px rgba(139,92,246,0.8)', '0 0 20px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
             🔬 Laboratory

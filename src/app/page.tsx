@@ -30,6 +30,55 @@ async function fetchBanners() {
   return null;
 }
 
+// 从API获取拍卖数据
+async function fetchAuctions() {
+  try {
+    const res = await fetch('/api/auction');
+    const json = await res.json();
+    const auctions = json.data || json.auctions || [];
+    if (auctions.length > 0) {
+      return auctions.map((a: any) => ({
+        id: a.id,
+        name: a.nft?.name || a.name || 'Unknown',
+        artist: a.nft?.artist || 'Unknown',
+        price: a.current_price || a.price || 0,
+        bids: a.bids || 0,
+        endTime: new Date(a.endTime).getTime() || Date.now() + 86400000,
+        rarity: a.nft?.rarity || a.rarity || 'common',
+        image: a.nft?.image || '/nft-common.png',
+        buyNowPrice: a.buyNowPrice || a.buy_now_price || a.current_price * 2
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to fetch auctions:', e);
+  }
+  return null;
+}
+
+// 从API获取NFT数据
+async function fetchNFTs() {
+  try {
+    const res = await fetch('/api/nft');
+    const json = await res.json();
+    const nfts = json.data || json.nfts || [];
+    if (nfts.length > 0) {
+      return nfts.map((n: any) => ({
+        id: n.id,
+        name: n.name,
+        collection: n.creator || n.collection || 'Unknown',
+        price: n.price || 0,
+        priceUnit: n.priceSymbol || n.priceUnit || 'SUI',
+        change: Math.floor(Math.random() * 40) - 10, // 模拟涨跌幅
+        image: n.image || '/nft-common.png',
+        rarity: n.rarity || 'common'
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to fetch NFTs:', e);
+  }
+  return null;
+}
+
 // 轮播图
 const defaultBanners = [
   { id: 1, title: 'NFT盲盒', desc: '打开盲盒，赢取稀有NFT！', link: '/box', bg: 'from-violet-600 via-purple-600 to-pink-600', emoji: '🎁' },
@@ -97,6 +146,8 @@ export default function Home() {
   const { t } = useI18n?.() || { t: {} };
   const [currentBanner, setCurrentBanner] = useState(0);
   const [banners, setBanners] = useState(defaultBanners);
+  const [auctionData, setAuctionData] = useState(hotAuctions);
+  const [nftData, setNftData] = useState(hotNFTs);
   const [countdown, setCountdown] = useState<Record<number, {days: number, hours: number, minutes: number, seconds: number}>>({});
   const [bidModal, setBidModal] = useState<{show: boolean, auction?: any}>({show: false});
   const [bidPrice, setBidPrice] = useState('');
@@ -105,10 +156,10 @@ export default function Home() {
   const { stats, loading: statsLoading } = useStats();
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // 过滤拍卖数据 - 显示8个
+  // 过滤拍卖数据 - 显示8个 (使用API数据)
   const filteredAuctions = auctionFilter === 'ending' 
-    ? [...hotAuctions].sort((a, b) => a.endTime - b.endTime).slice(0, 8)
-    : [...hotAuctions].sort((a, b) => b.id - a.id).slice(0, 8);
+    ? [...auctionData].sort((a, b) => a.endTime - b.endTime).slice(0, 8)
+    : [...auctionData].sort((a, b) => b.id - a.id).slice(0, 8);
 
   // 价格显示用变量
   const suiChangeVal = stats?.sui?.change ?? 0.56;
@@ -129,6 +180,18 @@ export default function Home() {
     fetchBanners().then(data => {
       if (data && data.length > 0) {
         setBanners(data);
+      }
+    });
+  }, []);
+
+  // 从API加载拍卖和NFT数据
+  useEffect(() => {
+    Promise.all([fetchAuctions(), fetchNFTs()]).then(([auctions, nfts]) => {
+      if (auctions && auctions.length > 0) {
+        setAuctionData(auctions);
+      }
+      if (nfts && nfts.length > 0) {
+        setNftData(nfts);
       }
     });
   }, []);
@@ -255,100 +318,161 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-10 space-y-8 md:space-y-12">
 
-        {/* 热门拍卖 - 2x4布局 */}
-        <section className="bg-gray-900/30 -mx-4 px-4 py-6 md:py-8 rounded-2xl md:rounded-3xl">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 md:mb-6">
-            <h2 className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
-              热门拍卖
-            </h2>
-            <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-2 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
-              <button 
-                onClick={() => setAuctionFilter('ending')}
-                className={`flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'ending' ? 'bg-orange-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
-              >
-                ⏰ 即将结束
-              </button>
-              <button 
-                onClick={() => setAuctionFilter('new')}
-                className={`flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm transition-all whitespace-nowrap ${auctionFilter === 'new' ? 'bg-violet-600 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}
-              >
-                🆕 最新上架
-              </button>
-              <Link href="/auction" className="flex-shrink-0 px-2.5 md:px-4 py-1.5 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap">
-                查看全部
-              </Link>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {filteredAuctions.map((auction) => (
-              <div key={auction.id} className="group bg-gray-800/50 rounded-xl overflow-hidden hover:bg-gray-700/50 transition-all cursor-pointer" onClick={() => handleBid(auction)}>
-                <div className="aspect-square relative bg-gray-700">
-                  <img src={auction.image} alt={auction.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                  <div className="absolute top-2 left-2 right-2 flex justify-between">
-                    <span className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-0.5 ${
-                      countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1 
-                        ? 'bg-red-600 animate-pulse' 
-                        : 'bg-orange-600/80 backdrop-blur-sm'
-                    }`}>
-                      <Clock className="w-3 h-3" /> 
-                      <span>{formatCountdown(auction.id)}</span>
-                    </span>
-                    <span className={`px-1.5 py-0.5 backdrop-blur-sm rounded-lg text-[10px] ${auction.rarity === '传说' ? 'bg-orange-500/60' : 'bg-purple-500/60'}`}>{auction.rarity === '传说' ? 'SSR' : 'SR'}</span>
-                  </div>
+        {/* 热门拍卖 - 高大上风格 */}
+        <section className="relative -mx-4 px-4 py-8 md:py-12 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-950/20 via-transparent to-transparent" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-red-500/10 rounded-full blur-3xl" />
+          
+          <div className="relative max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25">
+                  <span className="text-lg md:text-xl">🔨</span>
                 </div>
-                <div className="p-2 md:p-3">
-                  <h3 className="font-bold text-sm truncate">{auction.name}</h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <div>
-                      <p className="text-[10px] text-gray-500">当前价</p>
-                      <p className="text-orange-400 font-bold text-sm">{auction.price} BOX</p>
-                    </div>
-                    <p className="text-[10px] text-gray-500">{auction.bids}次</p>
-                  </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleBid(auction); }}
-                    className="w-full mt-2 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg text-xs font-bold"
-                  >
-                    参与竞拍
-                  </button>
-                </div>
+                <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">Hot Auctions</span>
+              </h2>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setAuctionFilter('ending')}
+                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${auctionFilter === 'ending' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                >
+                  ⏰ Ending
+                </button>
+                <button 
+                  onClick={() => setAuctionFilter('new')}
+                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${auctionFilter === 'new' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                >
+                  ✨ New
+                </button>
+                <Link href="/auction" className="px-3 md:px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 rounded-xl text-xs md:text-sm font-medium transition-all">
+                  View All →
+                </Link>
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+              {filteredAuctions.slice(0, 4).map((auction) => {
+                const rarityClass = auction.rarity === 'legendary' || auction.rarity === '传说' ? 'from-amber-500 via-orange-500 to-yellow-500' : 'from-violet-500 via-purple-500 to-pink-500';
+                const urgency = countdown[auction.id]?.days !== undefined && countdown[auction.id].days < 1;
+                
+                return (
+                  <div key={auction.id} 
+                    onClick={() => handleBid(auction)}
+                    className="group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-orange-500/30 hover:bg-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10"
+                  >
+                    <div className="relative aspect-square overflow-hidden">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${rarityClass} opacity-10`} />
+                      <img src={auction.image} alt={auction.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                      
+                      <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase ${auction.rarity === 'legendary' || auction.rarity === '传说' ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-violet-500 to-purple-500'}`}>
+                        {auction.rarity === 'legendary' || auction.rarity === '传说' ? 'Legendary' : auction.rarity === 'Epic' ? 'Epic' : 'Rare'}
+                      </div>
+                      
+                      <div className={`absolute top-3 right-3 px-3 py-2 rounded-xl text-xs font-bold flex flex-col items-center min-w-[60px] ${urgency ? 'bg-red-600 text-white animate-pulse shadow-lg shadow-red-500/50' : 'bg-orange-500/90 text-white shadow-lg shadow-orange-500/30'}`}>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatCountdown(auction.id)}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <span className="block w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl text-center transition-colors">
+                            Place Bid
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 md:p-4">
+                      <h3 className="font-bold text-white text-sm truncate">{auction.name}</h3>
+                      <p className="text-gray-500 text-xs mb-3">by {auction.artist}</p>
+                      
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-gray-500 text-[10px]">Current Bid</p>
+                          <p className="text-lg font-bold text-orange-400">{auction.price} BOX</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-gray-500 text-[10px]">{auction.bids} bids</p>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2 border-t border-white/5">
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <span className="text-gray-500">Buy Now</span>
+                          <span className="text-white font-semibold">{auction.buyNowPrice} BOX</span>
+                        </div>
+                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full" style={{ width: `${Math.min(100, (auction.price / auction.buyNowPrice) * 100)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
-        {/* 热门NFT */}
-        <section>
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-              <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-violet-500 to-pink-500 rounded-full" />
-              热门NFT
-            </h2>
-            <Link href="/market" className="text-violet-400 hover:text-violet-300 flex items-center gap-1">
-              查看全部 <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-            {hotNFTs.map((nft) => (
-              <Link key={nft.id} href={`/nft/${nft.id}`} className="group bg-gray-900/60 rounded-xl md:rounded-2xl overflow-hidden hover:bg-gray-800/80 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10">
-                <div className="aspect-square relative bg-gray-800">
-                  <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                  <span className={`absolute top-2 md:top-3 right-2 md:right-3 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs font-bold ${rarityColors[nft.rarity] || 'bg-gray-600'}`}>{nft.rarity}</span>
+        {/* 热门NFT - 高大上风格 */}
+        <section className="relative -mx-4 px-4 py-8 md:py-12 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-violet-950/20 via-transparent to-transparent" />
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl" />
+          
+          <div className="relative max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <span className="text-lg md:text-xl">🖼️</span>
                 </div>
-                <div className="p-2 md:p-4">
-                  <p className="text-[10px] md:text-xs text-gray-400">{nft.collection}</p>
-                  <p className="text-sm font-medium truncate mb-1 md:mb-2">{nft.name}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-violet-400 font-bold text-sm">{nft.price} SUI</span>
-                    <span className={`text-[10px] md:text-xs flex items-center gap-0.5 md:gap-1 ${nft.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {nft.change >= 0 ? <ArrowUp className="w-2 md:w-3 h-2 md:h-3" /> : <ArrowDown className="w-2 md:w-3 h-2 md:h-3" />}
-                      {Math.abs(nft.change)}%
-                    </span>
-                  </div>
-                </div>
+                <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Hot NFTs</span>
+              </h2>
+              <Link href="/market" className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 rounded-xl text-sm font-medium transition-all">
+                View All →
               </Link>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+              {nftData.slice(0, 5).map((nft) => {
+                const rarityClass = rarityColors[nft.rarity] || 'from-gray-500 to-slate-600';
+                const borderColor = nft.rarity === 'legendary' ? 'border-amber-500/50 shadow-amber-500/20' : nft.rarity === 'epic' ? 'border-violet-500/50 shadow-violet-500/20' : 'border-white/10';
+                
+                return (
+                  <Link key={nft.id} href={`/nft/${nft.id}`} className="group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-violet-500/30 hover:bg-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/10 hover:-translate-y-1">
+                    <div className="relative aspect-square overflow-hidden">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${rarityClass} opacity-10`} />
+                      <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                      
+                      <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase ${rarityClass}`}>
+                        {nft.rarity}
+                      </span>
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <span className="block w-full py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl text-center transition-colors">
+                            View Details
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 md:p-4">
+                      <p className="text-gray-500 text-xs truncate mb-1">{nft.collection}</p>
+                      <p className="text-white font-medium text-sm truncate mb-3">{nft.name}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-violet-400 font-bold">{nft.price} {nft.priceUnit || 'SUI'}</span>
+                        <span className={`text-xs flex items-center gap-1 ${nft.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {nft.change >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                          {Math.abs(nft.change)}%
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </section>
 

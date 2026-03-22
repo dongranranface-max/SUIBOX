@@ -7,7 +7,7 @@ export default function TermsPage() {
   const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   return (
     <div className="min-h-screen bg-black text-white">
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <h1 className="text-3xl font-bold mb-8 text-center">📜 服务条款</h1>
         
         <div className="space-y-6 text-gray-300 leading-relaxed">

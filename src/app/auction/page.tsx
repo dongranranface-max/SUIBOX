@@ -32,9 +32,13 @@ export default function AuctionPage() {
   const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [activeTab, setActiveTab] = useState<TabType>('hot');
   const [selectedAuction, setSelectedAuction] = useState<typeof auctionList[0] | null>(null);
+  const [modalTab, setModalTab] = useState<'bid' | 'offer' | 'history'>('bid');
   const [countdown, setCountdown] = useState<Record<number, {days: number; hours: number; minutes: number; seconds: number}>>({});
   const [bidPrice, setBidPrice] = useState('');
   const [bidError, setBidError] = useState('');
+  const [offerPrice, setOfferPrice] = useState('');
+  const [offerType, setOfferType] = useState<'fixed' | 'premium'>('fixed');
+  const [premiumPercent, setPremiumPercent] = useState(10);
 
   const filteredAuctions = useMemo(() => {
     let result = [...auctionList];
@@ -115,6 +119,22 @@ export default function AuctionPage() {
   const handleBuyNow = () => {
     if (!selectedAuction) return;
     alert(`Purchase successful!\nAmount: ${selectedAuction.buyNowPrice} BOX`);
+    setSelectedAuction(null);
+  };
+
+  // 溢价处理
+  const handlePremiumChange = (percent: number) => {
+    setPremiumPercent(percent);
+    if (selectedAuction) {
+      const premium = selectedAuction.currentPrice * (1 + percent / 100);
+      setOfferPrice(premium.toFixed(2));
+    }
+  };
+
+  // 提交报价
+  const submitOffer = () => {
+    if (!offerPrice || parseFloat(offerPrice) <= 0) return;
+    alert(`Offer submitted!\nPrice: ${offerPrice} BOX\nPremium: +${premiumPercent}%\nWaiting for seller confirmation...`);
     setSelectedAuction(null);
   };
 
@@ -353,6 +373,28 @@ export default function AuctionPage() {
                   </div>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6">
+                  <button
+                    onClick={() => setModalTab('bid')}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${modalTab === 'bid' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+                  >
+                    Place Bid
+                  </button>
+                  <button
+                    onClick={() => setModalTab('offer')}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${modalTab === 'offer' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+                  >
+                    Make Offer
+                  </button>
+                  <button
+                    onClick={() => setModalTab('history')}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${modalTab === 'history' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+                  >
+                    History
+                  </button>
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   <div className="bg-white/5 rounded-xl p-3 text-center">
@@ -369,47 +411,138 @@ export default function AuctionPage() {
                   </div>
                 </div>
 
-                {/* Bid Input */}
-                <div className="mb-4">
-                  <label className="block text-gray-500 text-xs mb-2">Your Bid (min {selectedAuction.currentPrice + 10} BOX)</label>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setBidPrice(String(Math.max(selectedAuction.currentPrice + 10, parseInt(bidPrice) - 10)))}
-                      className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
+                {/* Tab Content */}
+                {modalTab === 'bid' && (
+                  <>
+                    {/* Bid Input */}
+                    <div className="mb-4">
+                      <label className="block text-gray-500 text-xs mb-2">Your Bid (min {selectedAuction.currentPrice + 10} BOX)</label>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setBidPrice(String(Math.max(selectedAuction.currentPrice + 10, parseInt(bidPrice) - 10)))}
+                          className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <input
+                          type="number"
+                          value={bidPrice}
+                          onChange={(e) => { setBidPrice(e.target.value); setBidError(''); }}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-center font-semibold focus:outline-none focus:border-orange-500/50"
+                        />
+                        <button 
+                          onClick={() => setBidPrice(String(parseInt(bidPrice) + 10))}
+                          className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {bidError && <p className="text-red-400 text-xs mt-2">{bidError}</p>}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSubmitBid}
+                        className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/20"
+                      >
+                        Place Bid
+                      </button>
+                      <button
+                        onClick={handleBuyNow}
+                        className="flex-1 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-all"
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {modalTab === 'offer' && (
+                  <div className="space-y-4">
+                    {/* Offer Type */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setOfferType('fixed'); setOfferPrice(String(selectedAuction.currentPrice)); }}
+                        className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${offerType === 'fixed' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+                      >
+                        Fixed Price
+                      </button>
+                      <button
+                        onClick={() => setOfferType('premium')}
+                        className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${offerType === 'premium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+                      >
+                        Premium Offer
+                      </button>
+                    </div>
+
+                    {/* Price Input */}
+                    <div>
+                      <label className="text-gray-500 text-xs mb-2 block">Your Offer Price</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={offerPrice}
+                          onChange={(e) => setOfferPrice(e.target.value)}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+                          placeholder="Enter price"
+                        />
+                        <span className="text-white font-medium">BOX</span>
+                      </div>
+                    </div>
+
+                    {/* Premium Slider */}
+                    {offerType === 'premium' && (
+                      <div>
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-gray-500">Premium</span>
+                          <span className="text-amber-400 font-medium">+{premiumPercent}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={premiumPercent}
+                          onChange={(e) => handlePremiumChange(parseInt(e.target.value))}
+                          className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    )}
+
+                    {/* Submit Offer */}
+                    <button
+                      onClick={submitOffer}
+                      className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all"
                     >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <input
-                      type="number"
-                      value={bidPrice}
-                      onChange={(e) => { setBidPrice(e.target.value); setBidError(''); }}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-center font-semibold focus:outline-none focus:border-orange-500/50"
-                    />
-                    <button 
-                      onClick={() => setBidPrice(String(parseInt(bidPrice) + 10))}
-                      className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
+                      Submit Offer (Seller Confirm)
                     </button>
                   </div>
-                  {bidError && <p className="text-red-400 text-xs mt-2">{bidError}</p>}
-                </div>
+                )}
 
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSubmitBid}
-                    className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/20"
-                  >
-                    Place Bid
-                  </button>
-                  <button
-                    onClick={handleBuyNow}
-                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-all"
-                  >
-                    Buy Now
-                  </button>
-                </div>
+                {modalTab === 'history' && (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-white">0x1234...abcd</span>
+                          <span className="text-orange-400 font-bold">+50 BOX</span>
+                        </div>
+                        <p className="text-gray-500 text-xs">2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                      <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-pink-500 rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-white">0x5678...efgh</span>
+                          <span className="text-orange-400 font-bold">+30 BOX</span>
+                        </div>
+                        <p className="text-gray-500 text-xs">5 hours ago</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

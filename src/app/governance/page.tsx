@@ -202,7 +202,7 @@ export default function GovernancePage() {
       {/* 头部 */}
       <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 to-black py-10">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, violet 0%, transparent 50%)' }} />
-        <div className="max-w-5xl mx-auto px-6 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl font-bold mb-3 flex items-center gap-3">
               <Vote className="w-8 h-8 text-violet-400" />
@@ -234,7 +234,7 @@ export default function GovernancePage() {
       </div>
 
       {/* 主内容 */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* 提案类型筛选 */}
         <div className="flex flex-wrap gap-2 mb-6">
           {typeFilters.map(type => (
