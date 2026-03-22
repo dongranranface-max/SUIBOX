@@ -6,14 +6,14 @@ const ZKLOGIN_CONFIG = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirectUri: process.env.ZKLOGIN_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: 'https://suibox.io/api/auth/callback',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     userInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
   },
   discord: {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    redirectUri: process.env.ZKLOGIN_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: 'https://suibox.io/api/auth/callback',
     tokenUrl: 'https://discord.com/api/oauth2/token',
     userInfoUrl: 'https://discord.com/api/users/@me',
   },
