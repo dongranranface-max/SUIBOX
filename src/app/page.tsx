@@ -3,13 +3,35 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { ChevronRight, ArrowUp, ArrowDown, Clock, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ArrowUp, ArrowDown, Clock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStats } from '@/hooks/useStats';
 import { useI18n } from '@/lib/i18n';
 
+// 从API获取轮播图
+async function fetchBanners() {
+  try {
+    const res = await fetch('/api/home?type=banners');
+    const data = await res.json();
+    if (data.banners && data.banners.length > 0) {
+      return data.banners.map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        desc: b.description,
+        link: b.link || '/box',
+        bg: b.bg_color || 'from-violet-600 via-purple-600 to-pink-600',
+        bg_image: b.bg_image || '',
+        emoji: b.emoji || '🎁'
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to fetch banners:', e);
+  }
+  return null;
+}
+
 // 轮播图
-const banners = [
+const defaultBanners = [
   { id: 1, title: 'NFT盲盒', desc: '打开盲盒，赢取稀有NFT！', link: '/box', bg: 'from-violet-600 via-purple-600 to-pink-600', emoji: '🎁' },
   { id: 2, title: '碎片合成', desc: '碎片合成NFT，赢取BOX奖励！', link: '/craft', bg: 'from-blue-600 via-cyan-600 to-teal-600', emoji: '⚗️' },
   { id: 3, title: 'NFT拍卖', desc: '稀有NFT正在拍卖中！', link: '/auction', bg: 'from-orange-600 via-red-600 to-pink-600', emoji: '🔨' },
@@ -74,6 +96,7 @@ const rarityColors: Record<string, string> = {
 export default function Home() {
   const { t } = useI18n?.() || { t: {} };
   const [currentBanner, setCurrentBanner] = useState(0);
+  const [banners, setBanners] = useState(defaultBanners);
   const [countdown, setCountdown] = useState<Record<number, {days: number, hours: number, minutes: number, seconds: number}>>({});
   const [bidModal, setBidModal] = useState<{show: boolean, auction?: any}>({show: false});
   const [bidPrice, setBidPrice] = useState('');
@@ -101,13 +124,22 @@ export default function Home() {
     }
   }, [stats, statsLoading, hasLoadedOnce]);
 
-  // 轮播图自动滑动
+  // 从API加载轮播图
+  useEffect(() => {
+    fetchBanners().then(data => {
+      if (data && data.length > 0) {
+        setBanners(data);
+      }
+    });
+  }, []);
+
+  // 轮播图自动滑动 - 3秒
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
-    }, 4000);
+    }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [banners.length]);
 
   // 拍卖倒计时
   useEffect(() => {
@@ -170,37 +202,52 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* 轮播图 - 移动端适配 */}
-      <section className="relative h-[300px] md:h-[400px] overflow-hidden">
+      {/* 轮播图 - 自适应 */}
+      <section className="relative w-full h-[35vh] sm:h-[40vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
         {banners.map((banner, i) => (
           <Link 
             key={banner.id} 
             href={banner.link}
             className={`absolute inset-0 bg-gradient-to-r ${banner.bg} transition-all duration-500 ${i === currentBanner ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}`}
           >
-            <div className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-8">
+            <div className="max-w-7xl mx-auto h-full flex items-center px-8 sm:px-12 md:px-16 lg:px-20">
               <div className="flex-1">
-                <span className="text-5xl md:text-7xl mb-4 md:mb-6 block">{banner.emoji}</span>
-                <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">{banner.title}</h1>
-                <p className="text-lg md:text-xl opacity-90 mb-4 md:mb-6">{banner.desc}</p>
-                <span className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-white/20 hover:bg-white/30 rounded-xl md:rounded-2xl transition-all text-base md:text-lg font-medium">
-                  立即体验 <ChevronRight className="w-5 h-5" />
+                <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-3 sm:mb-4 md:mb-6 block">{banner.emoji}</span>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-4">{banner.title}</h1>
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-4 sm:mb-5 md:mb-6">{banner.desc}</p>
+                <span className="inline-flex items-center gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 bg-white/20 hover:bg-white/30 rounded-xl md:rounded-2xl transition-all text-sm sm:text-base md:text-lg font-medium">
+                  立即体验 <ChevronRight className="w-4 sm:w-5 md:w-5" />
                 </span>
               </div>
-              <div className="w-40 md:w-72 h-40 md:h-72 relative hidden sm:block">
+              <div className="w-32 sm:w-40 md:w-56 lg:w-72 h-32 sm:h-40 md:h-56 lg:h-72 relative hidden sm:block">
                 <div className="absolute inset-0 bg-white/10 rounded-full animate-ping" />
                 <Image src="/suibox-logo.png" alt="SUIBOX" width={288} height={288} className="relative object-contain drop-shadow-2xl" />
               </div>
             </div>
           </Link>
         ))}
+        
+        {/* 左右切换按钮 */}
+        <button 
+          onClick={() => setCurrentBanner((currentBanner - 1 + banners.length) % banners.length)}
+          className="absolute left-2 sm:left-3 md:left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+        </button>
+        <button 
+          onClick={() => setCurrentBanner((currentBanner + 1) % banners.length)}
+          className="absolute right-2 sm:right-3 md:right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+        </button>
+        
         {/* 轮播指示器 */}
-        <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
           {banners.map((_, i) => (
             <button 
               key={i} 
               onClick={() => setCurrentBanner(i)} 
-              className={`h-2 md:h-3 rounded-full transition-all ${i === currentBanner ? 'w-6 md:w-10 bg-white' : 'w-2 md:w-3 bg-white/50'}`} 
+              className={`h-1.5 sm:h-2 md:h-3 rounded-full transition-all ${i === currentBanner ? 'w-4 sm:w-6 md:w-10 bg-white' : 'w-1.5 sm:w-2 md:w-3 bg-white/50'}`} 
             />
           ))}
         </div>

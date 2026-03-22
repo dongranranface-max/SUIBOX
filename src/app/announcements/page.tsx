@@ -1,236 +1,587 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, TrendingUp, Calendar, ExternalLink, X, Pin, AlertTriangle, Gift, Zap, Shield } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
+import { useState, useEffect } from 'react';
+import { Bell, Pin, ExternalLink, ArrowLeft, Loader2, Megaphone, Gift, Zap, Info, Clock, Star, Share2, Check, Twitter, Link2, Send } from 'lucide-react';
 
-// 模拟公告数据
-const announcements = [
-  {
-    id: 1,
-    type: 'important',
-    typeText: '重要公告',
-    icon: '🔴',
-    title: '系统升级通知',
-    content: 'SUIBOX 将于 2026-03-16 02:00-04:00 UTC 进行系统升级，届时部分功能可能短暂不可用，请提前做好准备。升级完成后将恢复所有服务，感谢理解！',
-    time: '2026-03-15 14:00',
-    pinned: true,
-  },
-  {
-    id: 2,
-    type: 'activity',
-    typeText: '活动公告',
-    icon: '🟠',
-    title: '周末双倍奖励活动',
-    content: '本周六、周日所有质押用户享受双倍收益！活动时间：2026-03-21 00:00 - 2026-03-23 23:59 UTC',
-    time: '2026-03-14 10:00',
-    pinned: true,
-  },
-  {
-    id: 3,
-    type: 'update',
-    typeText: '更新公告',
-    icon: '🟢',
-    title: '新功能上线：NFT 质押挖矿',
-    content: '全新 NFT 质押挖矿功能正式上线！持有 NFT 参与质押，每日获取 BOX 奖励。稀有 NFT 享受更高算力权重，最高 5 倍收益！',
-    time: '2026-03-13 09:00',
-    pinned: false,
-  },
-  {
-    id: 4,
-    type: 'governance',
-    typeText: '治理公告',
-    icon: '🔵',
-    title: '社区提案通过公告',
-    content: '提案 #2 "降低盲盒手续费至5%" 已投票通过，将于 3 月 20 日正式执行。感谢社区参与治理！',
-    time: '2026-03-12 18:00',
-    pinned: false,
-  },
-  {
-    id: 5,
-    type: 'warning',
-    typeText: '风险提示',
-    icon: '🟡',
-    title: '谨防诈骗公告',
-    content: '近期发现冒充 SUIBOX 官方的诈骗行为，请注意：官方不会索要您的私钥，也不会通过私信发送链接。请通过官方渠道获取信息，谨防受骗！',
-    time: '2026-03-10 12:00',
-    pinned: false,
-  },
-];
+// 标记通知为已读
+function markNotificationsAsRead(notificationIds: string[]) {
+  if (typeof window === 'undefined') return;
+  const readIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+  const newReadIds = [...new Set([...readIds, ...notificationIds])];
+  localStorage.setItem('readNotifications', JSON.stringify(newReadIds));
+}
 
-const typeConfig: Record<string, { bg: string; text: string; icon: any }> = {
-  important: { bg: 'bg-red-500/20', text: 'text-red-400', icon: AlertTriangle },
-  activity: { bg: 'bg-orange-500/20', text: 'text-orange-400', icon: Gift },
-  update: { bg: 'bg-green-500/20', text: 'text-green-400', icon: Zap },
-  governance: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: Shield },
-  warning: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', icon: AlertTriangle },
+interface Announcement {
+  id: number;
+  type?: string;
+  typeText?: string;
+  title: string;
+  content: string;
+  time: string;
+  isPinned?: boolean;
+}
+
+const typeStyles: Record<string, { 
+  bg: string; 
+  text: string; 
+  dot: string; 
+  border: string; 
+  label: string;
+  gradient: string;
+  iconBg: string;
+  icon: React.ElementType;
+  accent: string;
+}> = {
+  system: { 
+    bg: 'bg-blue-500/20', 
+    text: 'text-blue-400', 
+    dot: 'bg-blue-500', 
+    border: 'border-blue-500/30', 
+    label: 'System', 
+    gradient: 'from-blue-600/20 via-blue-500/10 to-transparent', 
+    iconBg: 'bg-blue-500/20', 
+    icon: Info,
+    accent: '#3b82f6'
+  },
+  announcement: { 
+    bg: 'bg-rose-500/20', 
+    text: 'text-rose-400', 
+    dot: 'bg-rose-500', 
+    border: 'border-rose-500/30', 
+    label: 'Announcement', 
+    gradient: 'from-rose-600/20 via-rose-500/10 to-transparent', 
+    iconBg: 'bg-rose-500/20', 
+    icon: Megaphone,
+    accent: '#f43f5e'
+  },
+  promotion: { 
+    bg: 'bg-amber-500/20', 
+    text: 'text-amber-400', 
+    dot: 'bg-amber-500', 
+    border: 'border-amber-500/30', 
+    label: 'Promotion', 
+    gradient: 'from-amber-600/20 via-amber-500/10 to-transparent', 
+    iconBg: 'bg-amber-500/20', 
+    icon: Gift,
+    accent: '#f59e0b'
+  },
+  activity: { 
+    bg: 'bg-emerald-500/20', 
+    text: 'text-emerald-400', 
+    dot: 'bg-emerald-500', 
+    border: 'border-emerald-500/30', 
+    label: 'Event', 
+    gradient: 'from-emerald-600/20 via-emerald-500/10 to-transparent', 
+    iconBg: 'bg-emerald-500/20', 
+    icon: Zap,
+    accent: '#10b981'
+  },
+  important: { 
+    bg: 'bg-red-500/20', 
+    text: 'text-red-400', 
+    dot: 'bg-red-500', 
+    border: 'border-red-500/30', 
+    label: 'Important', 
+    gradient: 'from-red-600/20 via-red-500/10 to-transparent', 
+    iconBg: 'bg-red-500/20', 
+    icon: Megaphone,
+    accent: '#ef4444'
+  },
+  activity_old: { 
+    bg: 'bg-orange-500/20', 
+    text: 'text-orange-400', 
+    dot: 'bg-orange-500', 
+    border: 'border-orange-500/30', 
+    label: 'Event', 
+    gradient: 'from-orange-600/20 via-orange-500/10 to-transparent', 
+    iconBg: 'bg-orange-500/20', 
+    icon: Zap,
+    accent: '#f97316'
+  },
 };
 
-export default function AnnouncementsPage() {
-  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<typeof announcements[0] | null>(null);
+function AnnouncementDetail({ item, onBack }: { item: Announcement; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const getTypeStyle = (type?: string) => typeStyles[type || ''] || typeStyles.system;
+  const style = getTypeStyle(item.type);
+  const IconComponent = style.icon;
   
-  const pinnedAnnouncements = announcements.filter(a => a.pinned);
-  const normalAnnouncements = announcements.filter(a => !a.pinned);
-
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/announcements?id=${item.id}` : '';
+  
+  // 完整的分享内容：标题 + 内容摘要 + 链接
+  const shareText = `${item.title}\n\n${item.content.slice(0, 150)}${item.content.length > 150 ? '...' : ''}\n\n`;
+  const fullShareContent = shareText + shareUrl;
+  
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(fullShareContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+  
+  const handleShareTwitter = () => {
+    const text = shareText;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(url, '_blank', 'width=550,height=420');
+  };
+  
+  const handleShareTelegram = () => {
+    const text = shareText;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'width=550,height=420');
+  };
+  
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* 头部 */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-violet-900/30 to-black py-6 md:py-10">
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, violet 0%, transparent 50%)' }} />
-        <div className="max-w-4xl mx-auto px-4 md:px-6 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3 flex items-center gap-2 md:gap-3">
-              <Bell className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
-              平台公告
-            </h1>
-            <p className="text-gray-400 text-sm md:text-base">了解 SUIBOX 最新动态和重要通知</p>
-            
-            {/* 统计 */}
-            <div className="flex gap-2 md:gap-4 mt-4 md:mt-6">
-              <div className="bg-white/5 rounded-xl px-3 md:px-4 py-2 border border-white/10 min-h-[44px] flex items-center">
-                <span className="text-amber-400 font-bold">{announcements.length}</span>
-                <span className="text-gray-400 text-sm ml-1">条公告</span>
-              </div>
-              <div className="bg-white/5 rounded-xl px-3 md:px-4 py-2 border border-white/10 min-h-[44px] flex items-center">
-                <span className="text-red-400 font-bold">{pinnedAnnouncements.length}</span>
-                <span className="text-gray-400 text-sm ml-1">条置顶</span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
+    <div className="max-w-[800px] mx-auto px-6 py-12">
+      <button 
+        onClick={onBack}
+        className="group flex items-center gap-2.5 text-[#6b6b6d] hover:text-white text-[14px] mb-8 transition-all duration-200"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back to all updates
+      </button>
 
-      {/* 主内容 */}
-      <main className="max-w-4xl mx-auto px-4 md:py-8">
-        {/* 置顶公告 */}
-        {pinnedAnnouncements.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Pin className="w-5 h-5 text-amber-400" />
-              <span className="font-bold">置顶公告</span>
-            </div>
-            <div className="space-y-4">
-              {pinnedAnnouncements.map((announcement) => {
-                const config = typeConfig[announcement.type];
-                return (
-                  <motion.div
-                    key={announcement.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setSelectedAnnouncement(announcement)}
-                    className={`${config.bg} rounded-xl p-3 md:p-4 border cursor-pointer hover:opacity-80 transition min-h-[44px] md:min-h-auto`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                        <span className="text-xl md:text-2xl flex-shrink-0">{announcement.icon}</span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-sm md:text-base truncate">{announcement.title}</h3>
-                            <span className={`${config.text} text-xs px-2 py-0.5 rounded-full ${config.bg} flex-shrink-0`}>
-                              {announcement.typeText}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {announcement.time}
-                          </div>
-                        </div>
-                      </div>
-                      <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+      <div className="mb-8">
+        {item.type && (
+          <div className="flex items-center gap-3 mb-5">
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold border"
+              style={{ 
+                backgroundColor: `${style.accent}15`, 
+                color: style.accent,
+                borderColor: `${style.accent}30`
+              }}
+            >
+              <IconComponent className="w-3.5 h-3.5" />
+              {style.label}
+            </span>
+            {item.isPinned && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                <Star className="w-3 h-3 fill-rose-400" />
+                Featured
+              </span>
+            )}
           </div>
         )}
 
-        {/* 普通公告 */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Bell className="w-5 h-5 text-gray-400" />
-            <span className="font-bold">最新公告</span>
-          </div>
-          <div className="space-y-3">
-            {normalAnnouncements.map((announcement) => {
-              const config = typeConfig[announcement.type];
-              return (
-                <motion.div
-                  key={announcement.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => setSelectedAnnouncement(announcement)}
-                  className="bg-white/5 rounded-xl p-3 md:p-4 border border-white/10 cursor-pointer hover:bg-white/10 transition min-h-[44px]"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                      <span className="text-lg md:text-xl flex-shrink-0">{announcement.icon}</span>
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-sm md:text-base truncate">{announcement.title}</h3>
-                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {announcement.time}
-                        </div>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-                  </div>
-                </motion.div>
-              );
-            })}
+        <h1 className="text-[32px] md:text-[38px] font-bold text-white mb-5 leading-[1.25] tracking-tight">
+          {item.title}
+        </h1>
+        
+        <div className="flex items-center gap-4 text-[13px] text-[#6b6b6d]">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span>{item.time}</span>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* 公告详情弹窗 */}
-      {selectedAnnouncement && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
-          onClick={() => setSelectedAnnouncement(null)}
-        >
-          <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="bg-gray-900 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg max-h-[90vh] overflow-y-auto border-t md:border border-gray-700 md:border-white/20"
-            onClick={e => e.stopPropagation()}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 md:p-10 border"
+        style={{ 
+          background: `linear-gradient(135deg, ${style.accent}08 0%, transparent 50%)`,
+          borderColor: `${style.accent}20`
+        }}
+      >
+        <div 
+          className="absolute top-0 right-0 w-64 h-64 opacity-10 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at top right, ${style.accent}40 0%, transparent 70%)`
+          }}
+        />
+        
+        <div className="relative">
+          <p className="text-[17px] text-[#c0c0c2] leading-[1.8] whitespace-pre-wrap font-normal">
+            {item.content}
+          </p>
+        </div>
+      </div>
+
+      {/* Share Section */}
+      <div className="mt-8 pt-6 border-t border-[#1f1f24]">
+        <p className="text-[13px] text-[#6b6b6d] mb-4">Share this update</p>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleCopyLink}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0f0f12] border border-[#1f1f24] rounded-xl hover:border-[#2a2a32] transition-all duration-200 group"
           >
-            {/* 移动端顶部装饰条 */}
-            <div className="flex justify-center pt-3 pb-1 md:hidden">
-              <div className="w-12 h-1 bg-gray-600 rounded-full" />
+            {copied ? (
+              <Check className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Link2 className="w-4 h-4 text-[#6b6b6d] group-hover:text-white transition-colors" />
+            )}
+            <span className="text-[13px] font-medium text-[#c0c0c2] group-hover:text-white transition-colors">
+              {copied ? 'Copied!' : 'Copy Link'}
+            </span>
+          </button>
+          
+          <button 
+            onClick={handleShareTwitter}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0f0f12] border border-[#1f1f24] rounded-xl hover:border-[#1da1f2]/30 transition-all duration-200 group"
+          >
+            <Twitter className="w-4 h-4 text-[#6b6b6d] group-hover:text-[#1da1f2] transition-colors" />
+            <span className="text-[13px] font-medium text-[#c0c0c2] group-hover:text-white transition-colors">
+              Twitter
+            </span>
+          </button>
+          
+          <button 
+            onClick={handleShareTelegram}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0f0f12] border border-[#1f1f24] rounded-xl hover:border-[#2AABEE]/30 transition-all duration-200 group"
+          >
+            <Send className="w-4 h-4 text-[#6b6b6d] group-hover:text-[#2AABEE] transition-colors" />
+            <span className="text-[13px] font-medium text-[#c0c0c2] group-hover:text-white transition-colors">
+              Telegram
+            </span>
+          </button>
+
+          <button 
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: item.title,
+                  text: item.content,
+                  url: shareUrl,
+                });
+              } else {
+                handleCopyLink();
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 border border-violet-500/30 rounded-xl hover:bg-violet-500/25 transition-all duration-200 group"
+          >
+            <Share2 className="w-4 h-4 text-violet-400 group-hover:text-violet-300" />
+            <span className="text-[13px] font-medium text-violet-300">
+              Share
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCard({ isPinned = false }: { isPinned?: boolean }) {
+  return (
+    <div className={`relative overflow-hidden bg-[#0f0f12] border border-[#1f1f24] rounded-2xl p-5 ${isPinned ? 'animate-pulse' : ''}`}>
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-xl bg-[#1a1a1f]" />
+        <div className="flex-1">
+          <div className="h-4 w-24 bg-[#1a1a1f] rounded-lg mb-3" />
+          <div className="h-5 w-3/4 bg-[#1a1a1f] rounded-lg mb-2" />
+          <div className="h-4 w-full bg-[#1a1a1f] rounded-lg mb-2" />
+          <div className="h-3 w-32 bg-[#1a1a1f] rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementCard({ item, isPinned = false, onClick }: { item: Announcement; isPinned?: boolean; onClick: () => void }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const style = typeStyles[item.type || ''] || typeStyles.system;
+  const IconComponent = style.icon;
+  
+  return (
+    <div 
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`
+        group relative overflow-hidden cursor-pointer
+        rounded-2xl border transition-all duration-300 ease-out
+        hover:shadow-lg hover:shadow-black/20
+        ${isPinned 
+          ? `bg-gradient-to-r ${style.gradient} border-[${style.accent}25] hover:border-[${style.accent}40]` 
+          : 'bg-[#0f0f12] border-[#1a1a1f] hover:border-[#2a2a32]'
+        }
+      `}
+      style={{
+        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+      }}
+    >
+      {/* Background Accent */}
+      <div 
+        className="absolute top-0 right-0 w-40 h-40 opacity-30 pointer-events-none transition-opacity duration-500"
+        style={{
+          background: `radial-gradient(circle at top right, ${style.accent}30 0%, transparent 70%)`,
+          opacity: isHovered ? 50 : 30
+        }}
+      />
+      
+      <div className="relative p-5 md:p-6">
+        <div className="flex items-start gap-4">
+          {/* Icon */}
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+            style={{ 
+              backgroundColor: `${style.accent}15`,
+              border: `1px solid ${style.accent}25`
+            }}
+          >
+            <IconComponent 
+              className="w-5 h-5" 
+              style={{ color: style.accent }}
+            />
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 mb-2.5 flex-wrap">
+              <span 
+                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border"
+                style={{ 
+                  backgroundColor: `${style.accent}12`, 
+                  color: style.accent,
+                  borderColor: `${style.accent}25`
+                }}
+              >
+                {style.label}
+              </span>
+              {item.isPinned && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500/12 text-rose-400 border border-rose-500/25">
+                  <Star className="w-3 h-3 fill-rose-400" />
+                  Featured
+                </span>
+              )}
             </div>
+
+            <h3 className="text-[17px] font-semibold text-white mb-2 leading-tight group-hover:transition-colors">
+              {item.title}
+            </h3>
             
-            <div className="p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{selectedAnnouncement.icon}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs ${typeConfig[selectedAnnouncement.type].bg} ${typeConfig[selectedAnnouncement.type].text}`}>
-                    {selectedAnnouncement.typeText}
-                  </span>
-                </div>
-                <button onClick={() => setSelectedAnnouncement(null)} className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-white bg-white/10 rounded-full md:bg-transparent md:rounded-none min-w-[44px]">
-                  ✕
-                </button>
-              </div>
-              
-              <h2 className="text-lg md:text-xl font-bold mb-2">{selectedAnnouncement.title}</h2>
-              <div className="text-sm text-gray-500 mb-4 flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                {selectedAnnouncement.time}
-              </div>
-              
-              <div className="bg-black/30 rounded-xl p-3 md:p-4 text-gray-300 whitespace-pre-wrap text-sm md:text-base">
-                {selectedAnnouncement.content}
+            <p className="text-[14px] text-[#6b6b6d] leading-[1.6] line-clamp-2 mb-3">
+              {item.content}
+            </p>
+            
+            <div className="flex items-center gap-3 text-[12px] text-[#4a4a4c]">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{item.time}</span>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+          
+          {/* Arrow */}
+          <ExternalLink 
+            className="w-5 h-5 shrink-0 transition-all duration-300 group-hover:translate-x-1"
+            style={{ 
+              color: style.accent,
+              opacity: isHovered ? 100 : 40
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementList() {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'featured' | 'latest'>('all');
+
+  useEffect(() => {
+    fetchAnnouncements();
+    // 标记所有通知为已读
+    markAllAsRead();
+  }, []);
+
+  // 标记所有通知为已读
+  const markAllAsRead = () => {
+    if (typeof window === 'undefined') return;
+    
+    fetch('/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        const list = data.data || data.notifications || [];
+        const allIds = list.map((n: any) => n.id);
+        markNotificationsAsRead(allIds);
+        
+        // 触发自定义事件通知 Header 更新数量
+        window.dispatchEvent(new CustomEvent('notificationsRead'));
+      })
+      .catch(console.error);
+  };
+
+  const fetchAnnouncements = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      
+      const list = data.notifications || data.data || [];
+      
+      if (list.length > 0) {
+        const mapped = list.map((item: any, index: number) => {
+          let mappedType = item.type || 'system';
+          let typeText = item.type;
+          
+          if (item.type === 'system') {
+            typeText = 'System';
+          } else if (item.type === 'announcement') {
+            typeText = 'Announcement';
+          } else if (item.type === 'promotion') {
+            typeText = 'Promotion';
+          } else if (item.type === 'activity') {
+            typeText = 'Activity';
+          } else if (item.type === 'important') {
+            typeText = 'Important';
+          }
+          
+          return {
+            id: item.id || `announcement-${index}`,
+            type: mappedType,
+            typeText: typeText,
+            title: item.title,
+            content: item.message || item.content,
+            time: item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : item.time || '',
+            isPinned: item.is_pinned === 1 || item.isPinned || index < 2,
+          };
+        });
+        setAnnouncements(mapped);
+      }
+    } catch (error) {
+      console.error('Failed to fetch announcements:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pinnedAnnouncements = announcements.filter(a => a.isPinned);
+  const latestAnnouncements = announcements.filter(a => !a.isPinned);
+  const selectedAnnouncement = announcements.find(a => a.id === selectedId);
+
+  if (loading) {
+    return (
+      <div className="max-w-[800px] mx-auto px-6 py-12">
+        <div className="mb-10">
+          <div className="w-48 h-10 bg-[#1a1a1f] rounded-lg mb-3 animate-pulse" />
+          <div className="w-72 h-5 bg-[#1a1a1f] rounded-lg animate-pulse" />
+        </div>
+        <div className="space-y-4">
+          <SkeletonCard isPinned />
+          <SkeletonCard isPinned />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedAnnouncement) {
+    return <AnnouncementDetail item={selectedAnnouncement} onBack={() => setSelectedId(null)} />;
+  }
+
+  return (
+    <div className="max-w-[800px] mx-auto px-6 py-12">
+      {/* Header */}
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
+            <Bell className="w-5 h-5 text-violet-400" />
+          </div>
+          <h1 className="text-[28px] font-bold text-white tracking-tight">
+            What's New
+          </h1>
+        </div>
+        <p className="text-[15px] text-[#6b6b6d]">
+          The latest updates, events, and announcements from SUIBOX
+        </p>
+      </div>
+
+      {/* Filter Buttons */}
+      <div className="flex gap-3 mb-8">
+        <button 
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+            filter === 'all' 
+              ? 'bg-violet-500/15 border border-violet-500/30 text-white' 
+              : 'bg-[#0f0f12] border border-[#1a1a1f] text-[#6b6b6d] hover:border-[#2a2a32]'
+          }`}
+        >
+          {announcements.length} Updates
+        </button>
+        <button 
+          onClick={() => setFilter('featured')}
+          className={`px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+            filter === 'featured' 
+              ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400' 
+              : 'bg-[#0f0f12] border border-[#1a1a1f] text-[#6b6b6d] hover:border-[#2a2a32]'
+          }`}
+        >
+          {pinnedAnnouncements.length} Featured
+        </button>
+        <button 
+          onClick={() => setFilter('latest')}
+          className={`px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+            filter === 'latest' 
+              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' 
+              : 'bg-[#0f0f12] border border-[#1a1a1f] text-[#6b6b6d] hover:border-[#2a2a32]'
+          }`}
+        >
+          {latestAnnouncements.length} Latest
+        </button>
+      </div>
+
+      {/* Pinned Section - Show when filter is 'all' or 'featured' */}
+      {(filter === 'all' || filter === 'featured') && pinnedAnnouncements.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-[13px] font-semibold text-[#4a4a4c] uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Pin className="w-4 h-4 text-rose-400" />
+            <span className="text-rose-400/80">Featured</span>
+          </h2>
+          <div className="space-y-4">
+            {pinnedAnnouncements.map((item) => (
+              <AnnouncementCard key={item.id} item={item} isPinned onClick={() => setSelectedId(item.id)} />
+            ))}
+          </div>
+        </section>
       )}
+
+      {/* Latest Section - Show when filter is 'all' or 'latest' */}
+      {(filter === 'all' || filter === 'latest') && latestAnnouncements.length > 0 && (
+        <section>
+          <h2 className="text-[13px] font-semibold text-[#4a4a4c] uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-violet-400" />
+            <span className="text-violet-400/80">Latest</span>
+          </h2>
+          <div className="space-y-3">
+            {latestAnnouncements.map((item) => (
+              <AnnouncementCard key={item.id} item={item} onClick={() => setSelectedId(item.id)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {announcements.length === 0 && (
+        <div className="text-center py-20">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#1a1a1f] flex items-center justify-center">
+            <Bell className="w-7 h-7 text-[#3a3a3c]" />
+          </div>
+          <p className="text-[15px] text-[#6b6b6d]">
+            {filter === 'featured' ? 'No featured announcements' : filter === 'latest' ? 'No latest announcements' : 'No updates yet'}
+          </p>
+          <p className="text-[13px] text-[#4a4a4c] mt-1">Check back soon for new announcements</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AnnouncementsPage() {
+  return (
+    <div className="min-h-screen bg-[#08080a]">
+      <AnnouncementList />
     </div>
   );
 }

@@ -22,8 +22,44 @@ db.exec(`
     email TEXT,
     name TEXT,
     avatar TEXT,
+    invite_code TEXT UNIQUE,
+    referrer_id INTEGER,
+    referrer_address TEXT,
+    status TEXT DEFAULT 'active',
+    login_count INTEGER DEFAULT 0,
+    last_login DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (referrer_id) REFERENCES users(id)
+  );
+
+  -- 用户资产表
+  CREATE TABLE IF NOT EXISTS user_assets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    sui_balance REAL DEFAULT 0,
+    box_balance REAL DEFAULT 0,
+    box_opens_remaining INTEGER DEFAULT 0,
+    total_nfts INTEGER DEFAULT 0,
+    nft_categories TEXT DEFAULT '{}',
+    airdrop_claimed REAL DEFAULT 0,
+    airdrop_pending REAL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  -- 邀请奖励记录表
+  CREATE TABLE IF NOT EXISTS invite_rewards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    inviter_id INTEGER NOT NULL,
+    invitee_id INTEGER NOT NULL,
+    box_reward INTEGER DEFAULT 0,
+    airdrop_reward REAL DEFAULT 0,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    claimed_at DATETIME,
+    FOREIGN KEY (inviter_id) REFERENCES users(id),
+    FOREIGN KEY (invitee_id) REFERENCES users(id)
   );
 
   -- NFT 表
@@ -83,10 +119,67 @@ db.exec(`
 
   -- 索引
   CREATE INDEX IF NOT EXISTS idx_users_address ON users(sui_address);
+  CREATE INDEX IF NOT EXISTS idx_users_invite_code ON users(invite_code);
+  CREATE INDEX IF NOT EXISTS idx_users_referrer ON users(referrer_id);
   CREATE INDEX IF NOT EXISTS idx_nfts_owner ON nfts(owner_address);
   CREATE INDEX IF NOT EXISTS idx_nfts_status ON nfts(status);
   CREATE INDEX IF NOT EXISTS idx_stakes_user ON stakes(user_address);
   CREATE INDEX IF NOT EXISTS idx_transactions_hash ON transactions(tx_hash);
+`);
+
+// 添加缺失的列（如果不存在）
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN invite_code TEXT UNIQUE`);
+} catch (e) {
+  // 列可能已存在
+}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN referrer_id INTEGER REFERENCES users(id)`);
+} catch (e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN referrer_address TEXT`);
+} catch (e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'`);
+} catch (e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0`);
+} catch (e) {}
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN last_login DATETIME`);
+} catch (e) {}
+
+// 创建 user_assets 表（如果不存在）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_assets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    sui_balance REAL DEFAULT 0,
+    box_balance REAL DEFAULT 0,
+    box_opens_remaining INTEGER DEFAULT 0,
+    total_nfts INTEGER DEFAULT 0,
+    nft_categories TEXT DEFAULT '{}',
+    airdrop_claimed REAL DEFAULT 0,
+    airdrop_pending REAL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// 创建 invite_rewards 表（如果不存在）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS invite_rewards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    inviter_id INTEGER NOT NULL,
+    invitee_id INTEGER NOT NULL,
+    box_reward INTEGER DEFAULT 0,
+    airdrop_reward REAL DEFAULT 0,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    claimed_at DATETIME,
+    FOREIGN KEY (inviter_id) REFERENCES users(id),
+    FOREIGN KEY (invitee_id) REFERENCES users(id)
+  );
 `);
 
 export { db };

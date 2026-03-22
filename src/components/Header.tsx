@@ -27,6 +27,33 @@ const dropdowns: Record<string, { name: string; href: string; icon?: any }[]> = 
   ],
 };
 
+// 获取未读通知数量的函数
+async function fetchNotificationCount(): Promise<number> {
+  try {
+    const res = await fetch('/api/notifications');
+    const data = await res.json();
+    const notifications = data.data || data.notifications || [];
+    
+    // 获取已读列表
+    const readIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    
+    // 返回未读数量
+    const unreadCount = notifications.filter((n: any) => !readIds.includes(n.id)).length;
+    return unreadCount;
+  } catch {
+    return 0;
+  }
+}
+
+// 标记通知为已读
+function markNotificationsAsRead(notificationIds: string[]) {
+  if (typeof window === 'undefined') return;
+  
+  const readIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+  const newReadIds = [...new Set([...readIds, ...notificationIds])];
+  localStorage.setItem('readNotifications', JSON.stringify(newReadIds));
+}
+
 const languages = [
   { code: 'zh', name: '中文', flag: '🇨🇳' },
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -41,11 +68,29 @@ export default function Header() {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 获取通知数量
+  useEffect(() => {
+    async function loadNotificationCount() {
+      const count = await fetchNotificationCount();
+      setNotificationCount(count);
+    }
+    loadNotificationCount();
+    
+    // 监听通知已读事件
+    const handleNotificationsRead = () => {
+      loadNotificationCount();
+    };
+    window.addEventListener('notificationsRead', handleNotificationsRead);
+    
+    return () => window.removeEventListener('notificationsRead', handleNotificationsRead);
   }, []);
 
   // 关闭移动菜单
@@ -105,6 +150,11 @@ export default function Header() {
                         item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
                       }`}>{item.badge}</span>
                     )}
+                    {item.showCount && notificationCount > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">
+                        {notificationCount}
+                      </span>
+                    )}
                   </Link>
                 )}
 
@@ -136,12 +186,14 @@ export default function Header() {
 
           {/* Right Side */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Notifications */}
+            {/* Notifications Bell */}
             <Link href="/announcements" className="relative p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
-                3
-              </span>
+              {notificationCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
             </Link>
 
             {/* Language - Desktop */}
