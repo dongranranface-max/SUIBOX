@@ -6,18 +6,18 @@ const ZKLOGIN_CONFIG = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirectUri: process.env.ZKLOGIN_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: 'https://suibox.io/api/auth/callback',
   },
   apple: {
     clientId: process.env.APPLE_CLIENT_ID || '',
     teamId: process.env.APPLE_TEAM_ID || '',
     keyId: process.env.APPLE_KEY_ID || '',
-    redirectUri: process.env.ZKLOGIN_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: 'https://suibox.io/api/auth/callback',
   },
   discord: {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    redirectUri: process.env.ZKLOGIN_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: 'https://suibox.io/api/auth/callback',
   },
 };
 
