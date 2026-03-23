@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-type Language = 'zh' | 'en' | 'ja' | 'ko' | 'ru';
+type Language = 'en' | 'zh' | 'ko' | 'es';
 
 interface Translations {
   [key: string]: string;
@@ -47,23 +47,6 @@ const translations: Record<Language, Translations> = {
     'common.remaining': 'Remaining',
     'common.price': 'Price',
   },
-  ja: {
-    'nav.invite': '招待',
-    'nav.box': 'ボックス',
-    'nav.craft': '合成',
-    'nav.auction': 'オークション',
-    'nav.dao': 'DAO',
-    'nav.join': '入驻',
-    'home.search': 'NFT、アーティスト、コレクションを検索...',
-    'home.login': 'ログイン',
-    'home.connect': 'ウォレット接続',
-    'search.placeholder': 'NFT、アーティスト、コレクションを検索...',
-    'search.noResult': '結果が見つかりません',
-    'search.hot': '人気検索',
-    'common.viewAll': 'すべて見る',
-    'common.remaining': '残り',
-    'common.price': '価格',
-  },
   ko: {
     'nav.invite': '초대',
     'nav.box': '박스',
@@ -81,22 +64,22 @@ const translations: Record<Language, Translations> = {
     'common.remaining': '남음',
     'common.price': '가격',
   },
-  ru: {
-    'nav.invite': 'Пригласить',
-    'nav.box': 'Бокс',
-    'nav.craft': 'Крафт',
-    'nav.auction': 'Аукцион',
+  es: {
+    'nav.invite': 'Invitar',
+    'nav.box': 'Caja',
+    'nav.craft': 'Crear',
+    'nav.auction': 'Subasta',
     'nav.dao': 'DAO',
-    'nav.join': 'Присоединиться',
-    'home.search': 'Поиск NFT, Артист, Коллекция...',
-    'home.login': 'Вход',
-    'home.connect': 'Подключить кошелек',
-    'search.placeholder': 'Поиск NFT, Артист, Коллекция...',
-    'search.noResult': 'Результатов не найдено',
-    'search.hot': 'Популярные',
-    'common.viewAll': 'Смотреть все',
-    'common.remaining': 'Осталось',
-    'common.price': 'Цена',
+    'nav.join': 'Unirse',
+    'home.search': 'Buscar NFT, artista, colección...',
+    'home.login': 'Iniciar sesión',
+    'home.connect': 'Conectar billetera',
+    'search.placeholder': 'Buscar NFT, artista, colección...',
+    'search.noResult': 'Sin resultados',
+    'search.hot': 'Búsquedas populares',
+    'common.viewAll': 'Ver todo',
+    'common.remaining': 'Restante',
+    'common.price': 'Precio',
   },
 };
 
@@ -107,13 +90,13 @@ interface I18nContextType {
 }
 
 const I18nContext = createContext<I18nContextType>({
-  language: 'zh',
+  language: 'en',
   setLanguage: () => {},
   t: (key: string) => key,
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('zh');
+  const [language, setLanguage] = useState<Language>('en');
 
   const t = (key: string): string => {
     return translations[language][key] || key;

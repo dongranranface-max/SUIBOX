@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Grid, List, Heart, ShoppingCart, X, Flame, Zap, DollarSign, MessageCircle, Send, TrendingUp, Users, Layers, Sparkles, Loader2, Filter, ChevronDown, Grid3X3, LayoutGrid, SlidersHorizontal, Fire, Star, Clock, ArrowUpDown, Plus, Minus } from 'lucide-react';
 import { useWallet } from '@suiet/wallet-kit';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/lib/i18n';
+import { executeOnchainPurchase, fetchWalletBalance, requestWalletAuthorization, type TradeCoinUnit } from '@/lib/marketTrade';
 
 interface NFT {
   id: string;
@@ -63,7 +64,8 @@ const sortOptions = [
 
 export default function MarketPage() {
   const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
-  const { isLoggedIn, login } = useAuth();
+  const { isLoggedIn, login, userAddress } = useAuth();
+  const wallet = useWallet();
   const [activeCategory, setActiveCategory] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('hot');
@@ -80,6 +82,59 @@ export default function MarketPage() {
   const [comments, setComments] = useState<{id: string; user: string; avatar: string; text: string; time: string}[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+  const [buyQuantity, setBuyQuantity] = useState(1);
+  const [isBuying, setIsBuying] = useState(false);
+
+  const handleBuyNow = async () => {
+    if (!selectedNFT) return;
+
+    if (!isLoggedIn) {
+      login();
+      return;
+    }
+
+    const address = userAddress || wallet.account?.address || '';
+    if (!address) {
+      alert('购买NFT前必须先获取钱包地址');
+      return;
+    }
+
+    const total = Number((selectedNFT.price * buyQuantity).toFixed(4));
+    const unit = selectedNFT.priceUnit as TradeCoinUnit;
+    const receiver =
+      process.env.NEXT_PUBLIC_MARKET_RECEIVER_ADDRESS ||
+      process.env.NEXT_PUBLIC_NFT_MARKET_RECEIVER ||
+      '';
+    setIsBuying(true);
+    try {
+      const balance = await fetchWalletBalance(address, unit);
+      if (balance < total) {
+        alert('余额不足');
+        return;
+      }
+
+      await requestWalletAuthorization(wallet as unknown as Parameters<typeof requestWalletAuthorization>[0], {
+        nftId: selectedNFT.id,
+        unit,
+        total,
+      });
+      const digest = await executeOnchainPurchase(wallet as unknown as Parameters<typeof executeOnchainPurchase>[0], {
+        receiver,
+        amountSui: total,
+        unit,
+        nftId: selectedNFT.id,
+        buyer: address,
+      });
+      alert(`交易已上链成功\nNFT: ${selectedNFT.name}\n支付金额: ${total} ${selectedNFT.priceUnit}\nDigest: ${digest || '已提交'}`);
+      setSelectedNFT(null);
+      setBuyQuantity(1);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '交易授权失败';
+      alert(msg);
+    } finally {
+      setIsBuying(false);
+    }
+  };
 
   const filteredNFTs = useMemo(() => {
     let result = [...mockNFTs];
@@ -116,7 +171,7 @@ export default function MarketPage() {
   const toggleFavorite = (id: string) => setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
 
   // 加载NFT评论
-  const loadComments = (nftId: string) => {
+  const loadComments = () => {
     // 模拟评论数据
     setComments([
       { id: '1', user: 'CryptoFan', avatar: '🎨', text: 'Amazing NFT! The artwork is stunning 👏', time: '2h ago' },
@@ -283,7 +338,7 @@ export default function MarketPage() {
                 ].map(item => (
                   <button
                     key={item.key}
-                    onClick={() => setCoinFilter(item.key as any)}
+                    onClick={() => setCoinFilter(item.key as 'all' | 'SUI' | 'BOX')}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       coinFilter === item.key 
                         ? item.key === 'SUI' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
@@ -341,7 +396,7 @@ export default function MarketPage() {
               )}
               {searchQuery && (
                 <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-lg flex items-center gap-1">
-                  "{searchQuery}"
+                  &quot;{searchQuery}&quot;
                   <button onClick={() => setSearchQuery('')}><X className="w-3 h-3" /></button>
                 </span>
               )}
@@ -369,7 +424,10 @@ export default function MarketPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedNFT(nft)}
+                  onClick={() => {
+                    setSelectedNFT(nft);
+                    setBuyQuantity(1);
+                  }}
                   className={`group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:shadow-xl ${rarity.glow} ${viewMode === 'list' ? 'flex' : ''}`}
                 >
                   {/* Image */}
@@ -448,13 +506,13 @@ export default function MarketPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            onClick={() => { setSelectedNFT(null); setActiveTab('buy'); }}
+            onClick={() => { setSelectedNFT(null); setActiveTab('buy'); setBuyQuantity(1); }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => { e.stopPropagation(); loadComments(selectedNFT.id); }}
+              onClick={(e) => { e.stopPropagation(); loadComments(); }}
               className="w-full max-w-2xl bg-[#0f0f14] border border-white/10 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               {/* Header Image */}
@@ -466,7 +524,7 @@ export default function MarketPage() {
                   {selectedNFT.rarity}
                 </div>
                 <button
-                  onClick={() => setSelectedNFT(null)}
+                  onClick={() => { setSelectedNFT(null); setBuyQuantity(1); }}
                   className="absolute top-4 right-4 w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -547,20 +605,25 @@ export default function MarketPage() {
                     <div className="mb-4">
                       <label className="block text-gray-500 text-xs mb-2">Quantity</label>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => {}}
+                        <button
+                          onClick={() => setBuyQuantity(prev => Math.max(1, prev - 1))}
                           className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <input
                           type="number"
-                          value="1"
-                          readOnly
+                          value={buyQuantity}
+                          onChange={(e) => {
+                            const next = Number(e.target.value);
+                            if (!Number.isNaN(next)) {
+                              setBuyQuantity(Math.max(1, Math.min(selectedNFT.remaining, next)));
+                            }
+                          }}
                           className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-center font-semibold"
                         />
-                        <button 
-                          onClick={() => {}}
+                        <button
+                          onClick={() => setBuyQuantity(prev => Math.min(selectedNFT.remaining, prev + 1))}
                           className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-colors"
                         >
                           <Plus className="w-4 h-4" />
@@ -573,11 +636,15 @@ export default function MarketPage() {
                       <div>
                         <p className="text-gray-500 text-xs mb-1">Total Price</p>
                         <p className={`text-3xl font-bold ${selectedNFT.priceUnit === 'SUI' ? 'text-cyan-400' : 'text-violet-400'}`}>
-                          {selectedNFT.price} <span className="text-lg">{selectedNFT.priceUnit}</span>
+                          {(selectedNFT.price * buyQuantity).toFixed(2)} <span className="text-lg">{selectedNFT.priceUnit}</span>
                         </p>
                       </div>
-                      <button className="px-8 py-3 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25">
-                        Buy Now
+                      <button
+                        onClick={handleBuyNow}
+                        disabled={isBuying}
+                        className="px-8 py-3 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25 disabled:opacity-60"
+                      >
+                        {isBuying ? 'Authorizing...' : 'Buy Now'}
                       </button>
                     </div>
                   </>

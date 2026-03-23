@@ -1,18 +1,24 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { languages, defaultLanguage, LanguageCode, LANGUAGE_KEY, getBrowserLanguage } from './config';
 import { zh, Translations } from './zh';
 import { en } from './en';
-import { ja } from './ja';
-import { ru } from './ru';
+import { ko } from './ko';
+import { es } from './es';
 
 // 翻译映射
-const translations: Record<LanguageCode, Translations> = { zh, en, ja, ru };
+const translations: Record<LanguageCode, Translations> = { en, zh, ko, es };
 
 // 简化翻译函数
-function getNestedValue(obj: any, path: string): string {
-  return path.split('.').reduce((acc, part) => acc && acc[part], obj) || path;
+function getNestedValue(obj: unknown, path: string): string {
+  const result = path.split('.').reduce<unknown>((acc, part) => {
+    if (acc && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
+  return typeof result === 'string' ? result : '';
 }
 
 // I18n Context
@@ -34,32 +40,20 @@ const createTranslateFn = (t: Translations) => (key: string, fallback?: string):
 
 // Provider 组件
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>(defaultLanguage);
-  const [mounted, setMounted] = useState(false);
-
-  // 初始化语言
-  useEffect(() => {
-    setMounted(true);
-    // 优先从 localStorage 读取
+  const [language, setLanguageState] = useState<LanguageCode>(() => {
+    if (typeof window === 'undefined') return defaultLanguage;
     const saved = localStorage.getItem(LANGUAGE_KEY);
-    if (saved && languages.some(l => l.code === saved)) {
-      setLanguageState(saved as LanguageCode);
-    } else {
-      // 其次使用浏览器语言
-      setLanguageState(getBrowserLanguage());
+    if (saved && languages.some((l) => l.code === saved)) {
+      return saved as LanguageCode;
     }
-  }, []);
+    return getBrowserLanguage();
+  });
 
   // 保存语言到 localStorage
   const setLanguage = (lang: LanguageCode) => {
     setLanguageState(lang);
     localStorage.setItem(LANGUAGE_KEY, lang);
   };
-
-  // 防止 SSR hydration mismatch
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   const t = translations[language];
   const tt = createTranslateFn(t);
@@ -85,11 +79,11 @@ export function useI18n() {
     const t = translations[defaultLanguage];
     return {
       language: defaultLanguage as LanguageCode,
-      setLanguage: ((lang: LanguageCode) => {
+      setLanguage: (lang: LanguageCode) => {
         if (typeof window !== 'undefined') {
           localStorage.setItem(LANGUAGE_KEY, lang);
         }
-      }) as any,
+      },
       t,
       languages,
       tt: createTranslateFn(t),

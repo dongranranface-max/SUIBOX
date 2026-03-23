@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Wallet, LogOut, Copy, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useI18n } from '@/lib/i18n';
 
 function shortenAddress(addr: string): string {
   if (!addr) return '';
@@ -14,6 +15,7 @@ function shortenAddress(addr: string): string {
 
 export function SuiWalletButton() {
   const pathname = usePathname();
+  const { tt } = useI18n();
   const { address, connected, disconnect } = useWallet();
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
@@ -121,7 +123,7 @@ export function SuiWalletButton() {
 
             {/* 地址 */}
             <div className="px-4 py-3 border-b border-white/10">
-              <p className="text-xs text-gray-500 mb-1">地址</p>
+              <p className="text-xs text-gray-500 mb-1">{tt('profile.address', 'Address')}</p>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-mono text-white">{shortenAddress(displayAddress)}</span>
                 <button onClick={() => copyAddress(displayAddress)} className="p-1 hover:bg-white/5 rounded">
@@ -134,11 +136,11 @@ export function SuiWalletButton() {
             <div className="py-2">
               <Link href="/profile" onClick={() => setShowMenu(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
                 <Wallet className="w-4 h-4" />
-                个人主页
+                {tt('nav.profile', 'Profile')}
               </Link>
               <Link href="/wallet" onClick={() => setShowMenu(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
                 <Wallet className="w-4 h-4" />
-                我的钱包
+                {tt('home.connectWallet', 'Wallet')}
               </Link>
             </div>
 
@@ -149,7 +151,7 @@ export function SuiWalletButton() {
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-all"
               >
                 <LogOut className="w-4 h-4" />
-                退出登录
+                {tt('nav.logout', 'Logout')}
               </button>
             </div>
           </motion.div>

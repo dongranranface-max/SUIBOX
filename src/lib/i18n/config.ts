@@ -1,15 +1,15 @@
 // 语言配置
 export const languages = [
-  { code: 'zh', name: '中文', nativeName: '中文', flag: '🇨🇳', dir: 'ltr' },
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', dir: 'ltr' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', dir: 'ltr' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺', dir: 'ltr' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳', dir: 'ltr' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', dir: 'ltr' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', dir: 'ltr' },
 ] as const;
 
 export type LanguageCode = typeof languages[number]['code'];
 
 // 默认语言
-export const defaultLanguage: LanguageCode = 'zh';
+export const defaultLanguage: LanguageCode = 'en';
 
 // 语言存储key
 export const LANGUAGE_KEY = 'suibox_language';

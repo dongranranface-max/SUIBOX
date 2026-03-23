@@ -1,0 +1,20 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "SUIBOX - NFT Mystery Box + DeFi",
+  "url": "https://suibox.site",
+  "description": "Discover rare NFTs through mystery boxes, craft fragments, stake for rewards, and participate in DAO governance on SUI blockchain.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://suibox.site/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "SUIBOX",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://suibox.site/suibox-logo.png"
+    }
+  }
+}

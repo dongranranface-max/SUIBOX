@@ -15,7 +15,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
     return (
       <select
         value={language}
-        onChange={(e) => setLanguage(e.target.value as any)}
+          onChange={(e) => setLanguage(e.target.value as typeof language)}
         className="bg-transparent text-gray-400 text-xs border-none focus:outline-none cursor-pointer"
       >
         {languages.map(lang => (
@@ -30,7 +30,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
   if (variant === 'mobile') {
     return (
       <div className="px-3 py-2">
-        <p className="text-xs text-gray-500 mb-2">选择语言</p>
+        <p className="text-xs text-gray-500 mb-2">Language</p>
         <div className="grid grid-cols-2 gap-2">
           {languages.map(lang => (
             <button

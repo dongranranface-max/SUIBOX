@@ -3,15 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-
-  // 关闭菜单当页面切换
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+  const { tt } = useI18n();
 
   // 防止滚动穿透
   useEffect(() => {
@@ -26,13 +23,13 @@ export default function MobileNav() {
   }, [isOpen]);
 
   const navItems = [
-    { label: '开盲盒', href: '/box', highlight: true },
-    { label: '合成', href: '/craft' },
-    { label: '市场', href: '/market' },
-    { label: 'Staking', href: '/mine' },
-    { label: 'DAO', href: '/governance' },
-    { label: '邀请', href: '/invite' },
-    { label: '个人主页', href: '/profile' },
+    { key: 'nav.box', fallback: 'Box', href: '/box', highlight: true },
+    { key: 'nav.craft', fallback: 'Craft', href: '/craft' },
+    { key: 'nav.market', fallback: 'Market', href: '/market' },
+    { key: 'nav.staking', fallback: 'Staking', href: '/mine' },
+    { key: 'nav.dao', fallback: 'DAO', href: '/governance' },
+    { key: 'nav.invite', fallback: 'Invite', href: '/invite' },
+    { key: 'nav.profile', fallback: 'Profile', href: '/profile' },
   ];
 
   return (
@@ -48,9 +45,9 @@ export default function MobileNav() {
           
           {/* Nav Items */}
           <nav className="flex items-center gap-0.5 flex-1 justify-center">
-            <Link href="/box" className="px-2 py-1 text-xs text-amber-400 font-medium">盲盒</Link>
-            <Link href="/craft" className="px-2 py-1 text-xs text-amber-400 font-medium">合成</Link>
-            <Link href="/market" className="px-2 py-1 text-xs text-gray-300 flex items-center gap-0.5">市场</Link>
+            <Link href="/box" className="px-2 py-1 text-xs text-amber-400 font-medium">{tt('nav.box', 'Box')}</Link>
+            <Link href="/craft" className="px-2 py-1 text-xs text-amber-400 font-medium">{tt('nav.craft', 'Craft')}</Link>
+            <Link href="/market" className="px-2 py-1 text-xs text-gray-300 flex items-center gap-0.5">{tt('nav.market', 'Market')}</Link>
           </nav>
 
           {/* Right Side */}
@@ -86,7 +83,7 @@ export default function MobileNav() {
         <div className="flex flex-col h-full overflow-y-auto pb-20">
           {/* 主导航 */}
           <nav className="flex-1 py-2">
-            {navItems.map((item) => (
+                {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -98,7 +95,7 @@ export default function MobileNav() {
                     : 'text-gray-300 hover:bg-white/5'
                 }`}
               >
-                {item.label}
+                {tt(item.key, item.fallback)}
               </Link>
             ))}
           </nav>
@@ -107,18 +104,18 @@ export default function MobileNav() {
           <div className="border-t border-white/10">
             <Link href="/support" className="flex items-center gap-2 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white">
               <span>🎫</span>
-              <span>客服支持</span>
+              <span>{tt('support.title', 'Support')}</span>
             </Link>
             <Link href="/security" className="flex items-center gap-2 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white">
               <span>🛡️</span>
-              <span>安全中心</span>
+              <span>{tt('nav.settings', 'Security')}</span>
             </Link>
           </div>
 
           {/* Footer */}
           <div className="mt-auto p-4 border-t border-white/10 text-xs text-gray-500">
             <p>SUIBOX v1.0</p>
-            <p>SUI区块链NFT平台</p>
+            <p>{tt('home.subtitle', 'NFT + DeFi Platform')}</p>
           </div>
         </div>
       </div>

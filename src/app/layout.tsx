@@ -5,14 +5,29 @@ import { I18nProvider } from "@/lib/i18n";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "SUIBOX - NFT盲盒与DeFi质押平台 | SUI链",
-  description: "SUIBOX是基于SUI链的NFT盲盒平台，支持开盲盒、碎片合成、NFT交易、DeFi质押等功能。",
-  keywords: "NFT, SUI, 盲盒, DeFi, 质押, 区块链, Web3",
+  title: "SUIBOX - NFT Mystery Box + DeFi Staking | SUI Chain",
+  description: "Discover rare NFTs through mystery boxes, craft fragments, stake for 15% APY, and participate in DAO governance on SUI blockchain.",
+  keywords: "NFT, SUI, mystery box, DeFi, staking, blockchain, Web3, crypto, DAO",
   authors: [{ name: "SUIBOX Team" }],
+  robots: {
+    index: true,
+    follow: true,
+  },
   openGraph: {
-    title: "SUIBOX - NFT盲盒与DeFi质押平台",
-    description: "基于SUI链的NFT盲盒平台，开启你的数字资产之旅",
+    title: "SUIBOX - NFT Mystery Box + DeFi",
+    description: "Discover rare NFTs through mystery boxes on SUI blockchain. Stake SBOX for 15% APY.",
     type: "website",
+    url: "https://suibox.site",
+    siteName: "SUIBOX",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SUIBOX - NFT Mystery Box + DeFi",
+    description: "Discover rare NFTs on SUI blockchain. Stake for 15% APY.",
+  },
+  alternates: {
+    canonical: "https://suibox.site",
   },
 };
 
@@ -22,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh">
+    <html lang="en">
       <body className="antialiased">
         <I18nProvider>
           <Providers>

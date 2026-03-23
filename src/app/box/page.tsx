@@ -276,6 +276,9 @@ function OpeningAnimation() {
   );
 }
 
+// SEO: Open Box - SUIBOX | NFT Mystery Boxes on SUI
+// Description: Open mystery boxes to discover rare NFTs. Collect fragments and craft exclusive NFTs.
+
 export default function BoxPage() {
   const wallet = useWallet();
   const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();

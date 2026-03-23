@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Heart, ShoppingCart, DollarSign, MessageCircle, Share2, Flag, ChevronLeft, CheckCircle, Eye, Flame, Clock, TrendingUp, Send, Copy, Twitter, Telegram } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { useWallet } from '@suiet/wallet-kit';
+import { useAuth } from '@/hooks/useAuth';
+import { executeOnchainPurchase, fetchWalletBalance, requestWalletAuthorization, type TradeCoinUnit } from '@/lib/marketTrade';
 
 interface Comment {
   id: number;
@@ -28,10 +31,13 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
   // 解包params (Next.js 16+)
   const resolvedParams = use(params);
   const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
+  const wallet = useWallet();
+  const { isLoggedIn, login, userAddress } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(123);
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'history' | 'offers'>('comments');
+  const [isBuying, setIsBuying] = useState(false);
   const [comments, setComments] = useState<Comment[]>([
     { id: 1, user: 'CryptoFan', avatar: '🎮', text: '太帅了！想要！', time: '2小时前', likes: 5 },
     { id: 2, user: 'SUILover', avatar: '🦄', text: '稀有度拉满', time: '5小时前', likes: 3 },
@@ -82,6 +88,53 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
   };
 
   const copyAddress = (addr: string) => { navigator.clipboard.writeText(addr); alert('地址已复制!'); };
+
+  const handleBuyNow = async () => {
+    if (!isLoggedIn) {
+      login();
+      return;
+    }
+
+    const address = userAddress || wallet.account?.address || '';
+    if (!address) {
+      alert('购买NFT前必须先获取钱包地址');
+      return;
+    }
+
+    const unit = nft.priceUnit as TradeCoinUnit;
+    const receiver =
+      process.env.NEXT_PUBLIC_MARKET_RECEIVER_ADDRESS ||
+      process.env.NEXT_PUBLIC_NFT_MARKET_RECEIVER ||
+      '';
+
+    setIsBuying(true);
+    try {
+      const balance = await fetchWalletBalance(address, unit);
+      if (balance < nft.price) {
+        alert('余额不足');
+        return;
+      }
+
+      await requestWalletAuthorization(wallet as unknown as Parameters<typeof requestWalletAuthorization>[0], {
+        nftId: nft.id,
+        unit,
+        total: nft.price,
+      });
+      const digest = await executeOnchainPurchase(wallet as unknown as Parameters<typeof executeOnchainPurchase>[0], {
+        receiver,
+        amountSui: nft.price,
+        unit,
+        nftId: nft.id,
+        buyer: address,
+      });
+      alert(`交易已上链成功\nNFT: ${nft.name}\n支付金额: ${nft.price} ${nft.priceUnit}\nDigest: ${digest || '已提交'}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '交易授权失败';
+      alert(msg);
+    } finally {
+      setIsBuying(false);
+    }
+  };
 
   const getRarityColor = (rarity: string) => {
     switch (rarity.toLowerCase()) { 
@@ -166,8 +219,12 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
 
             {/* Buy Buttons */}
             <div className="flex gap-3">
-              <button className="flex-1 py-4 bg-gradient-to-r from-violet-600 via-pink-600 to-purple-600 rounded-2xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
-                <ShoppingCart className="w-5 h-5" />立即购买
+              <button
+                onClick={handleBuyNow}
+                disabled={isBuying}
+                className="flex-1 py-4 bg-gradient-to-r from-violet-600 via-pink-600 to-purple-600 rounded-2xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <ShoppingCart className="w-5 h-5" />{isBuying ? '授权中...' : '立即购买'}
               </button>
               <button className="flex-1 py-4 bg-green-600 hover:bg-green-500 rounded-2xl font-bold text-lg flex items-center justify-center gap-2">
                 <DollarSign className="w-5 h-5" />发起报价
@@ -182,7 +239,7 @@ export default function NFTDetailPage({ params }: { params: { id: string } }) {
                   { key: 'history', label: '历史', icon: Clock }, 
                   { key: 'offers', label: '报价', icon: DollarSign, count: nft.offers.length }
                 ].map(tab => (
-                  <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === tab.key ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key as 'comments' | 'history' | 'offers')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === tab.key ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-500 hover:text-white'}`}>
                     <tab.icon className="w-4 h-4" />{tab.label}
                     {tab.count !== undefined && <span className="text-xs bg-gray-700 px-1.5 rounded-full">{tab.count}</span>}
                   </button>

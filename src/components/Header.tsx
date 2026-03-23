@@ -2,28 +2,29 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, Megaphone, Globe } from 'lucide-react';
 import { SuiWalletButton } from './SuiWallet';
+import { useI18n } from '@/lib/i18n';
 
 const navItems = [
-  { name: '首页', href: '/', icon: Home },
-  { name: '开盲盒', href: '/box', icon: Coins, highlight: true, badge: 'HOT' },
-  { name: '合成', href: '/craft', icon: FlaskConical, badge: 'NEW' },
-  { name: '市场', hasDropdown: true, menu: 'market', icon: ShoppingCart },
-  { name: '收益', hasDropdown: true, menu: 'earn', icon: Landmark, highlight: true },
-  { name: '邀请', href: '/invite', icon: User, badge: 'FREE' },
+  { key: 'nav.home', href: '/', icon: Home },
+  { key: 'nav.box', href: '/box', icon: Coins, highlight: true, badge: 'HOT' },
+  { key: 'nav.craft', href: '/craft', icon: FlaskConical, badge: 'NEW' },
+  { key: 'nav.market', hasDropdown: true, menu: 'market', icon: ShoppingCart },
+  { key: 'nav.stake', hasDropdown: true, menu: 'earn', icon: Landmark, highlight: true },
+  { key: 'nav.invite', href: '/invite', icon: User, badge: 'FREE' },
 ];
 
-const dropdowns: Record<string, { name: string; href: string; icon?: any }[]> = {
+const dropdowns: Record<string, { name: string; href: string; icon?: ComponentType<{ className?: string }> }[]> = {
   market: [
-    { name: 'NFT市场', href: '/market', icon: ShoppingCart },
-    { name: '拍卖行', href: '/auction', icon: Ticket },
+    { name: 'nav.market', href: '/market', icon: ShoppingCart },
+    { name: 'nav.auction', href: '/auction', icon: Ticket },
   ],
   earn: [
-    { name: 'Staking', href: '/mine', icon: Landmark },
-    { name: 'DAO', href: '/governance', icon: Megaphone },
+    { name: 'nav.staking', href: '/mine', icon: Landmark },
+    { name: 'nav.dao', href: '/governance', icon: Megaphone },
   ],
 };
 
@@ -38,7 +39,7 @@ async function fetchNotificationCount(): Promise<number> {
     const readIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
     
     // 返回未读数量
-    const unreadCount = notifications.filter((n: any) => !readIds.includes(n.id)).length;
+    const unreadCount = notifications.filter((n: { id: string }) => !readIds.includes(n.id)).length;
     return unreadCount;
   } catch {
     return 0;
@@ -54,14 +55,8 @@ function markNotificationsAsRead(notificationIds: string[]) {
   localStorage.setItem('readNotifications', JSON.stringify(newReadIds));
 }
 
-const languages = [
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦' },
-];
-
 export default function Header() {
+  const { languages, language, setLanguage, tt } = useI18n();
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -123,7 +118,7 @@ export default function Header() {
           {/* Desktop Nav - 桌面端 */}
           <nav className="hidden md:flex items-center gap-0.5">
             {navItems.map((item) => (
-              <div key={item.name} className="relative">
+              <div key={item.key} className="relative">
                 {item.hasDropdown ? (
                   <button
                     onMouseEnter={() => setDropdownOpen(item.menu || null)}
@@ -132,7 +127,7 @@ export default function Header() {
                       item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    {item.name}
+                    {tt(item.key)}
                     <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                   </button>
                 ) : (
@@ -143,7 +138,7 @@ export default function Header() {
                     }`}
                   >
                     {item.icon && <item.icon className="w-4 h-4" />}
-                    {item.name}
+                    {tt(item.key)}
                     {item.badge && (
                       <span className={`ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${
                         item.badge === 'HOT' ? 'bg-red-500 text-white' :
@@ -169,12 +164,12 @@ export default function Header() {
                       onMouseLeave={() => setDropdownOpen(null)}
                     >
                       <div className="px-3 py-2 border-b border-white/5">
-                        <span className="text-xs text-gray-500">{item.name}</span>
+                        <span className="text-xs text-gray-500">{tt(item.key)}</span>
                       </div>
                       {dropdowns[item.menu || '']?.map((sub) => (
                         <Link key={sub.href} href={sub.href} className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all">
                           {sub.icon && <sub.icon className="w-4 h-4 text-violet-400" />}
-                          {sub.name}
+                          {tt(sub.name)}
                         </Link>
                       ))}
                     </motion.div>
@@ -198,15 +193,16 @@ export default function Header() {
 
             {/* Language - Desktop */}
             <div 
-              className="hidden sm:block relative"
+              className="relative"
               onMouseEnter={() => setLangMenuOpen(true)}
               onMouseLeave={() => setLangMenuOpen(false)}
             >
               <button 
-                className="flex items-center gap-2 px-3 py-2.5 hover:bg-white/10 rounded-xl text-sm text-gray-300 hover:text-white transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-xl text-sm text-gray-300 hover:text-white transition-all duration-200"
               >
-                <Globe className="w-4 h-4 text-violet-400" />
-                <span className="hidden lg:inline">语言</span>
+                <Globe className="w-5 h-5 text-violet-400" />
+                <span className="hidden lg:inline">{tt('nav.language', 'Language')}</span>
+                <span className="lg:hidden text-lg">{languages.find(l => l.code === language)?.flag}</span>
                 <ChevronDown className={`w-3.5 h-3.5 opacity-60 ${langMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               
@@ -217,16 +213,21 @@ export default function Header() {
                   className="absolute right-0 mt-2 w-40 bg-gray-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50"
                 >
                   <div className="px-3 py-2 border-b border-white/10">
-                    <span className="text-xs text-gray-500">选择语言</span>
+                    <span className="text-xs text-gray-500">{tt('nav.language', 'Language')}</span>
                   </div>
                   {languages.map((lang) => (
                     <button 
                       key={lang.code} 
-                      onClick={() => setLangMenuOpen(false)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all"
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setLangMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/10 transition-all ${
+                        language === lang.code ? 'text-violet-400 bg-violet-500/10' : 'text-gray-300 hover:text-white'
+                      }`}
                     >
                       <span className="text-lg">{lang.flag}</span>
-                      <span>{lang.name}</span>
+                      <span>{lang.nativeName}</span>
                     </button>
                   ))}
                 </motion.div>
@@ -264,7 +265,7 @@ export default function Header() {
             >
               <nav className="py-2 space-y-0.5 max-h-[70vh] overflow-y-auto">
                 {navItems.map((item) => (
-                  <div key={item.name}>
+                  <div key={item.key}>
                     {item.hasDropdown ? (
                       <>
                         <button 
@@ -275,7 +276,7 @@ export default function Header() {
                         >
                           <span className="flex items-center gap-2">
                             {item.icon && <item.icon className="w-4 h-4" />}
-                            {item.name}
+                            {tt(item.key)}
                             {item.badge && <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
                               item.badge === 'HOT' ? 'bg-red-500 text-white' :
                               item.badge === 'NEW' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
@@ -292,7 +293,7 @@ export default function Header() {
                                 className="block px-3 py-2 text-xs text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
                                 onClick={closeMenu}
                               >
-                                {sub.name}
+                                {tt(sub.name)}
                               </Link>
                             ))}
                           </div>
@@ -306,7 +307,7 @@ export default function Header() {
                       >
                         {item.icon && <item.icon className="w-4 h-4" />}
                         <span className={item.highlight ? 'text-amber-400 font-medium' : 'text-gray-300'}>
-                          {item.name}
+                          {tt(item.key)}
                         </span>
                         {item.badge && (
                           <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
@@ -325,10 +326,15 @@ export default function Header() {
                     {languages.map((lang) => (
                       <button 
                         key={lang.code} 
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white/5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/10"
+                        onClick={() => setLanguage(lang.code)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs transition-all ${
+                          language === lang.code
+                            ? 'bg-violet-500/20 text-violet-300'
+                            : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
                       >
                         <span className="text-lg">{lang.flag}</span>
-                        <span>{lang.name}</span>
+                        <span>{lang.code.toUpperCase()}</span>
                       </button>
                     ))}
                   </div>

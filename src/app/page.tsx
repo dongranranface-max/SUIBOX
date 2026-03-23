@@ -8,20 +8,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStats } from '@/hooks/useStats';
 import { useI18n } from '@/lib/i18n';
 
+type JsonMap = Record<string, unknown>;
+type AuctionItem = {
+  id: number;
+  name: string;
+  artist: string;
+  price: number;
+  bids: number;
+  endTime: number;
+  rarity: string;
+  image: string;
+  buyNowPrice: number;
+};
+
 // 从API获取轮播图
 async function fetchBanners() {
   try {
     const res = await fetch('/api/home?type=banners');
     const data = await res.json();
     if (data.banners && data.banners.length > 0) {
-      return data.banners.map((b: any) => ({
-        id: b.id,
-        title: b.title,
-        desc: b.description,
-        link: b.link || '/box',
-        bg: b.bg_color || 'from-violet-600 via-purple-600 to-pink-600',
-        bg_image: b.bg_image || '',
-        emoji: b.emoji || '🎁'
+      return data.banners.map((b: JsonMap) => ({
+        id: Number(b.id || 0),
+        title: String(b.title || ''),
+        desc: String(b.description || ''),
+        link: String(b.link || '/box'),
+        bg: String(b.bg_color || 'from-violet-600 via-purple-600 to-pink-600'),
+        bg_image: String(b.bg_image || ''),
+        emoji: String(b.emoji || '🎁')
       }));
     }
   } catch (e) {
@@ -37,17 +50,21 @@ async function fetchAuctions() {
     const json = await res.json();
     const auctions = json.data || json.auctions || [];
     if (auctions.length > 0) {
-      return auctions.map((a: any) => ({
-        id: a.id,
-        name: a.nft?.name || a.name || 'Unknown',
-        artist: a.nft?.artist || 'Unknown',
-        price: a.current_price || a.price || 0,
-        bids: a.bids || 0,
-        endTime: new Date(a.endTime).getTime() || Date.now() + 86400000,
-        rarity: a.nft?.rarity || a.rarity || 'common',
-        image: a.nft?.image || '/nft-common.png',
-        buyNowPrice: a.buyNowPrice || a.buy_now_price || a.current_price * 2
-      }));
+      return auctions.map((a: JsonMap) => {
+        const nft = (a.nft as JsonMap | undefined) || {};
+        const price = Number(a.current_price || a.price || 0);
+        return {
+          id: Number(a.id || 0),
+          name: String(nft.name || a.name || 'Unknown'),
+          artist: String(nft.artist || 'Unknown'),
+          price,
+          bids: Number(a.bids || 0),
+          endTime: new Date(String(a.endTime || '')).getTime() || Date.now() + 86400000,
+          rarity: String(nft.rarity || a.rarity || 'common'),
+          image: String(nft.image || '/nft-common.png'),
+          buyNowPrice: Number(a.buyNowPrice || a.buy_now_price || price * 2),
+        };
+      });
     }
   } catch (e) {
     console.error('Failed to fetch auctions:', e);
@@ -62,15 +79,15 @@ async function fetchNFTs() {
     const json = await res.json();
     const nfts = json.data || json.nfts || [];
     if (nfts.length > 0) {
-      return nfts.map((n: any) => ({
-        id: n.id,
-        name: n.name,
-        collection: n.creator || n.collection || 'Unknown',
-        price: n.price || 0,
-        priceUnit: n.priceSymbol || n.priceUnit || 'SUI',
+      return nfts.map((n: JsonMap) => ({
+        id: Number(n.id || 0),
+        name: String(n.name || ''),
+        collection: String(n.creator || n.collection || 'Unknown'),
+        price: Number(n.price || 0),
+        priceUnit: String(n.priceSymbol || n.priceUnit || 'SUI'),
         change: Math.floor(Math.random() * 40) - 10, // 模拟涨跌幅
-        image: n.image || '/nft-common.png',
-        rarity: n.rarity || 'common'
+        image: String(n.image || '/nft-common.png'),
+        rarity: String(n.rarity || 'common')
       }));
     }
   } catch (e) {
@@ -143,13 +160,13 @@ const rarityColors: Record<string, string> = {
 };
 
 export default function Home() {
-  const { t } = useI18n?.() || { t: {} };
+  const { tt } = useI18n?.() || { tt: (k: string, f?: string) => f || k };
   const [currentBanner, setCurrentBanner] = useState(0);
   const [banners, setBanners] = useState(defaultBanners);
-  const [auctionData, setAuctionData] = useState(hotAuctions);
+  const [auctionData, setAuctionData] = useState<AuctionItem[]>(hotAuctions);
   const [nftData, setNftData] = useState(hotNFTs);
   const [countdown, setCountdown] = useState<Record<number, {days: number, hours: number, minutes: number, seconds: number}>>({});
-  const [bidModal, setBidModal] = useState<{show: boolean, auction?: any}>({show: false});
+  const [bidModal, setBidModal] = useState<{show: boolean, auction?: AuctionItem}>({show: false});
   const [bidPrice, setBidPrice] = useState('');
   const [bidError, setBidError] = useState('');
   const [auctionFilter, setAuctionFilter] = useState<'ending' | 'new'>('ending');
@@ -229,15 +246,15 @@ export default function Home() {
   // 格式化倒计时 - 显示到秒
   const formatCountdown = (auctionId: number) => {
     const c = countdown[auctionId];
-    if (!c) return '已结束';
-    if (c.days > 0) return `${c.days}天${c.hours}时${c.minutes}分${c.seconds}秒`;
-    if (c.hours > 0) return `${c.hours}时${c.minutes}分${c.seconds}秒`;
-    if (c.minutes > 0) return `${c.minutes}分${c.seconds}秒`;
-    return `${c.seconds}秒`;
+    if (!c) return tt('auction.ended', 'Ended');
+    if (c.days > 0) return `${c.days}d ${c.hours}h ${c.minutes}m ${c.seconds}s`;
+    if (c.hours > 0) return `${c.hours}h ${c.minutes}m ${c.seconds}s`;
+    if (c.minutes > 0) return `${c.minutes}m ${c.seconds}s`;
+    return `${c.seconds}s`;
   };
 
   // 出价
-  const handleBid = (auction: any) => {
+  const handleBid = (auction: AuctionItem) => {
     // 设置弹窗显示
     setBidModal({show: true, auction: auction});
   };
@@ -245,21 +262,21 @@ export default function Home() {
   const validateBid = (price: string) => {
     const num = parseFloat(price);
     const minPrice = Math.floor(bidModal.auction.price * 1.1);
-    if (isNaN(num) || num <= 0) return '请输入有效金额';
-    if (num < minPrice) return `最低出价 ${minPrice} BOX`;
+    if (isNaN(num) || num <= 0) return tt('errors.invalidInput', 'Invalid input');
+    if (num < minPrice) return `${tt('auction.currentBid', 'Current Bid')}: ${minPrice} BOX`;
     return '';
   };
 
   const submitBid = () => {
     const error = validateBid(bidPrice);
     if (error) { setBidError(error); return; }
-    alert(`出价成功！出价: ${bidPrice} BOX`);
+    alert(`${tt('common.success', 'Success')}! ${tt('auction.bid', 'Bid')}: ${bidPrice} BOX`);
     setBidModal({show: false});
   };
 
   const handleBuyNow = () => {
     if (!bidModal.auction) return;
-    alert(`一口价购买成功！金额: ${bidModal.auction.buyNowPrice} BOX`);
+    alert(`${tt('common.success', 'Success')}! ${tt('market.buyNow', 'Buy Now')}: ${bidModal.auction.buyNowPrice} BOX`);
     setBidModal({show: false});
   };
 
@@ -279,7 +296,7 @@ export default function Home() {
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-4">{banner.title}</h1>
                 <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-4 sm:mb-5 md:mb-6">{banner.desc}</p>
                 <span className="inline-flex items-center gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 bg-white/20 hover:bg-white/30 rounded-xl md:rounded-2xl transition-all text-sm sm:text-base md:text-lg font-medium">
-                  立即体验 <ChevronRight className="w-4 sm:w-5 md:w-5" />
+                  {tt('home.hero.start', 'Get Started')} <ChevronRight className="w-4 sm:w-5 md:w-5" />
                 </span>
               </div>
               <div className="w-32 sm:w-40 md:w-56 lg:w-72 h-32 sm:h-40 md:h-56 lg:h-72 relative hidden sm:block">
@@ -330,23 +347,23 @@ export default function Home() {
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25">
                   <span className="text-lg md:text-xl">🔨</span>
                 </div>
-                <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">Hot Auctions</span>
+                <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">{tt('home.hotAuctions', 'Hot Auctions')}</span>
               </h2>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setAuctionFilter('ending')}
                   className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${auctionFilter === 'ending' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
                 >
-                  ⏰ Ending
+                  ⏰ {tt('auction.ending', 'Ending')}
                 </button>
                 <button 
                   onClick={() => setAuctionFilter('new')}
                   className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${auctionFilter === 'new' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
                 >
-                  ✨ New
+                  ✨ {tt('market.sort.newest', 'Newest')}
                 </button>
                 <Link href="/auction" className="px-3 md:px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 rounded-xl text-xs md:text-sm font-medium transition-all">
-                  View All →
+                  {tt('home.viewAll', 'View All')} →
                 </Link>
               </div>
             </div>
@@ -378,7 +395,7 @@ export default function Home() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="absolute bottom-3 left-3 right-3">
                           <span className="block w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl text-center transition-colors">
-                            Place Bid
+                            {tt('auction.placeBid', 'Place Bid')}
                           </span>
                         </div>
                       </div>
@@ -390,7 +407,7 @@ export default function Home() {
                       
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <p className="text-gray-500 text-[10px]">Current Bid</p>
+                          <p className="text-gray-500 text-[10px]">{tt('auction.currentBid', 'Current Bid')}</p>
                           <p className="text-lg font-bold text-orange-400">{auction.price} BOX</p>
                         </div>
                         <div className="text-right">
@@ -400,7 +417,7 @@ export default function Home() {
                       
                       <div className="pt-2 border-t border-white/5">
                         <div className="flex items-center justify-between text-xs mb-1.5">
-                          <span className="text-gray-500">Buy Now</span>
+                          <span className="text-gray-500">{tt('market.buyNow', 'Buy Now')}</span>
                           <span className="text-white font-semibold">{auction.buyNowPrice} BOX</span>
                         </div>
                         <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -427,10 +444,10 @@ export default function Home() {
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25">
                   <span className="text-lg md:text-xl">🖼️</span>
                 </div>
-                <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Hot NFTs</span>
+                <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">{tt('home.trending', 'Trending')} NFTs</span>
               </h2>
               <Link href="/market" className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 rounded-xl text-sm font-medium transition-all">
-                View All →
+                {tt('home.viewAll', 'View All')} →
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
@@ -451,7 +468,7 @@ export default function Home() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="absolute bottom-3 left-3 right-3">
                           <span className="block w-full py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl text-center transition-colors">
-                            View Details
+                            {tt('common.view', 'View')}
                           </span>
                         </div>
                       </div>
@@ -481,10 +498,10 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
               <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full" />
-              排行榜
+              {tt('nav.ranking', 'Ranking')}
             </h2>
             <Link href="/ranking" className="text-violet-400 hover:text-violet-300 flex items-center gap-1">
-              查看全部 <ChevronRight className="w-4 h-4" />
+              {tt('home.viewAll', 'View All')} <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
@@ -509,7 +526,7 @@ export default function Home() {
           <section className="lg:col-span-2">
             <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 mb-4 md:mb-6">
               <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
-              SUI生态
+              {tt('common.view', 'View')} SUI Ecosystem
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
               {suiEcosystem.map((item) => (
@@ -626,19 +643,19 @@ export default function Home() {
         <section className="bg-gray-900/30 -mx-4 px-4 py-6 md:py-8 mt-8 rounded-xl md:rounded-2xl">
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 mb-4 md:mb-6">
             <span className="w-1 h-6 md:h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
-            平台统计
+            {tt('home.stats.totalVolume', 'Total Volume')} & {tt('home.stats.totalNFT', 'Total NFT')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* 交易量 */}
             <div className="bg-gray-800/30 rounded-2xl p-5 border border-gray-700/50 text-center">
-              <p className="text-gray-400 text-sm mb-2">交易量</p>
+              <p className="text-gray-400 text-sm mb-2">{tt('home.stats.totalVolume', 'Total Volume')}</p>
               <p className="text-3xl font-bold text-white">456M</p>
               <p className="text-gray-500 text-xs mt-1">SUI</p>
               <p className="text-green-500 text-xs mt-1">↑ 12.5%</p>
             </div>
             {/* NFT总量 */}
             <div className="bg-gray-800/30 rounded-2xl p-5 border border-gray-700/50 text-center">
-              <p className="text-gray-400 text-sm mb-2">NFT总量</p>
+              <p className="text-gray-400 text-sm mb-2">{tt('home.stats.totalNFT', 'Total NFT')}</p>
               <p className="text-3xl font-bold text-white">125K</p>
               <p className="text-gray-500 text-xs mt-1">个</p>
               <p className="text-green-500 text-xs mt-1">↑ 8.3%</p>
@@ -652,7 +669,7 @@ export default function Home() {
             </div>
             {/* NFT持有者 */}
             <div className="bg-gray-800/30 rounded-2xl p-5 border border-gray-700/50 text-center">
-              <p className="text-gray-400 text-sm mb-2">NFT持有者</p>
+              <p className="text-gray-400 text-sm mb-2">{tt('home.stats.activeUsers', 'Active Users')}</p>
               <p className="text-3xl font-bold text-white">89K</p>
               <p className="text-gray-500 text-xs mt-1">用户</p>
               <p className="text-green-500 text-xs mt-1">↑ 5.2%</p>
@@ -700,11 +717,11 @@ export default function Home() {
                   <Image src="/suibox-logo.png" alt="SUIBOX" width={64} height={64} className="relative object-contain animate-pulse" style={{ animationDuration: '3s' }} />
                 </div>
                 <div>
-                  <p className="font-bold text-2xl bg-gradient-to-r from-violet-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">发现SUIBOX</p>
+                  <p className="font-bold text-2xl bg-gradient-to-r from-violet-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">{tt('home.welcome', 'Discover SUIBOX')}</p>
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                即可发现并购买NFT。无需托管，无需延迟，只需连接您的钱包，并通过我们的智能合约购买即可。
+                {tt('home.subtitle', 'NFT + DeFi Platform')}
               </p>
               {/* 统计 - 4列 */}
               <div className="grid grid-cols-4 gap-3">
@@ -733,39 +750,39 @@ export default function Home() {
 
             {/* 右边 - 快捷链接 */}
             <div className="flex gap-16">
-              {/* 探索 */}
+              {/* Explore */}
               <div>
                 <h4 className="font-bold mb-4 flex items-center gap-2">
                   <span className="w-1 h-4 bg-gradient-to-b from-violet-500 to-pink-500 rounded-full" />
-                  探索
+                  {tt('home.featured', 'Explore')}
                 </h4>
                 <ul className="space-y-3 text-sm text-gray-400">
-                  <li><Link href="/craft" className="hover:text-white transition-colors">• 合成</Link></li>
-                  <li><Link href="/market" className="hover:text-white transition-colors">• 交易</Link></li>
-                  <li><Link href="/governance" className="hover:text-white transition-colors">• 质押</Link></li>
-                  <li><Link href="/auction" className="hover:text-white transition-colors">• 拍卖</Link></li>
+                  <li><Link href="/craft" className="hover:text-white transition-colors">• {tt('nav.craft', 'Craft')}</Link></li>
+                  <li><Link href="/market" className="hover:text-white transition-colors">• {tt('nav.trade', 'Trade')}</Link></li>
+                  <li><Link href="/governance" className="hover:text-white transition-colors">• {tt('nav.staking', 'Staking')}</Link></li>
+                  <li><Link href="/auction" className="hover:text-white transition-colors">• {tt('nav.auction', 'Auction')}</Link></li>
                 </ul>
               </div>
-              {/* 创造 */}
+              {/* Create */}
               <div>
                 <h4 className="font-bold mb-4 flex items-center gap-2">
                   <span className="w-1 h-4 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full" />
-                  创造
+                  {tt('nav.create', 'Create')}
                 </h4>
                 <ul className="space-y-3 text-sm text-gray-400">
-                  <li><Link href="/join" className="hover:text-white transition-colors">• 入驻</Link></li>
-                  <li><Link href="/create" className="hover:text-white transition-colors">• 铸造</Link></li>
+                  <li><Link href="/join" className="hover:text-white transition-colors">• {tt('nav.join', 'Join')}</Link></li>
+                  <li><Link href="/create" className="hover:text-white transition-colors">• {tt('nav.create', 'Mint')}</Link></li>
                 </ul>
               </div>
-              {/* 支持 */}
+              {/* Support */}
               <div>
                 <h4 className="font-bold mb-4 flex items-center gap-2">
                   <span className="w-1 h-4 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full" />
-                  支持
+                  {tt('support.title', 'Support')}
                 </h4>
                 <ul className="space-y-3 text-sm text-gray-400">
-                  <li><Link href="/support" className="hover:text-white transition-colors">• 客服中心</Link></li>
-                  <li><Link href="/help" className="hover:text-white transition-colors">• 帮助中心</Link></li>
+                  <li><Link href="/support" className="hover:text-white transition-colors">• {tt('support.title', 'Support Center')}</Link></li>
+                  <li><Link href="/help" className="hover:text-white transition-colors">• {tt('common.help', 'Help Center')}</Link></li>
                   <li><a href="https://x.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">• X</a></li>
                 </ul>
               </div>
@@ -776,10 +793,10 @@ export default function Home() {
           <div className="mt-12 pt-8 border-t border-gray-800">
             <div className="flex justify-between items-center flex-wrap gap-4">
               <div className="flex gap-6 text-sm text-gray-500">
-                <Link href="/terms" className="hover:text-white transition-colors">服务条款</Link>
-                <Link href="/privacy" className="hover:text-white transition-colors">隐私政策</Link>
-                <Link href="/security" className="hover:text-white transition-colors">安全中心</Link>
-                <Link href="/join" className="hover:text-white transition-colors">申请入驻</Link>
+                <Link href="/terms" className="hover:text-white transition-colors">{tt('login.termsOfService', 'Terms of Service')}</Link>
+                <Link href="/privacy" className="hover:text-white transition-colors">{tt('login.privacyPolicy', 'Privacy Policy')}</Link>
+                <Link href="/security" className="hover:text-white transition-colors">{tt('profile.security', 'Security')}</Link>
+                <Link href="/join" className="hover:text-white transition-colors">{tt('nav.apply', 'Apply')}</Link>
               </div>
               <div className="text-gray-500 text-sm">
                 © 2026 SUIBOX. All rights reserved.
@@ -836,7 +853,7 @@ export default function Home() {
               <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl p-4 mb-4 border border-orange-500/20">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-gray-400 text-xs mb-1">当前价</p>
+                    <p className="text-gray-400 text-xs mb-1">{tt('auction.currentBid', 'Current Bid')}</p>
                     <p className="text-3xl md:text-4xl font-black text-orange-400">{bidModal.auction.price}</p>
                     <p className="text-orange-400/60 text-sm">BOX</p>
                   </div>
@@ -849,14 +866,14 @@ export default function Home() {
               
               {/* 出价输入 */}
               <div className="mb-4">
-                <label className="text-gray-400 text-sm block mb-2">出价金额 (BOX)</label>
+                <label className="text-gray-400 text-sm block mb-2">{tt('auction.yourBid', 'Your Bid')} (BOX)</label>
                 <div className="relative">
                   <input 
                     type="number" 
                     value={bidPrice}
                     onChange={(e) => { setBidPrice(e.target.value); setBidError(''); }}
                     className={`w-full bg-gray-800/80 border rounded-xl py-4 px-4 pr-16 text-white text-xl font-bold text-center ${bidError ? 'border-red-500' : 'border-gray-600'}`}
-                    placeholder="请输入出价金额"
+                    placeholder={tt('auction.placeBid', 'Place Bid')}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">
                     BOX
@@ -866,7 +883,7 @@ export default function Home() {
                   <p className="text-red-400 text-xs text-center mt-2">{bidError}</p>
                 ) : (
                   <p className="text-gray-500 text-xs text-center mt-2">
-                    最低出价: {Math.floor(bidModal.auction.price * 1.1)} BOX
+                    {tt('auction.currentBid', 'Current Bid')}: {Math.floor(bidModal.auction.price * 1.1)} BOX
                   </p>
                 )}
               </div>
@@ -875,7 +892,7 @@ export default function Home() {
               {bidModal.auction.buyNowPrice && (
                 <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
                   <div className="flex justify-between items-center">
-                    <span className="text-yellow-400 font-medium">一口价</span>
+                    <span className="text-yellow-400 font-medium">{tt('market.buyNow', 'Buy Now')}</span>
                     <span className="text-yellow-400 font-bold">{bidModal.auction.buyNowPrice} BOX</span>
                   </div>
                 </div>
@@ -887,14 +904,14 @@ export default function Home() {
                   onClick={submitBid} 
                   className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all"
                 >
-                  ⚡ 确认出价
+                  ⚡ {tt('common.confirm', 'Confirm')} {tt('auction.bid', 'Bid')}
                 </button>
                 {bidModal.auction.buyNowPrice && (
                   <button 
                     onClick={handleBuyNow}
                     className="w-full py-4 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-xl font-bold text-lg shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02] transition-all"
                   >
-                    💰 一口价购买
+                    💰 {tt('market.buyNow', 'Buy Now')}
                   </button>
                 )}
               </div>

@@ -58,12 +58,12 @@ export const useUIStore = create<UIState>()(
 
 // 用户偏好设置
 interface UserPreferences {
-  language: 'zh' | 'en' | 'ja' | 'ko';
+  language: 'en' | 'zh' | 'ko' | 'es';
   currency: 'SUI' | 'BOX' | 'USD';
   notifications: boolean;
   
   // Actions
-  setLanguage: (lang: 'zh' | 'en' | 'ja' | 'ko') => void;
+  setLanguage: (lang: 'en' | 'zh' | 'ko' | 'es') => void;
   setCurrency: (currency: 'SUI' | 'BOX' | 'USD') => void;
   toggleNotifications: () => void;
 }
@@ -71,7 +71,7 @@ interface UserPreferences {
 export const usePreferences = create<UserPreferences>()(
   persist(
     (set) => ({
-      language: 'zh',
+      language: 'en',
       currency: 'SUI',
       notifications: true,
       

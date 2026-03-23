@@ -3,17 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Coins, ShoppingCart, Landmark, User } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 const navItems = [
-  { name: '首页', href: '/', icon: Home },
-  { name: '开盲盒', href: '/box', icon: Coins },
-  { name: '市场', href: '/market', icon: ShoppingCart },
-  { name: '收益', href: '/mine', icon: Landmark },
-  { name: '我的', href: '/profile', icon: User },
+  { key: 'nav.home', href: '/', icon: Home, fallback: 'Home' },
+  { key: 'nav.box', href: '/box', icon: Coins, fallback: 'Box' },
+  { key: 'nav.market', href: '/market', icon: ShoppingCart, fallback: 'Market' },
+  { key: 'nav.staking', href: '/mine', icon: Landmark, fallback: 'Staking' },
+  { key: 'nav.profile', href: '/profile', icon: User, fallback: 'Profile' },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { tt } = useI18n();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 z-50 safe-area-pb">
@@ -25,7 +27,7 @@ export default function BottomNav() {
           
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all ${
                 isActive 
@@ -34,7 +36,7 @@ export default function BottomNav() {
               }`}
             >
               <Icon className={`w-6 h-6 ${isActive ? 'fill-violet-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">{item.name}</span>
+              <span className="text-[10px] font-medium">{tt(item.key, item.fallback)}</span>
             </Link>
           );
         })}
