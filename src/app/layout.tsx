@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { I18nProvider } from "@/lib/i18n";
 import Header from "@/components/Header";
+import MobileNav from "@/components/MobileNav";
 import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({
         <I18nProvider>
           <Providers>
             <Header />
+            <MobileNav />
             <PageTransition>
               {children}
             </PageTransition>
