@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { I18nProvider } from "@/lib/i18n";
 import Header from "@/components/Header";
+import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: "SUIBOX - NFT Mystery Box + DeFi Staking | SUI Chain",
@@ -42,7 +43,9 @@ export default function RootLayout({
         <I18nProvider>
           <Providers>
             <Header />
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </Providers>
         </I18nProvider>
       </body>

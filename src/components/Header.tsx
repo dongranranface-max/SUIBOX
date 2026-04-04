@@ -4,17 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, Megaphone, Globe } from 'lucide-react';
+import { Bell, Menu, X, ChevronDown, Home, Coins, FlaskConical, ShoppingCart, Landmark, UserPlus, User, Ticket, Megaphone, Globe, Crown, Gift, TrendingUp, DollarSign } from 'lucide-react';
 import { SuiWalletButton } from './SuiWallet';
 import { useI18n } from '@/lib/i18n';
 
 const navItems = [
   { key: 'nav.home', href: '/', icon: Home },
-  { key: 'nav.box', href: '/box', icon: Coins, highlight: true, badge: 'HOT' },
-  { key: 'nav.craft', href: '/craft', icon: FlaskConical, badge: 'NEW' },
+  { key: 'nav.box', href: '/box', icon: Gift, highlight: true, badge: 'HOT' },
+  { key: 'nav.craft', href: '/craft', icon: FlaskConical, highlight: true, badge: 'NEW' },
   { key: 'nav.market', hasDropdown: true, menu: 'market', icon: ShoppingCart },
-  { key: 'nav.stake', hasDropdown: true, menu: 'earn', icon: Landmark, highlight: true },
-  { key: 'nav.invite', href: '/invite', icon: User, badge: 'FREE' },
+  { key: 'nav.stake', hasDropdown: true, menu: 'earn', icon: TrendingUp },
+  { key: 'nav.airdrop', href: '/airdrop', icon: Ticket, badge: 'FREE' },
+  { key: 'nav.genesis', href: '/genesis', icon: Crown, highlight: true, badge: 'PREMIUM' },
+  { key: 'nav.invite', href: '/invite', icon: User },
 ];
 
 const dropdowns: Record<string, { name: string; href: string; icon?: ComponentType<{ className?: string }> }[]> = {
@@ -23,7 +25,8 @@ const dropdowns: Record<string, { name: string; href: string; icon?: ComponentTy
     { name: 'nav.auction', href: '/auction', icon: Ticket },
   ],
   earn: [
-    { name: 'nav.staking', href: '/mine', icon: Landmark },
+    { name: 'nav.staking', href: '/staking', icon: Landmark },
+    { name: 'nav.yield', href: '/yield', icon: DollarSign },
     { name: 'nav.dao', href: '/governance', icon: Megaphone },
   ],
 };
@@ -121,14 +124,16 @@ export default function Header() {
               <div key={item.key} className="relative">
                 {item.hasDropdown ? (
                   <button
+                    onClick={() => setDropdownOpen(dropdownOpen === item.menu ? null : item.menu)}
                     onMouseEnter={() => setDropdownOpen(item.menu || null)}
                     onMouseLeave={() => setDropdownOpen(null)}
                     className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 ${
+                      dropdownOpen === item.menu ? 'bg-white/10 text-white' : 
                       item.highlight ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/10' : 'text-gray-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
                     {tt(item.key)}
-                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                    <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${dropdownOpen === item.menu ? 'rotate-180' : ''}`} />
                   </button>
                 ) : (
                   <Link 

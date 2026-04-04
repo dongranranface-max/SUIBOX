@@ -100,8 +100,11 @@ export const zh = {
     join: '入驻',
     governance: '社区治理',
     staking: 'Staking',
+    yield: 'Real Yield',
     apply: '申请入驻',
     institution: '机构管理',
+    airdrop: '空投',
+    genesis: '创世',
   },
 
   // 市场

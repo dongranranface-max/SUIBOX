@@ -1,521 +1,482 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Zap, AlertCircle, Loader2, Users, Wallet, Sparkles, Crown, Flame, Trophy, CheckCircle, UserPlus, Star, Heart, Sparkle } from 'lucide-react';
-import { useWallet } from '@suiet/wallet-kit';
-import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
-import { useAuth } from '@/hooks/useAuth';
+import { 
+  Gift, Coins, Zap, Shield, Clock, Info, 
+  ChevronRight, Star, Sparkles, TrendingUp,
+  Check, AlertTriangle, Package
+} from 'lucide-react';
 
-const GUARANTEE = { common: 3, rare: 7, epic: 25 };
-
-// 邀请任务配置
-const INVITE_TASKS = [
-  { friends: 1, reward: 1, label: '1位好友开盒', desc: '基础奖励', icon: '👋' },
-  { friends: 3, reward: 2, label: '3位好友开盒', desc: '进阶奖励', icon: '🎉' },
-  { friends: 15, reward: 3, label: '15位好友开盒', desc: '豪华大奖', icon: '👑' },
-];
-
-const FRAGMENT_CONFIG = {
-  common: { name: '普通碎片', rarity: 'R', image: '/fragment-common.png', color: 'from-gray-500 to-gray-700', border: 'border-gray-500' },
-  rare: { name: '稀有碎片', rarity: 'SR', image: '/fragment-rare.png', color: 'from-blue-500 to-cyan-600', border: 'border-blue-500' },
-  epic: { name: '史诗碎片', rarity: 'SSR', image: '/fragment-epic.png', color: 'from-yellow-500 to-orange-600', border: 'border-yellow-500' },
-  none: { name: '感谢参与', rarity: '谢谢参与', icon: '🙏', color: 'from-gray-700 to-gray-900', border: 'border-gray-600' },
+// 开盒结果类型
+type BoxResult = {
+  type: 'normal' | 'rare' | 'epic' | 'nothing';
+  name: string;
+  fragment: string;
+  probability: number;
+  color: string;
+  emoji: string;
 };
 
-// 能量条
-function EnergyBar({ count, max }: { count: number; max: number }) {
-  const percent = Math.min((count / max) * 100, 100);
-  const stage = count >= 35 ? 'epic' : count >= 7 ? 'rare' : count >= 3 ? 'common' : 'none';
-  
-  return (
-    <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-          <Flame className={`w-5 h-5 ${stage === 'epic' ? 'text-yellow-400' : stage === 'rare' ? 'text-blue-400' : 'text-orange-500'}`} />
-          <span className="text-gray-300 font-medium">保底能量</span>
-        </div>
-        <span className={`font-bold ${stage === 'epic' ? 'text-yellow-400' : stage === 'rare' ? 'text-blue-400' : 'text-orange-400'}`}>
-          {count >= 35 ? '🎉 必中史诗！' : count >= 7 ? '⭐ 下一发必中稀有' : count >= 3 ? `🎯 ${3 - count}次必中普通` : `${count}/${max}`}
-        </span>
-      </div>
-      <p className="text-xs text-gray-500 mb-2">根据获得"感谢参与"次数进行保底奖励</p>
-      <div className="h-5 bg-gray-800 rounded-full overflow-hidden relative">
-        <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} className={`absolute inset-y-0 left-0 rounded-full ${
-          stage === 'epic' ? 'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500' :
-          stage === 'rare' ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-400' :
-          'bg-gradient-to-r from-orange-500 via-red-500 to-orange-400'
-        }`} />
-        <motion.div animate={{ left: `${percent}%` }} transition={{ type: 'spring' }} className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg" style={{ transform: 'translate(-50%, -50%)' }} />
-      </div>
-      <div className="flex justify-between mt-2 text-xs text-gray-500">
-        <span className={count >= 3 ? 'text-green-400' : ''}><img src="/fragment-common.png" alt="" className="w-4 h-4 inline-block mr-1" />3次</span>
-        <span className={count >= 7 ? 'text-blue-400' : ''}><img src="/fragment-rare.png" alt="" className="w-4 h-4 inline-block mr-1" />7次</span>
-        <span className={count >= 35 ? 'text-yellow-400' : ''}><img src="/fragment-epic.png" alt="" className="w-4 h-4 inline-block mr-1" />35次</span>
-      </div>
-    </div>
-  );
-}
+// 开盒概率
+const boxProbabilities: BoxResult[] = [
+  { type: 'normal', name: '普通碎片', fragment: 'Common Fragment', probability: 50, color: 'gray', emoji: '🔹' },
+  { type: 'rare', name: '稀有碎片', fragment: 'Rare Fragment', probability: 15, color: 'purple', emoji: '💎' },
+  { type: 'epic', name: '史诗碎片', fragment: 'Epic Fragment', probability: 3, color: 'orange', emoji: '⚡' },
+  { type: 'nothing', name: '感谢参与', fragment: 'Better Luck Next Time', probability: 32, color: 'red', emoji: '😅' },
+];
 
-// 宝箱
-function LootBox({ isEpic, isOpening }: { isEpic: boolean; isOpening: boolean }) {
-  return (
-    <motion.div animate={isOpening ? { rotate: [0, 15, -15, 0] } : { y: [0, -15, 0], rotate: [0, 3, -3, 0] }} transition={{ duration: isOpening ? 0.5 : 2.5, repeat: Infinity }} className="relative cursor-pointer">
-      <motion.div animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: isEpic ? 1 : 2, repeat: Infinity }} className={`absolute inset-0 rounded-full ${isEpic ? 'bg-yellow-500' : 'bg-pink-500'} blur-3xl -z-10 mx-8`} />
-      <div className={`w-36 h-36 md:w-48 md:h-48 mx-auto rounded-3xl bg-gradient-to-br ${isEpic ? 'from-yellow-500 via-orange-600 to-red-600' : 'from-violet-600 via-pink-600 to-purple-700'} flex items-center justify-center shadow-2xl ${isEpic ? 'shadow-yellow-500/50' : 'shadow-pink-500/50'}`}>
-        <Gift className="w-16 h-16 md:w-24 md:h-24 text-white" />
-      </div>
-    </motion.div>
-  );
-}
-
-// 奖励卡
-function RewardCard({ type, count }: { type: string; count: number }) {
-  const config = FRAGMENT_CONFIG[type as keyof typeof FRAGMENT_CONFIG] || FRAGMENT_CONFIG.none;
-  const isEpic = type === 'epic';
-  const isRare = type === 'rare';
-  
-  return (
-    <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.98 }} className={`relative bg-gradient-to-br ${config.color} rounded-xl p-3 border-2 ${config.border}`}>
-      <div className="flex items-center gap-3">
-        <div className="w-14 h-14 rounded-lg bg-black/40 flex items-center justify-center">
-          {config.image ? <img src={config.image} alt={config.name} className="w-full h-full object-contain p-1.5" /> : <span className="text-3xl">{config.icon}</span>}
-        </div>
-        <div>
-          <p className="font-bold text-white text-sm">{config.name}</p>
-          <p className={`text-2xl font-black ${isEpic ? 'text-yellow-300' : isRare ? 'text-blue-300' : 'text-gray-200'}`}>{count}</p>
-        </div>
-      </div>
-      {isEpic && <motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity }} className="absolute -top-2 -right-2"><Crown className="w-7 h-7 text-yellow-400" /></motion.div>}
-    </motion.div>
-  );
-}
-
-// 邀请任务卡片 - 优化版
-function InviteTaskCard({ task, completed, progress }: { task: typeof INVITE_TASKS[0]; completed: boolean; progress: number }) {
-  return (
-    <motion.div 
-      whileHover={!completed ? { scale: 1.02 } : {}}
-      className={`relative overflow-hidden rounded-xl border-2 transition-all ${
-        completed 
-          ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 border-green-500/50' 
-          : 'bg-gray-800/30 border-gray-700/50'
-      }`}
-    >
-      {/* 进度填充 */}
-      {!completed && (
-        <motion.div 
-          initial={{ width: 0 }} 
-          animate={{ width: `${Math.min((progress / task.friends) * 100, 100)}%` }} 
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500/30 to-green-500/10"
-        />
-      )}
-      
-      <div className="relative p-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* 图标 */}
-          <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${
-            completed ? 'bg-green-500/30' : 'bg-gray-700'
-          }`}>
-            {completed ? <CheckCircle className="w-6 h-6 text-green-400" /> : task.icon}
-          </div>
-          
-          {/* 文字 */}
-          <div>
-            <p className={`font-bold text-sm ${completed ? 'text-green-400' : 'text-white'}`}>
-              {task.label}
-            </p>
-            <p className="text-xs text-gray-500">{task.desc}</p>
-          </div>
-        </div>
-        
-        {/* 奖励 */}
-        <div className={`text-right`}>
-          <motion.span 
-            animate={completed ? { scale: [1, 1.2, 1] } : {}}
-            className={`text-lg font-bold block ${completed ? 'text-green-400' : 'text-yellow-400'}`}
-          >
-            +{task.reward}
-          </motion.span>
-          <span className="text-xs text-gray-500">次</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// 结果弹窗
-function ResultModal({ result, onClose }: { result: { type: string }; onClose: () => void }) {
-  const config = FRAGMENT_CONFIG[result.type as keyof typeof FRAGMENT_CONFIG] || FRAGMENT_CONFIG.none;
-  const isEpic = result.type === 'epic';
-  const isRare = result.type === 'rare';
-  
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <motion.div initial={{ scale: 0, y: 50 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', duration: 0.6, bounce: 0.5 }} className={`relative w-full max-w-sm bg-gradient-to-b ${isEpic ? 'from-yellow-600 to-orange-800' : isRare ? 'from-blue-600 to-cyan-800' : 'from-gray-800 to-gray-900'} rounded-3xl p-8 text-center`} onClick={e => e.stopPropagation()}>
-        <div className="absolute inset-0 overflow-hidden rounded-3xl">
-          {[...Array(15)].map((_, i) => (<motion.div key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: [0, 1, 0], scale: [0, 2, 0] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.08 }} className="absolute w-2 h-2 bg-white rounded-full" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}
-        </div>
-        
-        <motion.div className="relative z-10">
-          {isEpic && <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.5, repeat: Infinity }} className="text-2xl font-black text-yellow-300 mb-3">🎉 史诗降临！🎉</motion.div>}
-          {isRare && <div className="text-xl font-bold text-blue-300 mb-3">⭐ 稀有掉落！</div>}
-          
-          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.2, type: 'spring' }} className={`w-32 h-32 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center border-4 ${config.border}`}>
-            {config.image ? <img src={config.image} alt={config.name} className="w-24 h-24 object-contain" /> : <span className="text-5xl">{config.icon}</span>}
-          </motion.div>
-          
-          <h2 className="text-2xl font-black text-white mb-1">{config.name}</h2>
-          <p className={`text-3xl font-black mb-5 ${config.text || 'text-gray-400'}`}>{config.rarity}</p>
-          
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onClose} className="px-10 py-3.5 bg-white text-black rounded-full font-bold text-lg shadow-lg">收下奖励</motion.button>
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// 开盒动画 - 增强版
-function OpeningAnimation() {
-  const [phase, setPhase] = useState(0);
-  
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 300);
-    const t2 = setTimeout(() => setPhase(2), 1000);
-    const t3 = setTimeout(() => setPhase(3), 2000);
-    return () => [t1, t2, t3].forEach(clearTimeout);
-  }, []);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/95 flex items-center justify-center z-50"
-    >
-      {/* 背景光效 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-full blur-3xl"
-        />
-      </div>
-      
-      <div className="relative z-10 text-center">
-        {/* 礼物盒动画 */}
-        <motion.div
-          animate={phase >= 1 ? { 
-            x: [0, -20, 20, -20, 20, 0],
-            rotate: [0, -10, 10, -10, 10, 0]
-          } : {}}
-          transition={{ duration: 0.5 }}
-        >
-          <Gift className="w-32 h-32 text-yellow-400 mx-auto" />
-        </motion.div>
-        
-        {/* 光晕效果 */}
-        {phase >= 2 && (
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1.2, opacity: 1 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          >
-            <div className="w-64 h-64 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-full blur-3xl opacity-40" />
-          </motion.div>
-        )}
-        
-        {/* 粒子爆炸 */}
-        {phase >= 3 && (
-          <motion.div className="absolute inset-0 pointer-events-none">
-            {[...Array(30)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                animate={{ 
-                  x: (Math.random() - 0.5) * 600, 
-                  y: (Math.random() - 0.5) * 600, 
-                  opacity: 0,
-                  scale: 0
-                }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full ${
-                  i % 5 === 0 ? 'bg-yellow-400' : 
-                  i % 5 === 1 ? 'bg-orange-400' : 
-                  i % 5 === 2 ? 'bg-red-400' : 
-                  i % 5 === 3 ? 'bg-white' : 'bg-pink-400'
-                }`}
-              />
-            ))}
-          </motion.div>
-        )}
-        
-        {/* 文字 */}
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ 
-            opacity: phase >= 2 ? 1 : 0, 
-            y: phase >= 2 ? 0 : 20,
-            scale: phase >= 3 ? [1, 1.2, 1] : 1
-          }} 
-          className="mt-10 text-3xl font-black text-white"
-        >
-          {phase >= 3 ? '✨ 恭喜获得！' : '🎁 开启中...'}
-        </motion.p>
-        
-        {/* 进度条 */}
-        <div className="mt-6 w-48 mx-auto h-2 bg-gray-800 rounded-full overflow-hidden">
-          <motion.div 
-            initial={{ width: '0%' }}
-            animate={{ width: phase >= 3 ? '100%' : `${phase * 33}%` }}
-            className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500"
-          />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// SEO: Open Box - SUIBOX | NFT Mystery Boxes on SUI
-// Description: Open mystery boxes to discover rare NFTs. Collect fragments and craft exclusive NFTs.
+// 双通道配置
+const channels = [
+  {
+    id: 'free',
+    name: '免费开盒',
+    icon: '🎁',
+    color: 'green',
+    dailyLimit: '1次（传奇5次+）',
+    cost: '免费',
+    output: '普通/稀有/史诗碎片（概率）',
+    desc: 'DAU基本盘，保障日活',
+  },
+  {
+    id: 'premium',
+    name: '高级付费开盒',
+    icon: '💎',
+    color: 'cyan',
+    dailyLimit: '不限次',
+    cost: '15 BOX',
+    output: '100%必出稀有或史诗（各50%）',
+    desc: '散户BOX消耗黑洞，截断抛压',
+  },
+];
 
 export default function BoxPage() {
-  const wallet = useWallet();
-  const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
-  // 统一认证：支持钱包 + zkLogin
-  const { userAddress, isLoggedIn, loading: authLoading, login } = useAuth();
-  
   const [isOpening, setIsOpening] = useState(false);
-  const [showOpening, setShowOpening] = useState(false);
-  const [result, setResult] = useState<{ type: string } | null>(null);
+  const [result, setResult] = useState<BoxResult | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [combo, setCombo] = useState(0);
-  
-  const [userData, setUserData] = useState({
-    dailyFreeCount: 1,
-    inviteBonus: 0,
-    uniqueFriendsToday: 0,
-    noneCount: 0,
-    fragments: { common: 0, rare: 0, epic: 0 },
-  });
+  const [totalOpened, setTotalOpened] = useState(0);
+  const [freeCount, setFreeCount] = useState(1);
+  const [selectedChannel, setSelectedChannel] = useState('free');
+  const [countdown, setCountdown] = useState('');
 
-  const totalDailyCount = userData.dailyFreeCount + userData.inviteBonus;
-  // 统一判断：钱包连接 或 zkLogin 登录
-  const canOpen = totalDailyCount > 0 && isLoggedIn;
-  const isEpic = userData.noneCount >= 35;
+  const currentChannel = channels.find(c => c.id === selectedChannel)!;
 
-  const calculateBonus = (friends: number) => {
-    if (friends >= 15) return 3;
-    if (friends >= 3) return 2;
-    if (friends >= 1) return 1;
-    return 0;
+  // 模拟倒计时（每日重置）
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+    
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 开盒逻辑
+  const openBox = () => {
+    if (isOpening) return;
+    if (selectedChannel === 'free' && freeCount <= 0) return;
+
+    setIsOpening(true);
+    setResult(null);
+    setShowResult(false);
+
+    // 动画时长
+    setTimeout(() => {
+      // 根据概率随机
+      const rand = Math.random() * 100;
+      let cumulative = 0;
+      let selected: BoxResult = boxProbabilities[3]; // 默认感谢参与
+
+      for (const prob of boxProbabilities) {
+        cumulative += prob.probability;
+        if (rand < cumulative) {
+          selected = prob;
+          break;
+        }
+      }
+
+      setResult(selected);
+      setShowResult(true);
+      setIsOpening(false);
+      setTotalOpened(t => t + 1);
+      if (selectedChannel === 'free') setFreeCount(c => c - 1);
+    }, 2000);
   };
 
-  const fetchUserData = useCallback(async () => {
-    if (!userAddress) return;
-    try {
-      const res = await fetch(`/api/box?address=${userAddress}`);
-      const data = await res.json();
-      setUserData(prev => ({ ...prev, ...data }));
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [userAddress]);
-
-  useEffect(() => { if (isLoggedIn) fetchUserData(); }, [isLoggedIn, fetchUserData]);
-
-  const handleOpen = useCallback(async () => {
-    if (!isLoggedIn) { setError('请先登录！'); return; }
-    if (totalDailyCount <= 0) { setError('今日次数已用完！'); return; }
-    setError(null); setIsOpening(true); setShowOpening(true); setCombo(c => c + 1);
-    
-    try {
-      await fetch('/api/box', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address: wallet.account?.address, action: 'open_box' }) });
-      await new Promise(r => setTimeout(r, 2500));
-      
-      const rand = Math.random() * 100;
-      let rt: string;
-      if (userData.noneCount >= 35) rt = 'epic';
-      else if (userData.noneCount >= 7) rt = 'rare';
-      else if (userData.noneCount >= 3) rt = 'common';
-      else rt = rand < 3 ? 'epic' : rand < 18 ? 'rare' : rand < 68 ? 'common' : 'none';
-      
-      setResult({ type: rt }); setShowOpening(false); setShowResult(true);
-      fetchUserData();
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : '开盒失败'); setCombo(0); }
-    setIsOpening(false);
-  }, [isLoggedIn, userAddress, totalDailyCount, userData.noneCount, fetchUserData]);
+  const colorMap: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+    gray: { bg: 'from-gray-500/20 to-gray-600/20', border: 'border-gray-500/30', text: 'text-gray-400', glow: 'shadow-gray-500/20' },
+    purple: { bg: 'from-purple-500/20 to-pink-500/20', border: 'border-purple-500/30', text: 'text-purple-400', glow: 'shadow-purple-500/20' },
+    orange: { bg: 'from-orange-500/20 to-red-500/20', border: 'border-orange-500/30', text: 'text-orange-400', glow: 'shadow-orange-500/20' },
+    red: { bg: 'from-red-500/20 to-pink-500/20', border: 'border-red-500/30', text: 'text-red-400', glow: 'shadow-red-500/20' },
+    green: { bg: 'from-green-500/20 to-emerald-500/20', border: 'border-green-500/30', text: 'text-green-400', glow: 'shadow-green-500/20' },
+    cyan: { bg: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/30', text: 'text-cyan-400', glow: 'shadow-cyan-500/20' },
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      {/* 背景 */}
-      <div className="fixed inset-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-violet-950 via-black to-orange-950" />
-        <motion.div animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-0 left-1/4 w-80 h-80 bg-yellow-600/20 rounded-full blur-[120px]" />
-        <motion.div animate={{ opacity: [0.15, 0.35, 0.15] }} transition={{ duration: 5, repeat: Infinity }} className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-[100px]" />
+    <div className="min-h-screen bg-gray-950">
+      {/* 背景效果 */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-5">
+      <div className="relative max-w-7xl mx-auto px-4 py-8">
         {/* 标题 */}
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-5">
-          <motion.h1 animate={{ textShadow: ['0 0 10px rgba(139,92,246,0.5)', '0 0 30px rgba(139,92,246,0.8)', '0 0 10px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            SUI GIFT
-          </motion.h1>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-full border border-gray-800 mb-4">
+            <Gift className="w-4 h-4 text-purple-400" />
+            <span className="text-sm text-gray-400">NFT Blind Box</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black mb-2">
+            <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent">
+              Mystery Box
+            </span>
+          </h1>
+          <p className="text-gray-400">开启盲盒，获取碎片，合成NFT</p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          {/* 左侧 */}
-          <div className="md:col-span-2">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-to-b from-gray-900/95 to-black/95 rounded-2xl p-5 md:p-8 text-center border border-gray-800">
-              {combo >= 2 && <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-red-500 px-3 py-1 rounded-full font-bold text-sm z-10">🔥 {combo}连击</motion.div>}
-              
-              <div className="mb-5"><EnergyBar count={userData.noneCount} max={35} /></div>
-              
-              <div className="py-2"><LootBox isEpic={isEpic} isOpening={isOpening} /></div>
-
-              <div className="mt-6">
-                {!isLoggedIn ? (
-                  <button onClick={login} className="px-10 py-3.5 rounded-full font-bold text-lg flex items-center gap-2 mx-auto shadow-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white">
-                    登录后开始抽奖
-                  </button>
-                ) : (
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleOpen} disabled={!canOpen || isOpening} className={`px-10 py-3.5 rounded-full font-bold text-lg flex items-center gap-2 mx-auto shadow-xl ${canOpen && !isOpening ? 'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-white hover:shadow-orange-500/40' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}>
-                    {isOpening ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6" />}
-                    {isOpening ? '开启中...' : '开始抽奖'}
-                  </motion.button>
-                )}
+        {/* 统计数据 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          {[
+            { label: '今日免费次数', value: freeCount.toString(), sub: '次', icon: '🎁', color: 'green' },
+            { label: '累计开盒', value: totalOpened.toString(), sub: '次', icon: '📊', color: 'cyan' },
+            { label: '每日重置', value: countdown, sub: '', icon: '⏱️', color: 'purple' },
+            { label: '下次刷新', value: '00:00', sub: '北京时间', icon: '🔄', color: 'gray' },
+          ].map((item, i) => (
+            <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span>{item.icon}</span>
+                <span className="text-gray-500 text-sm">{item.label}</span>
               </div>
+              <p className={`text-2xl md:text-3xl font-black ${colorMap[item.color as keyof typeof colorMap]?.text || 'text-white'}`}>
+                {item.value}
+              </p>
+              {item.sub && <p className="text-gray-500 text-sm">{item.sub}</p>}
+            </div>
+          ))}
+        </motion.div>
 
-              {isLoggedIn && <p className="mt-3 text-gray-400 text-sm">剩余 <span className="text-orange-400 font-bold text-xl">{totalDailyCount}</span> 次</p>}
-              
-              {/* 网络错误提示 */}
-              {(isWrongNetwork || isSwitching) && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 text-center">
-                  <p className="text-yellow-400 text-sm font-medium">
-                    {isSwitching ? '🔄 正在切换到SUI网络...' : '⚠️ 请切换到SUI网络 (Devnet)'}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    在钱包中手动切换网络，或刷新页面重试
-                  </p>
+        {/* 主内容 Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* 左侧盲盒主体 50% */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-6"
+          >
+            <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 text-center">
+              {/* 盲盒主体 */}
+              <div className="relative mb-8">
+                {/* 外发光 */}
+                <motion.div
+                  animate={isOpening ? { 
+                    rotate: [0, 360],
+                    scale: [1, 1.1, 1],
+                  } : {}}
+                  transition={{ duration: 2, repeat: isOpening ? Infinity : 0 }}
+                  className="relative mx-auto w-64 h-64"
+                >
+                  {/* 盒子 */}
+                  <motion.div
+                    animate={isOpening ? {
+                      y: [0, -20, 0, -10, 0],
+                      rotateX: [0, 10, -10, 5, 0],
+                    } : {}}
+                    transition={{ duration: 0.5, repeat: isOpening ? Infinity : 0 }}
+                    className="relative w-full h-full"
+                  >
+                    {/* 盒子主体 */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-cyan-600 rounded-3xl shadow-2xl shadow-purple-500/30">
+                      {/* 顶部装饰 */}
+                      <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent rounded-t-3xl" />
+                      
+                      {/* 问号 */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          animate={isOpening ? { scale: [1, 1.2, 1] } : {}}
+                          transition={{ duration: 0.5, repeat: Infinity }}
+                          className="text-8xl"
+                        >
+                          {isOpening ? '?' : '🎁'}
+                        </motion.div>
+                      </div>
+
+                      {/* 闪光效果 */}
+                      {isOpening && (
+                        <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                          {[...Array(6)].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="absolute w-1 h-1 bg-white rounded-full"
+                              animate={{
+                                x: [Math.random() * 256, Math.random() * 256],
+                                y: [Math.random() * 256, Math.random() * 256],
+                                opacity: [0, 1, 0],
+                              }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                delay: i * 0.2,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 倒影 */}
+                    <div 
+                      className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-8 bg-gradient-to-b from-purple-500/30 to-transparent rounded-full blur-lg"
+                      style={{ transform: 'scaleY(-0.3)' }}
+                    />
+                  </motion.div>
                 </motion.div>
-              )}
-
-              <div className="mt-5">
-                <p className="text-gray-500 text-xs mb-2">概率公示</p>
-                <div className="flex justify-center gap-2">
-                  {[
-                    { img: '/fragment-common.png', p: '50%', g: '3' },
-                    { img: '/fragment-rare.png', p: '15%', g: '7' },
-                    { img: '/fragment-epic.png', p: '3%', g: '25' },
-                  ].map((item, i) => (
-                    <div key={i} className="bg-gray-800/80 rounded-xl px-3 py-2 text-center flex flex-col items-center">
-                      <img src={item.img} alt="" className="w-10 h-10 object-contain mb-1" />
-                      <p className="text-yellow-400 font-bold text-sm">{item.p}</p>
-                      <p className="text-gray-600 text-xs">保{item.g}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </motion.div>
-          </div>
 
-          {/* 右侧 */}
-          <div className="space-y-3">
-            {isLoggedIn && !loading && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
-                {/* 战利品 */}
-                <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700">
-                  <div className="flex items-center gap-2 mb-3"><Trophy className="w-5 h-5 text-yellow-500" /><span className="text-gray-300 font-medium">我的战利品</span></div>
-                  <div className="space-y-2">
-                    <RewardCard type="common" count={userData.fragments.common} />
-                    <RewardCard type="rare" count={userData.fragments.rare} />
-                    <RewardCard type="epic" count={userData.fragments.epic} />
-                  </div>
-                </div>
+              {/* 通道选择 */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {channels.map((channel) => (
+                  <motion.button
+                    key={channel.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedChannel(channel.id)}
+                    className={`
+                      p-4 rounded-2xl border-2 transition-all
+                      ${selectedChannel === channel.id
+                        ? channel.id === 'free'
+                          ? 'bg-green-500/20 border-green-500'
+                          : 'bg-cyan-500/20 border-cyan-500'
+                        : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-2xl">{channel.icon}</span>
+                      <span className="font-bold text-white">{channel.name}</span>
+                    </div>
+                    <p className={`text-lg font-black ${channel.id === 'free' ? 'text-green-400' : 'text-cyan-400'}`}>
+                      {channel.cost}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {channel.id === 'free' ? `剩余 ${freeCount} 次` : '不限次'}
+                    </p>
+                  </motion.button>
+                ))}
+              </div>
 
-                {/* 好友助攻 - 优化版 */}
-                <div className="bg-gray-900/95 rounded-2xl p-4 border border-gray-700 overflow-hidden">
-                  {/* 头部 */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                        <Heart className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-gray-300 font-medium">好友助攻</span>
+              {/* 开盒按钮 */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={openBox}
+                disabled={isOpening || (selectedChannel === 'free' && freeCount <= 0)}
+                className={`
+                  w-full py-5 rounded-2xl font-black text-xl transition-all relative overflow-hidden
+                  ${isOpening
+                    ? 'bg-gray-700 cursor-wait'
+                    : selectedChannel === 'free' && freeCount <= 0
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-400 hover:via-pink-400 hover:to-cyan-400 text-white shadow-2xl shadow-purple-500/30'
+                  }
+                `}
+              >
+                {isOpening ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
+                    />
+                    开启中...
+                  </span>
+                ) : selectedChannel === 'free' && freeCount <= 0 ? (
+                  '今日次数已用完'
+                ) : (
+                  <>
+                    <Sparkles className="inline-block mr-2" />
+                    {selectedChannel === 'free' ? '免费开盒' : '付费开盒 (15 BOX)'}
+                  </>
+                )}
+              </motion.button>
+
+              {/* 保底提示 */}
+              <div className="mt-4 text-sm text-gray-500">
+                <Info className="inline-block w-4 h-4 mr-1" />
+                感谢参与累计3次 = 1普通碎片 / 7次 = 1稀有碎片 / 15次 = 1史诗碎片
+              </div>
+            </div>
+          </motion.div>
+
+          {/* 右侧信息 50% */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-6 space-y-6"
+          >
+            {/* 概率展示 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-400" />
+                开盒概率（Sui Randomness 链上随机）
+              </h3>
+              
+              <div className="space-y-3">
+                {boxProbabilities.map((prob, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorMap[prob.color].bg} border ${colorMap[prob.color].border} flex items-center justify-center text-2xl`}>
+                      {prob.emoji}
                     </div>
-                    <div className="text-right">
-                      <motion.span 
-                        key={userData.inviteBonus}
-                        initial={{ scale: 1.3 }}
-                        animate={{ scale: 1 }}
-                        className="text-2xl font-bold text-green-400"
-                      >
-                        +{userData.inviteBonus}
-                      </motion.span>
-                      <span className="text-xs text-gray-500 ml-1">次</span>
-                    </div>
-                  </div>
-                  
-                  {/* 当前状态 */}
-                  <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl p-3 mb-4 border border-green-500/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Sparkle className="w-4 h-4 text-green-400" />
-                        <span className="text-gray-400 text-sm">今日助攻好友</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-white">{prob.name}</span>
+                        <span className={`font-black ${colorMap[prob.color].text}`}>{prob.probability}%</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-3xl font-black text-green-400">{userData.uniqueFriendsToday}</span>
-                        <span className="text-gray-500 text-sm">人</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* 任务列表 */}
-                  <div className="space-y-2">
-                    {INVITE_TASKS.map((task, index) => (
-                      <motion.div
-                        key={task.friends}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <InviteTaskCard 
-                          task={task} 
-                          completed={userData.uniqueFriendsToday >= task.friends}
-                          progress={userData.uniqueFriendsToday}
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${prob.probability}%` }}
+                          transition={{ duration: 1, delay: i * 0.1 }}
+                          className={`h-full bg-gradient-to-r ${colorMap[prob.color].bg} rounded-full`}
                         />
-                      </motion.div>
-                    ))}
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* 底部提示 */}
-                  <div className="mt-3 pt-3 border-t border-gray-700/50 flex items-center justify-center gap-1 text-xs text-gray-500">
-                    <Sparkle className="w-3 h-3" />
-                    <span>好友开盲盒，你获免费次数</span>
-                    <Sparkle className="w-3 h-3" />
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                ))}
+              </div>
+            </div>
 
-            {!isLoggedIn && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gray-900/95 rounded-2xl p-8 text-center border border-gray-700">
-                <Wallet className="w-12 h-12 mx-auto mb-3 text-gray-500" />
-                <p className="text-gray-400 mb-4">登录后开始抽奖</p>
-                <button onClick={login} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold">
-                  立即登录
-                </button>
-              </motion.div>
-            )}
-          </div>
+            {/* 碎片说明 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Package className="w-5 h-5 text-purple-400" />
+                碎片用途
+              </h3>
+              
+              <div className="space-y-3">
+                {[
+                  { from: '普通碎片×6', to: '普通NFT + 5 BOX', icon: '🔹', color: 'gray' },
+                  { from: '稀有碎片×8', to: '稀有NFT + 8 BOX', icon: '💎', color: 'purple' },
+                  { from: '史诗碎片×10', to: '史诗NFT + 15 BOX', icon: '⚡', color: 'orange' },
+                  { from: '50普通+25稀有+10史诗', to: '传奇NFT + 100 BOX', icon: '👑', color: 'yellow' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-gray-800 rounded-xl">
+                    <span className="text-2xl">{item.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-400">{item.from}</p>
+                      <p className="text-white font-bold">→ {item.to}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 双通道说明 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-400" />
+                双通道开盒
+              </h3>
+              
+              <div className="space-y-4">
+                {channels.map((channel) => (
+                  <div key={channel.id} className={`p-4 rounded-xl bg-gradient-to-r ${channel.id === 'free' ? 'from-green-500/10 to-emerald-500/10' : 'from-cyan-500/10 to-blue-500/10'} border border-gray-700`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{channel.icon}</span>
+                      <span className="font-bold text-white">{channel.name}</span>
+                    </div>
+                    <p className="text-sm text-gray-400">{channel.desc}</p>
+                    <p className="text-sm mt-1">
+                      <span className="text-gray-500">每日次数:</span>
+                      <span className={channel.id === 'free' ? 'text-green-400' : 'text-cyan-400'}>{channel.dailyLimit}</span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="text-gray-500">产出:</span>
+                      <span className="text-white">{channel.output}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
-
-        {error && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-6 py-2.5 rounded-full text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</motion.div>}
-
-        <AnimatePresence>{showOpening && <OpeningAnimation />}</AnimatePresence>
-        <AnimatePresence>{showResult && result && <ResultModal result={result} onClose={() => setShowResult(false)} />}</AnimatePresence>
       </div>
+
+      {/* 结果弹窗 */}
+      <AnimatePresence>
+        {showResult && result && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              className="text-center"
+            >
+              {/* 结果图标 */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                transition={{ type: 'spring', duration: 0.8 }}
+                className={`w-40 h-40 mx-auto mb-6 rounded-full bg-gradient-to-br ${colorMap[result.color].bg} border-4 ${colorMap[result.color].border} flex items-center justify-center text-8xl shadow-2xl ${colorMap[result.color].glow}`}
+              >
+                {result.emoji}
+              </motion.div>
+
+              {/* 结果文字 */}
+              <motion.h2
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className={`text-4xl font-black mb-2 ${colorMap[result.color].text}`}
+              >
+                {result.name}
+              </motion.h2>
+              <p className="text-gray-400 text-xl mb-6">{result.fragment}</p>
+
+              {/* 概率 */}
+              <p className="text-sm text-gray-500 mb-8">
+                概率: <span className={`font-bold ${colorMap[result.color].text}`}>{result.probability}%</span>
+              </p>
+
+              {/* 关闭按钮 */}
+              <motion.button
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowResult(false)}
+                className="px-8 py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-2xl text-white font-bold transition-all"
+              >
+                继续开盒
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,0 +1,343 @@
+# SUIBOX 代币经济 Mermaid 流程图
+
+---
+
+## 图1: BOX 代币释放总览
+
+```mermaid
+---
+title: BOX 代币释放总览 (10亿总量)
+---
+flowchart TB
+    subgraph Total["10亿 BOX 总供应量"]
+        direction TB
+        A[10亿 BOX]
+    end
+
+    A --> B["即时释放<br/>约5%"]
+    A --> C["延迟释放<br/>约95%"]
+
+    B --> D["初始流通LP<br/>3951万 BOX<br/>传奇NFT销售释放"]
+
+    C --> E["阶梯式释放<br/>6年分期"]
+    C --> F["团队锁定<br/>4年阶梯"]
+    C --> G["战略储备<br/>18个月后"]
+
+    E --> E1["冷启动 0-3月<br/>3% = 1050万"]
+    E --> E2["成长期 4-12月<br/>17% = 5950万"]
+    E --> E3["稳定期 13-60月<br/>80% = 2.8亿"]
+
+    style D fill:#90EE90
+    style E1 fill:#FFD700
+    style E2 fill:#FFA500
+    style E3 fill:#FF6B6B
+```
+
+---
+
+## 图2: 用户行为与BOX联动
+
+```mermaid
+---
+title: 用户行为与BOX经济联动
+---
+flowchart LR
+    subgraph Entry["用户入口"]
+        A1["注册/登录<br/>zkLogin"]
+    end
+
+    A1 --> B["邀请好友"]
+
+    B --> C["开盲盒"]
+    C --> D["碎片合成NFT"]
+    D --> E["NFT升级"]
+    E --> F["质押挖矿"]
+
+    F --> G["每日收益BOX"]
+    G --> H["持有/交易"]
+
+    %% 奖励流向
+    B --> |"邀请奖励BOX"| I1["邀请人获得"]
+    D --> |"合成奖励BOX"| I2["用户获得"]
+    E --> |"升级回流45%| I3["奖励池"]
+
+    I3 --> |"50%"| J1["质押池"]
+    I3 --> |"30%"| J2["邀请激励"]
+    I3 --> |"20%"| J3["社区基金"]
+
+    %% 55%销毁
+    E --> |"55%销毁"| K["BOX通缩"]
+
+    style A1 fill:#87CEEB
+    style B fill:#98FB98
+    style C fill:#DDA0DD
+    style D fill:#F0E68C
+    style E fill:#FFB6C1
+    style F fill:#ADD8E6
+```
+
+---
+
+## 图3: 质押池释放流程
+
+```mermaid
+---
+title: 质押池3.5亿 BOX 阶梯释放
+---
+flowchart LR
+    subgraph Pool["质押池 3.5亿 BOX"]
+        direction TB
+        P[3.5亿]
+    end
+
+    P --> P1["冷启动期<br/>0-3月<br/>3% = 1050万"]
+    P1 --> P2["早期<br/>4-6月<br/>5% = 1750万"]
+    P2 --> P3["成长期<br/>7-12月<br/>12% = 4200万"]
+    P3 --> P4["稳定期<br/>13-60月<br/>80% = 2.8亿"]
+
+    P1 --> T1["代币质押池<br/>20%"]
+    P2 --> T2["SUI代币池<br/>10%"]
+    P3 --> T3["NFT质押池<br/>50%"]
+    P4 --> T4["混合质押池<br/>30%"]
+
+    style P1 fill:#90EE90
+    style P2 fill:#FFD700
+    style P3 fill:#FFA500
+    style P4 fill:#FF6B6B
+```
+
+---
+
+## 图4: 升级BOX回流分配
+
+```mermaid
+---
+title: 升级BOX回流分配机制
+---
+flowchart TB
+    U[用户升级NFT]
+    U --> U1["史诗升级<br/>456 BOX"]
+    U --> U2["传奇升级<br/>692 BOX"]
+
+    U1 --> Split["分配比例"]
+    U2 --> Split
+
+    Split --> |"55%销毁"| Burn["BOX销毁<br/>通缩"]
+    Split --> |"45%回流"| Reflow["回流奖励池"]
+
+    Reflow --> |"50%"| S["Staking基金<br/>质押挖矿"]
+    Reflow --> |"30%"| I["邀请激励基金<br/>好友活跃"]
+    Reflow --> |"20%"| C["社区基金<br/>平台运营/DAO"]
+
+    S --> S1["每日分配"]
+    I --> I1["持续激励"]
+    C --> C1["生态发展"]
+
+    style Burn fill:#FF6B6B
+    style Reflow fill:#90EE90
+    style S fill:#87CEEB
+    style I fill:#FFD700
+    style C fill:#DDA0DD
+```
+
+---
+
+## 图5: 邀请激励分配
+
+```mermaid
+---
+title: 邀请激励分配流程
+---
+flowchart LR
+    F[好友开盒] --> F1["首次开盒"]
+    F1 --> F10["第10次开盒"]
+    F10 --> F50["第50次开盒"]
+
+    F1 --> |"邀请人获得"| R1["10 BOX"]
+    F10 --> |"邀请人获得"| R2["20 BOX"]
+    F50 --> |"邀请人获得"| R3["50 BOX"]
+
+    R1 --> Pool["邀请激励基金池"]
+    R2 --> Pool
+    R3 --> Pool
+
+    Pool --> |"池子充足时"| Pay["全额发放"]
+    Pool --> |"池子不足时"| Save["累积到明天"]
+
+    Pay --> Done["用户获得奖励"]
+    Save --> |"累积够时"| Pay
+
+    style F1 fill:#90EE90
+    style F10 fill:#FFD700
+    style F50 fill:#FFA500
+    style R1 fill:#90EE90
+    style R2 fill:#FFD700
+    style R3 fill:#FFA500
+```
+
+---
+
+## 图6: 整体经济闭环
+
+```mermaid
+---
+title: SUIBOX 经济闭环
+---
+flowchart LR
+    subgraph External["外部"]
+        SUI[SUI生态<br/>资金流入]
+    end
+
+    SUI --> NFT[传奇NFT销售]
+    NFT --> LP["LP流动性<br/>建立"]
+
+    NFT --> Nft[获得NFT]
+    Nft --> Box[获得BOX]
+
+    Box --> Stake[质押挖矿]
+    Stake --> Up[升级消耗]
+
+    Up --> |"55%销毁"| Burn[BOX销毁]
+    Up --> |"45%回流"| Pool[奖励池]
+
+    Pool --> Stake
+    Pool --> Invite["邀请激励"]
+    Pool --> Comm["社区基金"]
+
+    Invite --> NewUser[新用户]
+    NewUser --> NFT
+
+    Burn --> Price[BOX价格上涨]
+    Stake --> Price
+
+    style SUI fill:#87CEEB
+    style NFT fill:#FFD700
+    style LP fill:#90EE90
+    style Burn fill:#FF6B6B
+    style Price fill:#FF1493
+```
+
+---
+
+## 图7: 流通量控制
+
+```mermaid
+---
+title: 流通量控制机制
+---
+flowchart TB
+    subgraph Input["每日释放"]
+        Daily["约13.7万 BOX"]
+    end
+
+    Daily --> Lock["质押锁仓<br/>50%+"]
+    Daily --> Burn["升级销毁<br/>55%"]
+    Daily --> Fee["交易手续费"]
+
+    Lock --> Cir["实际流通量"]
+    Burn --> Cir
+    Fee --> Cir
+
+    Cir --> |"供 < 需"| Price["价格上涨"]
+
+    Price --> Attract["吸引更多用户"]
+    Attract --> Daily
+
+    style Daily fill:#87CEEB
+    style Lock fill:#90EE90
+    style Burn fill:#FF6B6B
+    style Cir fill:#FFD700
+    style Price fill:#FF1493
+```
+
+---
+
+## 图8: 质押池收益分配
+
+```mermaid
+---
+title: 10个质押池收益分配
+---
+flowchart LR
+    subgraph Total["每日释放约13.7万 BOX"]
+        T[总释放]
+    end
+
+    T --> A["代币质押池<br/>20% = 2.7万"]
+    T --> B["SUI代币池<br/>10% = 1.4万"]
+    T --> C["普通NFT池<br/>5% = 0.7万"]
+    T --> D["稀有NFT池<br/>10% = 1.4万"]
+    T --> E["史诗NFT池<br/>15% = 2万"]
+    T --> F["传奇NFT池<br/>20% = 2.7万"]
+    T --> G["稀有+史诗池<br/>8% = 1.1万"]
+    T --> H["史诗+传奇池<br/>7% = 0.9万"]
+    T --> I["稀有+传奇池<br/>3% = 0.4万"]
+    T --> J["万物可质押<br/>2% = 0.3万"]
+
+    style A fill:#87CEEB
+    style B fill:#98FB98
+    style C fill:#DDA0DD
+    style D fill:#F0E68C
+    style E fill:#FFB6C1
+    style F fill:#ADD8E6
+    style G fill:#FFE4B5
+    style H fill:#E6E6FA
+    style I fill:#B0E0E6
+    style J fill:#D3D3D3
+```
+
+---
+
+## 图9: NFT稀有度体系
+
+```mermaid
+---
+title: NFT稀有度金字塔
+---
+flowchart TB
+    subgraph Legend["👑 传奇 NFT"]
+        L[总量1665个<br/>限量]
+    end
+
+    subgraph Epic["🔮 史诗 NFT"]
+        E[赛季/活动限量<br/>预计5000个]
+    end
+
+    subgraph Rare["💎 稀有 NFT"]
+        R[阶段限量<br/>预计2万个]
+    end
+
+    subgraph Common["🔩 普通 NFT"]
+        C[不限量<br/>持续产出]
+    end
+
+    L --> E
+    E --> R
+    R --> C
+
+    style L fill:#FFD700
+    style E fill:#9370DB
+    style R fill:#4169E1
+    style C fill:#808080
+```
+
+---
+
+## 图10: 团队代币解锁时间线
+
+```mermaid
+---
+title: 创世团队5千万 BOX 阶梯解锁
+---
+gantt
+    title 团队代币解锁计划
+    dateFormat  YYYY-MM
+    section 锁仓期
+    锁仓          :active1, 2026-01, 12
+    section 第一批
+    25% 解锁      :2027-01, 2027-03
+    section 第二批
+    25% 解锁      :2028-01, 2028-03
+    section 第三批
+    50% 解锁      :2029-01, 2029-03
+```

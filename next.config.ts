@@ -1,11 +1,6 @@
-import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 忽略TypeScript错误用于构建
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // 图片优化
   images: {
     formats: ['image/avif', 'image/webp'] as const,

@@ -1,280 +1,424 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Lock, Zap, Crown, Wallet, ArrowRight, RefreshCw, Layers, Rocket, Atom, ChevronRight } from 'lucide-react';
-import { useWallet } from '@suiet/wallet-kit';
-import { useAuth } from '@/hooks/useAuth';
-import { useAutoSwitchNetwork } from '@/hooks/useAutoSwitchNetwork';
-import { useI18n } from '@/lib/i18n';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Rocket, Layers, ChevronRight, Check } from 'lucide-react';
 
-// NFT视频配置
-const NFT_VIDEOS = { common: '/nft-common.mp4', rare: '/nft-rare.mp4', epic: '/nft-epic.mp4' };
-
-// 碎片配置
 const FRAGMENT_CONFIG = {
-  common: { name: '普通碎片', image: '/fragment-common.png' },
-  rare: { name: '稀有碎片', image: '/fragment-rare.png' },
-  epic: { name: '史诗碎片', image: '/fragment-epic.png' },
+  common: { name: 'Common Fragment', emoji: '🔹', color: 'gray', desc: 'Common quality fragment' },
+  rare: { name: 'Rare Fragment', emoji: '💎', color: 'purple', desc: 'Rare quality fragment' },
+  epic: { name: 'Epic Fragment', emoji: '⚡', color: 'orange', desc: 'Epic quality fragment' },
 };
 
-// NFT配置
 const NFT_CONFIG = {
-  common: { name: '普通NFT', video: '/nft-common.mp4' },
-  rare: { name: '稀有NFT', video: '/nft-rare.mp4' },
-  epic: { name: '史诗NFT', video: '/nft-epic.mp4' },
+  common: { name: 'Common NFT', emoji: '✨', color: 'gray', stars: 1 },
+  rare: { name: 'Rare NFT', emoji: '💎', color: 'purple', stars: 2 },
+  epic: { name: 'Epic NFT', emoji: '🔥', color: 'orange', stars: 3 },
+  legendary: { name: 'Legendary NFT', emoji: '👑', color: 'yellow', stars: 5 },
 };
 
-// 碎片合成配方
-const FRAGMENT_RECIPES = [
-  { id: 1, result: 'common', cost: { common: 6 }, reward: 5, name: '普通NFT', tier: 1 },
-  { id: 2, result: 'rare', cost: { rare: 8 }, reward: 8, name: '稀有NFT', tier: 2 },
-  { id: 3, result: 'epic', cost: { epic: 10 }, reward: 15, name: '史诗NFT', tier: 3 },
+const fragmentRecipes = [
+  { result: 'common', cost: { common: 6 }, reward: 5, name: 'Common NFT', tier: 1 },
+  { result: 'rare', cost: { rare: 8 }, reward: 8, name: 'Rare NFT', tier: 2 },
+  { result: 'epic', cost: { epic: 10 }, reward: 15, name: 'Epic NFT', tier: 3 },
 ];
 
-// NFT合成配方
-const NFT_RECIPES = [
-  { id: 1, result: 'rare', cost: { common: 5 }, boxCost: 30, reward: 10, name: '稀有NFT', tier: 2 },
-  { id: 2, result: 'epic', cost: { rare: 4 }, boxCost: 50, reward: 20, name: '史诗NFT', tier: 3 },
+const nftRecipes = [
+  { result: 'rare', cost: { commonNFT: 5, box: 30 }, reward: 10, name: 'Rare NFT', boxCost: 30 },
+  { result: 'epic', cost: { rareNFT: 4, box: 50 }, reward: 20, name: 'Epic NFT', boxCost: 50 },
+  { result: 'legendary', cost: { commonNFT: 100, rareNFT: 50, epicNFT: 20, box: 200 }, reward: 100, name: 'Legendary NFT', boxCost: 200 },
 ];
 
-function NFTVideo({ src, alt, size = 40 }: { src: string; alt: string; size?: number }) {
-  return <div className="relative rounded-lg overflow-hidden" style={{ width: size, height: size }}><video src={src} autoPlay loop muted playsInline className="w-full h-full object-cover" /></div>;
-}
-
-function FragImg({ src, alt, size = 40 }: { src: string; alt: string; size?: number }) {
-  return <img src={src} alt={alt} className="object-contain" style={{ width: size, height: size, borderRadius: '8px' }} />;
-}
-
-function TierBadge({ tier }: { tier: number }) {
-  const configs = [{ name: '普通', color: 'text-gray-400', bg: 'bg-gray-600' }, { name: '稀有', color: 'text-blue-400', bg: 'bg-blue-600' }, { name: '史诗', color: 'text-yellow-400', bg: 'bg-yellow-600' }];
-  const config = configs[tier - 1] || configs[0];
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${config.bg} ${config.color}`}>{config.name}</span>;
-}
+const userFragments = { common: 12, rare: 6, epic: 3 };
+const userNFTs = { common: 3, rare: 1, epic: 0, legendary: 0 };
+const userBox = 500;
 
 export default function CraftPage() {
-  const wallet = useWallet();
-  const { isWrongNetwork, isSwitching } = useAutoSwitchNetwork();
-  // 统一认证
-  const { userAddress, isLoggedIn, login } = useAuth();
   const [activeTab, setActiveTab] = useState<'fragment' | 'nft'>('fragment');
-  const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
-  const [synthesizing, setSynthesizing] = useState(false);
-  const [showResult, setShowResult] = useState(false);
-  const [resultData, setResultData] = useState<{ type: string; reward: number } | null>(null);
+  const [craftingNFT, setCraftingNFT] = useState<string | null>(null);
+  const [craftSuccess, setCraftSuccess] = useState<{ type: string; name: string } | null>(null);
 
-  const [myFragments, setMyFragments] = useState({ common: 10, rare: 5, epic: 2 });
-  const [myNFTs, setMyNFTs] = useState({ common: 3, rare: 1, epic: 0 });
-  const [myBOX, setMyBOX] = useState(100);
+  const colorMap: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+    gray: { bg: 'from-gray-500/20 to-gray-600/20', border: 'border-gray-500/30', text: 'text-gray-400', glow: 'shadow-gray-500/20' },
+    purple: { bg: 'from-purple-500/20 to-pink-500/20', border: 'border-purple-500/30', text: 'text-purple-400', glow: 'shadow-purple-500/20' },
+    orange: { bg: 'from-orange-500/20 to-red-500/20', border: 'border-orange-500/30', text: 'text-orange-400', glow: 'shadow-orange-500/20' },
+    yellow: { bg: 'from-yellow-500/20 to-amber-500/20', border: 'border-yellow-500/30', text: 'text-yellow-400', glow: 'shadow-yellow-500/20' },
+    cyan: { bg: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/30', text: 'text-cyan-400', glow: 'shadow-cyan-500/20' },
+  };
 
-  const canSynth = useMemo(() => {
-    if (activeTab === 'fragment') {
-      return FRAGMENT_RECIPES.filter(r => {
-        const c = r.cost;
-        return (!c.common || myFragments.common >= c.common) && (!c.rare || myFragments.rare >= c.rare) && (!c.epic || myFragments.epic >= c.epic);
-      }).length;
-    } else {
-      return NFT_RECIPES.filter(r => {
-        const c = r.cost;
-        const nftCount = c.common ? myNFTs.common : myNFTs.rare;
-        return nftCount >= (c.common || c.rare || 0) && myBOX >= r.boxCost;
-      }).length;
-    }
-  }, [activeTab, myFragments, myNFTs, myBOX]);
+  const canCraftFragment = (recipe: typeof fragmentRecipes[0]) => {
+    return Object.entries(recipe.cost).every(([type, needed]) => {
+      const fragType = type.replace('Fragment', '') as 'common' | 'rare' | 'epic';
+      return userFragments[fragType] >= needed;
+    });
+  };
 
-  const handleSynth = () => {
-    if (selectedRecipe === null) return;
-    setSynthesizing(true);
+  const canCraftNFT = (recipe: typeof nftRecipes[0]) => {
+    if (recipe.cost.commonNFT && userNFTs.common < recipe.cost.commonNFT) return false;
+    if (recipe.cost.rareNFT && userNFTs.rare < recipe.cost.rareNFT) return false;
+    if (recipe.cost.epicNFT && userNFTs.epic < recipe.cost.epicNFT) return false;
+    if (recipe.cost.box && userBox < recipe.cost.box) return false;
+    return true;
+  };
+
+  const doFragmentCraft = (recipe: typeof fragmentRecipes[0]) => {
+    if (!canCraftFragment(recipe)) return;
+    setCraftingNFT(recipe.name);
     setTimeout(() => {
-      if (activeTab === 'fragment') {
-        const recipe = FRAGMENT_RECIPES[selectedRecipe];
-        const c = recipe.cost;
-        setMyFragments(prev => ({ common: prev.common - (c.common || 0), rare: prev.rare - (c.rare || 0), epic: prev.epic - (c.epic || 0) }));
-        setMyNFTs(prev => ({ ...prev, [recipe.result]: prev[recipe.result as keyof typeof prev] + 1 }));
-        setMyBOX(prev => prev + recipe.reward);
-        setResultData({ type: recipe.result, reward: recipe.reward });
-      } else {
-        const recipe = NFT_RECIPES[selectedRecipe];
-        const c = recipe.cost;
-        setMyBOX(prev => prev - recipe.boxCost + recipe.reward);
-        setMyNFTs(prev => ({ common: prev.common - (c.common || 0), rare: prev.rare - (c.rare || 0), epic: prev.epic + 1 }));
-        setResultData({ type: recipe.result, reward: recipe.reward });
-      }
-      setSynthesizing(false);
-      setShowResult(true);
-      setSelectedRecipe(null);
-    }, 3000);
+      setCraftingNFT(null);
+      setCraftSuccess({ type: 'fragment', name: NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG].name });
+      setTimeout(() => setCraftSuccess(null), 3000);
+    }, 2000);
+  };
+
+  const doNFTCraft = (recipe: typeof nftRecipes[0]) => {
+    if (!canCraftNFT(recipe)) return;
+    setCraftingNFT(recipe.name);
+    setTimeout(() => {
+      setCraftingNFT(null);
+      setCraftSuccess({ type: 'nft', name: NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG].name });
+      setTimeout(() => setCraftSuccess(null), 3000);
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      <div className="fixed inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-950/50 via-black to-purple-950/50" />
-        <motion.div animate={{ opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[150px]" />
-        <motion.div animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-pink-600/20 rounded-full blur-[150px]" />
+    <div className="min-h-screen bg-gray-950">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-6">
-        <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-6">
-          <motion.h1 animate={{ textShadow: ['0 0 20px rgba(139,92,246,0.5)', '0 0 40px rgba(139,92,246,0.8)', '0 0 20px rgba(139,92,246,0.5)'] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl md:text-5xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            🔬 Laboratory
-          </motion.h1>
-          <p className="text-gray-400 mt-1 text-sm">Transform fragments into NFTs and earn rewards</p>
+      <div className="relative max-w-7xl mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 rounded-full border border-purple-500/30 mb-4">
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span className="text-sm text-purple-400">NFT Craft</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black mb-2">
+            <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent">
+              Craft Center
+            </span>
+          </h1>
+          <p className="text-gray-400">Craft Fragments into NFTs · Upgrade to Higher Tiers</p>
         </motion.div>
 
-        {isLoggedIn && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-            <div className="bg-gray-900/80 backdrop-blur rounded-2xl p-4 border border-violet-500/30">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2"><Atom className="w-5 h-5 text-violet-400" /><span className="font-bold text-gray-300">My Assets</span></div>
-                <span className="text-xs text-gray-500">{canSynth} recipes available</span>
+        {/* User Assets */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          {[
+            { label: 'Common Fragments', value: userFragments.common, emoji: '🔹', color: 'gray' },
+            { label: 'Rare Fragments', value: userFragments.rare, emoji: '💎', color: 'purple' },
+            { label: 'Epic Fragments', value: userFragments.epic, emoji: '⚡', color: 'orange' },
+            { label: 'BOX Balance', value: userBox, emoji: '💰', color: 'cyan' },
+          ].map((item, i) => (
+            <div key={i} className={`bg-gray-900 border border-gray-800 rounded-2xl p-4 bg-gradient-to-br ${colorMap[item.color].bg}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{item.emoji}</span>
+                <span className="text-gray-500 text-sm">{item.label}</span>
               </div>
-              
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-2">🎯 Fragments</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[{ key: 'common', count: myFragments.common }, { key: 'rare', count: myFragments.rare }, { key: 'epic', count: myFragments.epic }].map(item => (
-                    <div key={item.key} className="bg-gray-800/50 rounded-xl p-2 text-center">
-                      <div className="flex justify-center mb-1"><FragImg src={FRAGMENT_CONFIG[item.key as keyof typeof FRAGMENT_CONFIG].image} alt={item.key} size={32} /></div>
-                      <p className={`text-lg font-bold ${item.key === 'common' ? 'text-gray-300' : item.key === 'rare' ? 'text-blue-400' : 'text-yellow-400'}`}>{item.count}</p>
-                      <p className="text-xs text-gray-600">{item.key === 'common' ? 'Common' : item.key === 'rare' ? 'Rare' : 'Epic'}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-2">🖼️ NFTs</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[{ key: 'common', count: myNFTs.common }, { key: 'rare', count: myNFTs.rare }, { key: 'epic', count: myNFTs.epic }].map(item => (
-                    <div key={item.key} className="bg-gray-800/50 rounded-xl p-2 text-center">
-                      <div className="flex justify-center mb-1"><NFTVideo src={NFT_CONFIG[item.key as keyof typeof NFT_CONFIG].video} alt={item.key} size={32} /></div>
-                      <p className={`text-lg font-bold ${item.key === 'common' ? 'text-gray-300' : item.key === 'rare' ? 'text-blue-400' : 'text-yellow-400'}`}>{item.count}</p>
-                      <p className="text-xs text-gray-600">{item.key === 'common' ? 'Common' : item.key === 'rare' ? 'Rare' : 'Epic'}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="pt-3 border-t border-gray-700">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">💰 BOX Balance</span>
-                  <motion.span key={myBOX} initial={{ scale: 1.2 }} animate={{ scale: 1 }} className="text-2xl font-black text-green-400">{myBOX}</motion.span>
-                </div>
-              </div>
-              
-              {/* NFT发行量 */}
-              <div className="mt-4 pt-4 border-t border-gray-700">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div><p className="text-xs text-gray-500">Common NFT</p><p className="text-sm font-bold text-green-400">1M</p></div>
-                  <div><p className="text-xs text-gray-500">Rare NFT</p><p className="text-sm font-bold text-blue-400">100K</p></div>
-                  <div><p className="text-xs text-gray-500">Epic NFT</p><p className="text-sm font-bold text-yellow-400">20K</p></div>
-                </div>
-              </div>
+              <p className={`text-2xl font-black ${colorMap[item.color].text}`}>{item.value}</p>
             </div>
-          </motion.div>
-        )}
-
-        <div className="flex gap-2 mb-6">
-          {[{ key: 'fragment', label: '⚡ Fragment Synthesis', icon: Layers }, { key: 'nft', label: '🚀 Ultimate Synthesis', icon: Rocket }].map(tab => (
-            <motion.button key={tab.key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setActiveTab(tab.key as 'fragment' | 'nft'); setSelectedRecipe(null); }} className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 ${activeTab === tab.key ? 'bg-gradient-to-r from-violet-600 to-pink-600 shadow-lg' : 'bg-gray-800 text-gray-400'}`}>
-              <tab.icon className="w-5 h-5" /><span>{tab.label}</span>
-            </motion.button>
           ))}
+        </motion.div>
+
+        {/* Tab Switch */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <button
+            onClick={() => setActiveTab('fragment')}
+            className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all ${
+              activeTab === 'fragment'
+                ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/25'
+                : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            <Layers className="inline-block w-5 h-5 mr-2" />
+            Fragment Craft
+          </button>
+          <button
+            onClick={() => setActiveTab('nft')}
+            className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all ${
+              activeTab === 'nft'
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25'
+                : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            <Rocket className="inline-block w-5 h-5 mr-2" />
+            NFT Upgrade
+          </button>
         </div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-          {activeTab === 'fragment' ? FRAGMENT_RECIPES.map((recipe, index) => {
-            const c = recipe.cost;
-            const canDo = (!c.common || myFragments.common >= c.common) && (!c.rare || myFragments.rare >= c.rare) && (!c.epic || myFragments.epic >= c.epic);
-            return (
-              <motion.div key={recipe.id} whileHover={canDo ? { scale: 1.01 } : {}} onClick={() => canDo && setSelectedRecipe(index)} className={`rounded-xl border-2 cursor-pointer transition-all ${selectedRecipe === index ? 'border-violet-500 bg-violet-500/10' : canDo ? 'border-gray-700 bg-gray-900/60' : 'border-gray-800 bg-gray-900/30 opacity-60'}`}>
-                <div className="p-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex gap-1">
-                      {c.common && <div className="bg-gray-800 px-2 py-1 rounded-lg flex items-center gap-1"><FragImg src={FRAGMENT_CONFIG.common.image} alt="" size={18} /><span className="text-xs text-gray-300">×{c.common}</span></div>}
-                      {c.rare && <div className="bg-gray-800 px-2 py-1 rounded-lg flex items-center gap-1"><FragImg src={FRAGMENT_CONFIG.rare.image} alt="" size={18} /><span className="text-xs text-gray-300">×{c.rare}</span></div>}
-                      {c.epic && <div className="bg-gray-800 px-2 py-1 rounded-lg flex items-center gap-1"><FragImg src={FRAGMENT_CONFIG.epic.image} alt="" size={18} /><span className="text-xs text-gray-300">×{c.epic}</span></div>}
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                    <div className="flex items-center gap-2">
-                      <NFTVideo src={NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG].video} alt={recipe.result} size={36} />
-                      <div><p className="font-bold text-sm">{NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG].name}</p><TierBadge tier={recipe.tier} /></div>
-                    </div>
+        {/* Fragment Craft */}
+        <AnimatePresence>
+          {activeTab === 'fragment' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">Fragment → NFT</h2>
+                <p className="text-gray-400">Consume fragments, receive NFT + BOX reward</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {fragmentRecipes.map((recipe, i) => {
+                  const nft = NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG];
+                  const canCraft = canCraftFragment(recipe);
+                  const isCrafting = craftingNFT === recipe.name;
+
+                  return (
+                    <motion.div
+                      key={recipe.result}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`bg-gray-900 border border-gray-800 rounded-3xl p-6 bg-gradient-to-br ${colorMap[nft.color].bg}`}
+                    >
+                      <div className="text-center mb-6">
+                        <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-br ${colorMap[nft.color].bg} border-2 ${colorMap[nft.color].border} flex items-center justify-center text-4xl mb-3`}>
+                          {nft.emoji}
+                        </div>
+                        <h3 className={`text-xl font-black ${colorMap[nft.color].text}`}>{nft.name}</h3>
+                      </div>
+
+                      <div className="space-y-2 mb-6">
+                        <p className="text-sm text-gray-400 mb-2">Required Materials:</p>
+                        {Object.entries(recipe.cost).map(([type, needed]) => {
+                          const fragType = type.replace('Fragment', '') as 'common' | 'rare' | 'epic';
+                          const frag = FRAGMENT_CONFIG[fragType];
+                          const hasEnough = userFragments[fragType] >= needed;
+                          return (
+                            <div key={type} className="flex items-center justify-between p-3 bg-black/30 rounded-xl">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{frag.emoji}</span>
+                                <span className="text-white">{frag.name}</span>
+                              </div>
+                              <span className={hasEnough ? 'text-green-400' : 'text-red-400'}>
+                                {hasEnough ? '' : 'Need '}{userFragments[fragType]}/{needed}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl mb-6">
+                        <div className="flex items-center justify-between">
+                          <span className="text-green-400">Reward</span>
+                          <span className="text-green-400 font-bold">+{recipe.reward} BOX</span>
+                        </div>
+                      </div>
+
+                      <motion.button
+                        whileHover={{ scale: canCraft ? 1.02 : 1 }}
+                        whileTap={{ scale: canCraft ? 0.98 : 1 }}
+                        onClick={() => doFragmentCraft(recipe)}
+                        disabled={!canCraft || isCrafting}
+                        className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+                          isCrafting
+                            ? 'bg-gray-700 cursor-wait'
+                            : canCraft
+                            ? 'bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-white shadow-lg shadow-purple-500/25'
+                            : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {isCrafting ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                            Crafting...
+                          </span>
+                        ) : canCraft ? (
+                          'Start Craft'
+                        ) : (
+                          'Insufficient Materials'
+                        )}
+                      </motion.button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* NFT Upgrade */}
+        <AnimatePresence>
+          {activeTab === 'nft' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">NFT → Higher Tier NFT</h2>
+                <p className="text-gray-400">Consume NFT + BOX, receive higher tier NFT</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {nftRecipes.map((recipe, i) => {
+                  const nft = NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG];
+                  const canCraft = canCraftNFT(recipe);
+                  const isCrafting = craftingNFT === recipe.name;
+
+                  return (
+                    <motion.div
+                      key={recipe.result}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`bg-gray-900 border border-gray-800 rounded-3xl p-6 bg-gradient-to-br ${colorMap[nft.color].bg}`}
+                    >
+                      <div className="flex items-center justify-center my-4">
+                        <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 1, repeat: Infinity }}>
+                          <ChevronRight className={`w-8 h-8 ${colorMap[nft.color].text}`} />
+                        </motion.div>
+                      </div>
+
+                      <div className="text-center mb-6">
+                        <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-br ${colorMap[nft.color].bg} border-2 ${colorMap[nft.color].border} flex items-center justify-center text-4xl mb-3 relative`}>
+                          {nft.emoji}
+                          <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-yellow-500 rounded-full text-xs font-bold text-black">
+                            {'★'.repeat(nft.stars)}
+                          </div>
+                        </div>
+                        <h3 className={`text-xl font-black ${colorMap[nft.color].text}`}>{nft.name}</h3>
+                      </div>
+
+                      <div className="space-y-2 mb-6">
+                        <p className="text-sm text-gray-400 mb-2">Required Materials:</p>
+                        {Object.entries(recipe.cost).map(([type, needed]) => {
+                          if (type === 'box') {
+                            const hasEnough = userBox >= needed;
+                            return (
+                              <div key={type} className="flex items-center justify-between p-3 bg-black/30 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl">💰</span>
+                                  <span className="text-white">BOX</span>
+                                </div>
+                                <span className={hasEnough ? 'text-green-400' : 'text-red-400'}>
+                                  {hasEnough ? '' : 'Need '}{userBox}/{needed}
+                                </span>
+                              </div>
+                            );
+                          }
+                          
+                          const nftType = type.replace('NFT', '') as 'common' | 'rare' | 'epic';
+                          const requiredNFT = NFT_CONFIG[nftType];
+                          const userCount = userNFTs[nftType] || 0;
+                          const hasEnough = userCount >= needed;
+                          
+                          return (
+                            <div key={type} className="flex items-center justify-between p-3 bg-black/30 rounded-xl">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{requiredNFT.emoji}</span>
+                                <span className="text-white">{requiredNFT.name}</span>
+                              </div>
+                              <span className={hasEnough ? 'text-green-400' : 'text-red-400'}>
+                                {hasEnough ? '' : 'Need '}{userCount}/{needed}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl mb-6">
+                        <div className="flex items-center justify-between">
+                          <span className="text-green-400">Reward</span>
+                          <span className="text-green-400 font-bold">+{recipe.reward} BOX</span>
+                        </div>
+                      </div>
+
+                      <motion.button
+                        whileHover={{ scale: canCraft ? 1.02 : 1 }}
+                        whileTap={{ scale: canCraft ? 0.98 : 1 }}
+                        onClick={() => doNFTCraft(recipe)}
+                        disabled={!canCraft || isCrafting}
+                        className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+                          isCrafting
+                            ? 'bg-gray-700 cursor-wait'
+                            : canCraft
+                            ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white shadow-lg shadow-orange-500/25'
+                            : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {isCrafting ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                            Crafting...
+                          </span>
+                        ) : canCraft ? (
+                          'Start Upgrade'
+                        ) : (
+                          'Insufficient Materials'
+                        )}
+                      </motion.button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Legendary Tip */}
+              <div className="mt-8 p-6 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/30 rounded-3xl">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center text-2xl">
+                    👑
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-green-400 font-bold">+{recipe.reward} BOX</p>
-                    {canDo ? <Zap className="w-4 h-4 text-green-400 ml-auto" /> : <Lock className="w-4 h-4 text-gray-600 ml-auto" />}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-yellow-400 mb-2">Legendary NFT Ultimate Craft</h3>
+                    <p className="text-gray-400 text-sm mb-4">
+                      100 Common NFT + 50 Rare NFT + 20 Epic NFT + 200 BOX = 1 Legendary NFT
+                    </p>
+                    <div className="flex items-center gap-4 text-xs">
+                      <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">
+                        Global Limited 353
+                      </span>
+                      <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full">
+                        +100 BOX Reward
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            );
-          }) : NFT_RECIPES.map((recipe, index) => {
-            const c = recipe.cost;
-            const nftCount = c.common ? myNFTs.common : myNFTs.rare;
-            const canDo = nftCount >= (c.common || c.rare || 0) && myBOX >= recipe.boxCost;
-            return (
-              <motion.div key={recipe.id} whileHover={canDo ? { scale: 1.01 } : {}} onClick={() => canDo && setSelectedRecipe(index)} className={`rounded-xl border-2 cursor-pointer transition-all ${selectedRecipe === index ? 'border-violet-500 bg-violet-500/10' : canDo ? 'border-gray-700 bg-gray-900/60' : 'border-gray-800 bg-gray-900/30 opacity-60'}`}>
-                <div className="p-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex gap-1">
-                      <div className="bg-gray-800 px-2 py-1 rounded-lg"><span className="text-xs text-gray-300">{c.common ? 'Common' : 'Rare'} NFT ×{c.common || c.rare}</span></div>
-                      <div className="bg-red-500/20 px-2 py-1 rounded-lg"><span className="text-xs text-red-400">-{recipe.boxCost} BOX</span></div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                    <div className="flex items-center gap-2">
-                      <Crown className="w-6 h-6 text-yellow-400" />
-                      <div><p className="font-bold text-sm">{NFT_CONFIG[recipe.result as keyof typeof NFT_CONFIG].name}</p><TierBadge tier={recipe.tier} /></div>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-green-400 font-bold">+{recipe.reward} BOX</p>
-                    {canDo ? <Zap className="w-4 h-4 text-green-400 ml-auto" /> : <Lock className="w-4 h-4 text-gray-600 ml-auto" />}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {isLoggedIn && selectedRecipe !== null && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSynth} disabled={synthesizing} className="w-full py-4 bg-gradient-to-r from-violet-600 via-pink-600 to-purple-600 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-violet-500/30">
-              {synthesizing ? <><RefreshCw className="w-6 h-6 animate-spin" /><span>Synthesizing...</span></> : <><Sparkles className="w-6 h-6" /><span>Start Synthesis</span></>}
-            </motion.button>
-          </motion.div>
-        )}
-
-        {!isLoggedIn && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 bg-gray-900/80 rounded-2xl p-8 text-center border border-gray-700">
-            <Wallet className="w-14 h-14 mx-auto mb-4 text-gray-500" />
-            <p className="text-gray-400 mb-4">登录后进入合成实验室</p>
-            <button onClick={login} className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-lg font-bold">
-              立即登录
-            </button>
-          </motion.div>
-        )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {synthesizing && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-          <div className="text-center">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity }} className="w-24 h-24 mx-auto mb-6"><div className="w-full h-full bg-gradient-to-r from-violet-500 to-pink-500 rounded-full flex items-center justify-center"><Sparkles className="w-12 h-12 text-white" /></div></motion.div>
-            <p className="text-2xl font-bold">Synthesizing...</p>
-          </div>
-        </motion.div>
-      )}
-
-      {showResult && resultData && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setShowResult(false)}>
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className={`bg-gradient-to-br ${resultData.type === 'epic' ? 'from-yellow-600 to-orange-700' : resultData.type === 'rare' ? 'from-blue-600 to-cyan-700' : 'from-gray-600 to-gray-700'} rounded-3xl p-8 text-center max-w-sm`} onClick={e => e.stopPropagation()}>
-            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-32 h-32 mx-auto mb-4 rounded-xl overflow-hidden"><video src={NFT_VIDEOS[resultData.type as keyof typeof NFT_VIDEOS]} autoPlay loop muted playsInline className="w-full h-full object-cover" /></motion.div>
-            <h2 className="text-2xl font-black mb-2">{resultData.type === 'epic' ? 'Epic NFT' : resultData.type === 'rare' ? 'Rare NFT' : 'Common NFT'}</h2>
-            <p className="text-green-400 font-bold text-xl mb-6">+{resultData.reward} BOX</p>
-            <button onClick={() => setShowResult(false)} className="px-10 py-3 bg-white text-black rounded-full font-bold">Collect</button>
+      {/* Success Modal */}
+      <AnimatePresence>
+        {craftSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              className="bg-gray-900 border border-green-500/30 rounded-3xl p-8 text-center"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5 }}
+                className="w-24 h-24 mx-auto rounded-full bg-green-500/20 flex items-center justify-center text-5xl mb-4"
+              >
+                ✅
+              </motion.div>
+              <h2 className="text-2xl font-black text-green-400 mb-2">Craft Success!</h2>
+              <p className="text-white text-lg">You received {craftSuccess.name}</p>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

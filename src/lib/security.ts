@@ -36,10 +36,15 @@ export const securityConfig: SecurityConfig = {
 
 // ========== 1. 输入验证与过滤 ==========
 export const InputValidator = {
-  // XSS过滤
+  // XSS过滤 — encodes HTML special characters to prevent injection
   sanitize: (str: string): string => {
     if (typeof str !== 'string') return '';
-    return str.replace(/[<>"'&script]/g, '');
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
   },
 
   // 地址验证

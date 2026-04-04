@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { I18nProvider } from "@/contexts/I18nContext";
 import { AppWalletProvider } from "@/providers/WalletProvider";
+import { SuiDataProvider } from "@/contexts/SuiDataProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,9 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AppWalletProvider>
-        <I18nProvider>
+        <SuiDataProvider>
           {children}
-        </I18nProvider>
+        </SuiDataProvider>
       </AppWalletProvider>
     </QueryClientProvider>
   );

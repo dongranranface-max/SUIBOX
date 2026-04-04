@@ -7,6 +7,8 @@ import { ChevronRight, ChevronLeft, ArrowUp, ArrowDown, Clock, X } from 'lucide-
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStats } from '@/hooks/useStats';
 import { useI18n } from '@/lib/i18n';
+import GenesisAirdropHero from '@/components/GenesisAirdropHero';
+import BurnHole from '@/components/BurnHole';
 
 type JsonMap = Record<string, unknown>;
 type AuctionItem = {
@@ -85,7 +87,7 @@ async function fetchNFTs() {
         collection: String(n.creator || n.collection || 'Unknown'),
         price: Number(n.price || 0),
         priceUnit: String(n.priceSymbol || n.priceUnit || 'SUI'),
-        change: Math.floor(Math.random() * 40) - 10, // 模拟涨跌幅
+            change: 0,
         image: String(n.image || '/nft-common.png'),
         rarity: String(n.rarity || 'common')
       }));
@@ -221,11 +223,11 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [banners.length]);
 
-  // 拍卖倒计时
+  // 拍卖倒计时 — 跟随 auctionData（包含 API 数据和默认数据）
   useEffect(() => {
     const calculateCountdown = () => {
       const newCountdown: Record<number, {days: number, hours: number, minutes: number, seconds: number}> = {};
-      hotAuctions.forEach(auction => {
+      auctionData.forEach(auction => {
         const diff = auction.endTime - Date.now();
         if (diff > 0) {
           newCountdown[auction.id] = {
@@ -241,7 +243,7 @@ export default function Home() {
     calculateCountdown();
     const timer = setInterval(calculateCountdown, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [auctionData]);
 
   // 格式化倒计时 - 显示到秒
   const formatCountdown = (auctionId: number) => {
@@ -282,56 +284,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* 轮播图 - 自适应 */}
-      <section className="relative w-full h-[35vh] sm:h-[40vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
-        {banners.map((banner, i) => (
-          <Link 
-            key={banner.id} 
-            href={banner.link}
-            className={`absolute inset-0 bg-gradient-to-r ${banner.bg} transition-all duration-500 ${i === currentBanner ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}`}
-          >
-            <div className="max-w-7xl mx-auto h-full flex items-center px-8 sm:px-12 md:px-16 lg:px-20">
-              <div className="flex-1">
-                <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-3 sm:mb-4 md:mb-6 block">{banner.emoji}</span>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-4">{banner.title}</h1>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-4 sm:mb-5 md:mb-6">{banner.desc}</p>
-                <span className="inline-flex items-center gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 bg-white/20 hover:bg-white/30 rounded-xl md:rounded-2xl transition-all text-sm sm:text-base md:text-lg font-medium">
-                  {tt('home.hero.start', 'Get Started')} <ChevronRight className="w-4 sm:w-5 md:w-5" />
-                </span>
-              </div>
-              <div className="w-32 sm:w-40 md:w-56 lg:w-72 h-32 sm:h-40 md:h-56 lg:h-72 relative hidden sm:block">
-                <div className="absolute inset-0 bg-white/10 rounded-full animate-ping" />
-                <Image src="/suibox-logo.png" alt="SUIBOX" width={288} height={288} className="relative object-contain drop-shadow-2xl" />
-              </div>
-            </div>
-          </Link>
-        ))}
-        
-        {/* 左右切换按钮 */}
-        <button 
-          onClick={() => setCurrentBanner((currentBanner - 1 + banners.length) % banners.length)}
-          className="absolute left-2 sm:left-3 md:left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-        </button>
-        <button 
-          onClick={() => setCurrentBanner((currentBanner + 1) % banners.length)}
-          className="absolute right-2 sm:right-3 md:right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-        </button>
-        
-        {/* 轮播指示器 */}
-        <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
-          {banners.map((_, i) => (
-            <button 
-              key={i} 
-              onClick={() => setCurrentBanner(i)} 
-              className={`h-1.5 sm:h-2 md:h-3 rounded-full transition-all ${i === currentBanner ? 'w-4 sm:w-6 md:w-10 bg-white' : 'w-1.5 sm:w-2 md:w-3 bg-white/50'}`} 
-            />
-          ))}
-        </div>
-      </section>
+      {/* Season 0 Genesis Airdrop Hero */}
+      <GenesisAirdropHero />
+
+      {/* The Burn Hole - 实时销毁面板 (最显眼位置) */}
+      <div className="max-w-5xl mx-auto px-4 -mt-4 relative z-10">
+        <BurnHole />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-10 space-y-8 md:space-y-12">
 
@@ -564,7 +523,9 @@ export default function Home() {
                         <span className="font-bold">SUI</span>
                         <span className="text-xs text-gray-500">USDC</span>
                       </div>
-                      <span className="text-sm text-green-400">+0.56%</span>
+                      <span className={`text-sm ${suiChangeVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {suiChangeVal >= 0 ? '+' : ''}{suiChangeVal.toFixed(2)}%
+                      </span>
                     </div>
                     <p className="text-3xl font-bold mb-2">${suiPriceVal.toFixed(4)}</p>
                     {/* 折线图 */}
@@ -590,7 +551,7 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="flex justify-between mt-2">
-                      <a href="https://app.cetus.zone/swap?from=SUI&to=USDC" target="_blank" className="text-xs text-violet-400 hover:text-violet-300">在Cetus交易 ↗</a>
+                      <a href="https://app.cetus.zone/swap?from=SUI&to=USDC" target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:text-violet-300">在Cetus交易 ↗</a>
                     </div>
                   </div>
 
@@ -601,8 +562,8 @@ export default function Home() {
                         <span className="font-bold">BOX</span>
                         <span className="text-xs text-gray-500">SUI</span>
                       </div>
-                      <span className="text-sm text-green-400">
-                        +0.56%
+                      <span className={`text-sm ${suiChangeVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {suiChangeVal >= 0 ? '+' : ''}{suiChangeVal.toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-3xl font-bold mb-2">${(boxPriceVal * suiPriceVal).toFixed(4)}</p>
@@ -629,7 +590,7 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="flex justify-between mt-2">
-                      <a href="https://app.cetus.zone/swap?from=BOX&to=SUI" target="_blank" className="text-xs text-violet-400 hover:text-violet-300">在Cetus交易 ↗</a>
+                      <a href="https://app.cetus.zone/swap?from=BOX&to=SUI" target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:text-violet-300">在Cetus交易 ↗</a>
                     </div>
                   </div>
                 </div>
@@ -825,6 +786,7 @@ export default function Home() {
           >
             {/* 关闭按钮 - 移动端 */}
             <button 
+              aria-label="Close"
               onClick={() => setBidModal({show: false})}
               className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white md:hidden"
             >

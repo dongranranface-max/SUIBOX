@@ -100,8 +100,11 @@ export const en = {
     join: 'Join',
     governance: 'Governance',
     staking: 'Staking',
+    yield: 'Real Yield Hub',
     apply: 'Apply',
     institution: 'Institution',
+    airdrop: 'Airdrop',
+    genesis: 'Genesis',
   },
 
   // Market

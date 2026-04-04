@@ -4,6 +4,10 @@
 import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
 import { Transaction } from '@mysten/sui.js/transactions';
 import { SUI_CLI_ADRESS, SuiClient } from '@mysten/sui.js/client';
+import { 
+  getSUIBalance as graphqlGetBalance,
+  formatSUI as graphqlFormatSUI 
+} from './sui-graphql';
 
 // 项目方收款地址 (需要替换为实际地址)
 export const PROJECT_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -16,15 +20,20 @@ const SUI_RPC_URL = 'https://fullnode.mainnet.sui.io';
 const client = new SuiClient({ url: SUI_RPC_URL });
 
 /**
- * 检查钱包余额
+ * 检查钱包余额 (兼容旧版 + 新版 GraphQL)
  */
 export async function getBalance(address: string): Promise<number> {
   try {
-    const balance = await client.getBalance({
+    // 优先使用 GraphQL
+    const balance = await graphqlGetBalance(address);
+    if (balance > 0) return balance;
+    
+    // Fallback 到 RPC
+    const balanceRpc = await client.getBalance({
       owner: address,
       coinType: '0x2::sui::SUI',
     });
-    return Number(balance.totalBalance);
+    return Number(balanceRpc.totalBalance);
   } catch (error) {
     console.error('获取余额失败:', error);
     return 0;

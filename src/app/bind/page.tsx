@@ -82,8 +82,22 @@ export default function BindWalletPage() {
   };
 
   const setPrimary = async (address: string) => {
-    setPrimaryWallet(address);
-    // TODO: 调用 API 更新主钱包
+    try {
+      const res = await fetch('/api/user/wallets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_address: user?.wallet_address || user?.sui_address,
+          wallet_address: address,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPrimaryWallet(address);
+      }
+    } catch (error) {
+      console.error('Set primary wallet error:', error);
+    }
   };
 
   const unbindWallet = async (address: string) => {
@@ -147,6 +161,7 @@ export default function BindWalletPage() {
             <div className="flex items-center gap-2">
               <input 
                 readOnly
+                aria-label="邀请链接"
                 value={inviteCode ? `${window.location.origin}/login?invite=${inviteCode}` : ''}
                 className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300"
               />

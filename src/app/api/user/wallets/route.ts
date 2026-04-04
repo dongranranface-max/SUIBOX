@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // 模拟钱包绑定数据（内存存储）
 const walletBindings = new Map<string, { address: string; provider: string; boundAt: string }[]>();
+const primaryWallets = new Map<string, string>();
 
 // GET - 获取用户绑定的钱包列表
 export async function GET(request: NextRequest) {
@@ -76,6 +77,39 @@ export async function POST(request: NextRequest) {
     console.error('Bind wallet error:', error);
     return NextResponse.json(
       { success: false, error: '绑定失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - 设置主钱包
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { user_address, wallet_address } = body;
+
+    if (!user_address || !wallet_address) {
+      return NextResponse.json(
+        { success: false, error: '缺少必要参数' },
+        { status: 400 }
+      );
+    }
+
+    const wallets = walletBindings.get(user_address) || [];
+    if (!wallets.some(w => w.address === wallet_address)) {
+      return NextResponse.json(
+        { success: false, error: '钱包不存在' },
+        { status: 404 }
+      );
+    }
+
+    primaryWallets.set(user_address, wallet_address);
+
+    return NextResponse.json({ success: true, message: '主钱包已更新' });
+  } catch (error) {
+    console.error('Set primary wallet error:', error);
+    return NextResponse.json(
+      { success: false, error: '设置失败' },
       { status: 500 }
     );
   }
