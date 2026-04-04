@@ -125,18 +125,20 @@ export async function GET(request: NextRequest) {
 
   try {
     // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(provider, code);
+    const providerStr = provider as string;
+    const tokens = await exchangeCodeForTokens(providerStr, code as string);
     
     // Get user info
-    const userInfo = await getUserInfo(provider, tokens.access_token);
+    const accessToken = tokens.access_token as string;
+    const userInfo = await getUserInfo(providerStr, accessToken);
     
     // Generate Sui address from OAuth ID
     const oauthId = userInfo.id || userInfo.sub;
-    const suiAddress = generateZkLoginAddress(provider, oauthId);
+    const suiAddress = generateZkLoginAddress(providerStr, oauthId);
     
     // Create session data
     const sessionData = {
-      provider: provider,
+      provider: providerStr,
       oauthId,
       email: userInfo.email || '',
       name: userInfo.name || userInfo.username || 'SUI User',

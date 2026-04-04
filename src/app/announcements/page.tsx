@@ -381,7 +381,7 @@ function AnnouncementCard({ item, isPinned = false, onClick }: { item: Announcem
 function AnnouncementList() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'featured' | 'latest'>('all');
 
   useEffect(() => {

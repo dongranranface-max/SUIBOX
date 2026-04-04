@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Clock, Zap, Hexagon, Gavel, Timer, Flame, Star, TrendingUp, Plus, Minus, X, Check, DollarSign, Users, Fire } from 'lucide-react';
+import { Clock, Zap, Hexagon, Gavel, Timer, Flame, Star, TrendingUp, Plus, Minus, X, Check, DollarSign, Users } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 const SUI_TO_BOX_RATE = 100;
@@ -86,6 +86,12 @@ export default function AuctionPage() {
     if (c.hours > 0) return `${c.hours}h ${c.minutes}m ${c.seconds}s`;
     if (c.minutes > 0) return `${c.minutes}m ${c.seconds}s`;
     return `${c.seconds}s`;
+  };
+
+  const isEnding = (auctionId: number) => {
+    const c = countdown[auctionId];
+    if (!c) return false;
+    return c.days === 0 && c.hours < 1;
   };
 
   const getUrgencyLevel = (auctionId: number) => {
