@@ -8,6 +8,7 @@ interface CacheItem<T> {
 }
 
 // 全局缓存
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const globalCache = new Map<string, CacheItem<any>>();
 const DEFAULT_DURATION = 30000; // 30秒默认缓存
 
@@ -95,31 +96,31 @@ export function useSmartFetch<T>(
 // 批量获取数据 - 优化多API请求
 export async function batchFetch<T extends Record<string, string>>(
   endpoints: T
-): Promise<{ [K in keyof T]?: any }> {
-  const cacheKeys = Object.keys(endpoints);
-  const results: Record<string, any> = {};
+): Promise<Partial<Record<keyof T, unknown>>> {
+  const cacheKeys = Object.keys(endpoints) as (keyof T & string)[];
+  const results: Partial<Record<keyof T, unknown>> = {};
 
   // 先从缓存获取
-  cacheKeys.forEach(key => {
-    const cached = getCachedData(key);
-    if (cached) {
+  for (const key of cacheKeys) {
+    const cached = getCachedData(endpoints[key]);
+    if (cached !== null) {
       results[key] = cached;
     }
-  });
+  }
 
   // 获取未缓存的keys
   const uncachedKeys = cacheKeys.filter(key => !(key in results));
 
   if (uncachedKeys.length === 0) {
-    return results as { [K in keyof T]?: any };
+    return results;
   }
 
   // 并行请求未缓存的数据
   const promises = uncachedKeys.map(async (key) => {
     try {
       const res = await fetch(endpoints[key]);
-      const data = await res.json();
-      setCachedData(key, data);
+      const data: unknown = await res.json();
+      setCachedData(endpoints[key], data);
       return { key, data };
     } catch {
       return { key, data: null };
@@ -127,12 +128,12 @@ export async function batchFetch<T extends Record<string, string>>(
   });
 
   const fetched = await Promise.all(promises);
-  
-  fetched.forEach(({ key, data }) => {
-    if (data) {
-      results[key] = data;
-    }
-  });
 
-  return results as { [K in keyof T]?: any };
+  for (const { key, data } of fetched) {
+    if (data !== null) {
+      results[key as keyof T] = data;
+    }
+  }
+
+  return results;
 }

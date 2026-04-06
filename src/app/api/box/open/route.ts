@@ -18,6 +18,7 @@ import {
   addFragment, recordBurn,
   getDb,
 } from '@/lib/database';
+import { InputValidator } from '@/lib/security';
 
 // ─── 业务常量 ──────────────────────────────────────────
 const PAID_BOX_COST_BOX = 15;           // 付费通道消耗 BOX
@@ -94,6 +95,9 @@ export async function POST(request: NextRequest) {
 
     if (!address) {
       return NextResponse.json({ success: false, error: '缺少钱包地址' }, { status: 400 });
+    }
+    if (!InputValidator.validateAddress(address)) {
+      return NextResponse.json({ success: false, error: '无效的钱包地址格式' }, { status: 400 });
     }
 
     const todayOpens = getTodayOpens(address);
@@ -187,6 +191,9 @@ export async function GET(request: NextRequest) {
   try {
     const address = new URL(request.url).searchParams.get('address');
     if (!address) return NextResponse.json({ success: false, error: '缺少地址' }, { status: 400 });
+    if (!InputValidator.validateAddress(address)) {
+      return NextResponse.json({ success: false, error: '无效的钱包地址格式' }, { status: 400 });
+    }
 
     const todayOpens = getTodayOpens(address);
     const consolationCount = getConsolationCount(address);

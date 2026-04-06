@@ -30,6 +30,7 @@ import {
   recordBurn, getDb, checkAndGrantMilestone, getSynthesisCountForUser,
   getUserByAddress,
 } from '@/lib/database';
+import { InputValidator } from '@/lib/security';
 
 // ─── 业务常量 ──────────────────────────────────────────
 const BOX_REWARDS: Record<string, number> = {
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
 
     if (!address || !synthesis_type || !target_rarity) {
       return NextResponse.json({ success: false, error: '参数不完整' }, { status: 400 });
+    }
+    if (!InputValidator.validateAddress(address)) {
+      return NextResponse.json({ success: false, error: '无效的钱包地址格式' }, { status: 400 });
     }
 
     let resultTokenId: string;

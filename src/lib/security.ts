@@ -192,8 +192,8 @@ export const addressChecker = {
       return { isSafe: false, riskLevel: 'danger', reasons: ['无效地址格式'] };
     }
     
-    // 零地址检查
-    if (address === '0x0000000000000000000000000000000000000000000') {
+    // 零地址检查（SUI 地址为 0x + 64 个十六进制字符）
+    if (address === `0x${'0'.repeat(64)}`) {
       reasons.push('零地址');
     }
     
@@ -235,8 +235,6 @@ class AnomalyMonitor {
   // 添加告警
   addAlert(alert: AnomalyAlert): void {
     this.alerts.push(alert);
-    console.warn('🚨 安全告警:', alert);
-    
     // 可扩展：发送通知
     // await notifyAdmin(alert);
   }
@@ -246,11 +244,19 @@ class AnomalyMonitor {
     return this.alerts;
   }
 
-  // 清理旧告警（保留7天）
+  // 清理旧告警（保留7天）& 过期交易计数
   cleanup(): void {
     const WEEK = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     this.alerts = this.alerts.filter(a => now - a.timestamp < WEEK);
+
+    // 清理非今天的交易计数（key 格式：dateString:address）
+    const today = new Date().toDateString();
+    for (const key of this.dailyTxCounts.keys()) {
+      if (!key.startsWith(today)) {
+        this.dailyTxCounts.delete(key);
+      }
+    }
   }
 }
 

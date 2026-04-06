@@ -56,14 +56,16 @@ export const useUIStore = create<UIState>()(
   )
 );
 
+export type SupportedLanguage = 'en' | 'zh' | 'ko' | 'es' | 'ja' | 'ru';
+
 // 用户偏好设置
 interface UserPreferences {
-  language: 'en' | 'zh' | 'ko' | 'es';
+  language: SupportedLanguage;
   currency: 'SUI' | 'BOX' | 'USD';
   notifications: boolean;
-  
+
   // Actions
-  setLanguage: (lang: 'en' | 'zh' | 'ko' | 'es') => void;
+  setLanguage: (lang: SupportedLanguage) => void;
   setCurrency: (currency: 'SUI' | 'BOX' | 'USD') => void;
   toggleNotifications: () => void;
 }

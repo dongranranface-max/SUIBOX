@@ -1,7 +1,22 @@
 import { NextResponse } from 'next/server';
 
+interface StatsData {
+  sui: { price: number; change: number; chart: number[] };
+  box: { price: number; change: number; chart: number[] };
+  gasFee: number;
+  platform: {
+    tradingVolume: number;
+    nftTotal: number;
+    nftStaked: number;
+    boxStaked: number;
+    suiStaked: number;
+    nftHolders: number;
+    royaltyPaid: number;
+  };
+}
+
 // 内存缓存
-let cache: { data: any; timestamp: number } | null = null;
+let cache: { data: StatsData; timestamp: number } | null = null;
 const CACHE_DURATION = 60000;
 
 const BINANCE_API = 'https://api.binance.com/api/v3';
@@ -43,8 +58,8 @@ export async function GET() {
         suiPrice = parseFloat(data.lastPrice) || defaultData.sui.price;
         suiChange = parseFloat(data.priceChangePercent) || defaultData.sui.change;
       }
-    } catch (e) {
-      console.log('Binance API error, using defaults');
+    } catch {
+      // Binance API unavailable — use default price
     }
 
     // 生成图表数据
