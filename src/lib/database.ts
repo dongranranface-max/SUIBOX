@@ -20,6 +20,18 @@ export function getDb(): Database.Database {
   _db.pragma('journal_mode = WAL');
   _db.pragma('foreign_keys = ON');
   initSchema(_db);
+
+  // 进程退出时关闭数据库，确保 WAL 文件正确合并
+  const closeDb = () => {
+    if (_db && _db.open) {
+      _db.close();
+      _db = null;
+    }
+  };
+  process.once('exit', closeDb);
+  process.once('SIGINT', () => { closeDb(); process.exit(0); });
+  process.once('SIGTERM', () => { closeDb(); process.exit(0); });
+
   return _db;
 }
 

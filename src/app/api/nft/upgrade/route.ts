@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { upgradeNFTStar, recordBurn, getDb } from '@/lib/database';
+import { InputValidator } from '@/lib/security';
 
 // ─── 升级成本 & 解锁权益 ───────────────────────────────
 const UPGRADE_CONFIG = {
@@ -47,6 +48,9 @@ export async function GET(request: NextRequest) {
 
   if (!address || !token_id) {
     return NextResponse.json({ success: false, error: '缺少参数' }, { status: 400 });
+  }
+  if (!InputValidator.validateAddress(address)) {
+    return NextResponse.json({ success: false, error: '无效的钱包地址格式' }, { status: 400 });
   }
 
   const nft = getDb().prepare(
@@ -88,6 +92,9 @@ export async function POST(request: NextRequest) {
 
     if (!address || !token_id) {
       return NextResponse.json({ success: false, error: '缺少参数' }, { status: 400 });
+    }
+    if (!InputValidator.validateAddress(address)) {
+      return NextResponse.json({ success: false, error: '无效的钱包地址格式' }, { status: 400 });
     }
 
     // 获取 NFT 类型与当前星级
